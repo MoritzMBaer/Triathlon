@@ -660,8 +660,9 @@
     } else units.forEach(p => {
       left += unitOrTile(M, p, statusOf(p, M) !== 'done' ? (p === cur ? 'Heute · ' : 'Danach · ') + unitMeta(p) + (sp(p.sport).k === 'mob' ? ' · ' + mobItems(p).length + ' Übungen' : '') : null, 'heute', def);
     });
-    let right = checkCard(M) + statusCard(M, units) + weekCard(M, monday(now), window.innerWidth >= 960);
+    let right = checkCard(M) + statusCard(M, units);
     if (nextMain && !(units.length && !cur)) right += unitOrTile(M, nextMain, 'Morgen' + (M.shifts[tmr] ? ' · Dienst ' + M.shifts[tmr] : '') + (next.length > 1 ? ' · +' + (next.length - 1) + ' weitere' : ''), 'heute', def);
+    right += weekCard(M, monday(now), window.innerWidth >= 960);
     return header('Heute', WDL[now.getDay()] + ', ' + fmtDay(now)) + banner() + `<div class="grid2"><div class="col">${left}</div><div class="col">${right}</div></div>`;
   }
   /* Alles erledigt: kurzer Rückblick auf den Tag statt leerer Seite */
@@ -689,15 +690,12 @@
       else { total += p.dur || 0; bits.push(unitMeta(p)); }
       return `<button class="sum-row" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-label="${esc(p.title)} öffnen"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(cleanTitle(p))}</b><small>${esc(bits.filter(Boolean).join(' · '))}</small></span><span class="ok">${CHECK}</span></button>`;
     }).join('');
-    const w = weekCounts(M, monday(now));
-    const pct = w.n ? Math.round(w.doneN / w.n * 100) : 0;
     const nx = M.plan.find(p => p.date > today() && sp(p.sport).fam !== 'Mobility');
     const nd = nx && parseISO(nx.date), tmr = iso(addDays(now, 1));
     const nxLabel = nx ? (nx.date === tmr ? 'Morgen' : WDL[nd.getDay()]) : '';
     return `<section class="card sum">
       <div class="sum-h"><span class="sum-ic">${CHECK}</span><span class="tx"><b>Heute geschafft</b><small>${units.length === 1 ? '1 Einheit' : units.length + ' Einheiten'}${total ? ' · ' + fmtH(total) : ''}</small></span></div>
       <div class="sum-list">${rows}</div>
-      <div class="sum-week"><div class="sum-wl"><span>Diese Woche</span><b>${w.doneN} von ${w.n} · ${fmtH(w.doneMin)} von ${fmtH(w.planMin)}</b></div><div class="sum-bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Wochenfortschritt"><i style="width:${pct}%"></i></div></div>
       ${nx ? `<div class="sum-next" style="${cv(sp(nx.sport).k)}"><span class="ic">${ICON[sp(nx.sport).k]}</span><span class="tx"><small>Als Nächstes · ${esc(nxLabel)}${M.shifts[nx.date] ? ' · Dienst ' + esc(M.shifts[nx.date]) : ''}</small><b>${esc(cleanTitle(nx))}</b></span><span class="r">${esc(unitMeta(nx))}</span></div>` : ''}
     </section>`;
   }
