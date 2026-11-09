@@ -717,9 +717,10 @@
   function morgenCard(M, now) {
     const d = addDays(now, 1), k = iso(d);
     const us = M.plan.filter(p => p.date === k);
-    let h = `<section class="card ndays morgen"><div class="nd-day"><div class="nd-h"><b>Morgen</b><small>${WDL[d.getDay()]}, ${fmtShort(d)}</small>${M.shifts[k] ? `<span class="shift">${esc(M.shifts[k])}</span>` : ''}</div>`;
-    h += us.length ? us.map(p => { const S = sp(p.sport); return `<button class="nd-u" style="${cv(S.k)}" data-sheet="${esc(p.id)}"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(cleanTitle(p))}</b><small>${esc(sportLabel(p))} · ${esc(unitMeta(p))}${S.k === 'mob' ? ' · ' + mobItems(p).length + ' Übungen' : ''}</small></span></button>`; }).join('') : '<span class="free">Trainingsfrei</span>';
-    return h + '</div></section>';
+    /* gleiche Kacheln wie heute: tippen klappt die Einheit auf und wieder zu */
+    let h = `<div class="mhead"><b>Morgen</b><small>${WDL[d.getDay()]}, ${fmtShort(d)}</small>${M.shifts[k] ? `<span class="shift">${esc(M.shifts[k])}</span>` : ''}</div>`;
+    if (!us.length) return h + '<section class="card" style="padding:16px"><span class="free">Trainingsfrei</span></section>';
+    return h + us.map(p => unitOrTile(M, p, 'Morgen · ' + unitMeta(p) + (sp(p.sport).k === 'mob' ? ' · ' + mobItems(p).length + ' Übungen' : ''), 'heute', null)).join('');
   }
   /* Laptop: Blick auf die kommenden Tage */
   function nextDays(M, now) {
