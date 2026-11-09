@@ -43,6 +43,7 @@
   };
   const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   const CHEV_D = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  const CHEV_L = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>';
   const CHEV_R = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
   const SPORT = {
     'Schwimmen': { k: 'swim', fam: 'Schwimmen', ring: true, o: 0 },
@@ -61,7 +62,7 @@
     cfg: ls.get('tri:cfg', null),
     data: ls.get('tri:data', null),
     loading: false, err: null, busy: {}, msgs: {},
-    weekOff: 0, sheetId: null, active: {}, drafts: {}, open: {}, slide: 0,
+    weekOff: 0, sheetId: null, active: {}, drafts: {}, open: {}, slide: 0, started: {},
     rest: null, timer: null, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
   };
 
@@ -270,6 +271,45 @@
     return p.sport;
   }
 
+  /* ---------- Übersicht vor dem Start (Kraft & Mobility) ---------- */
+  const isStarted = p => !p.done && (state.started[p.id] != null ? state.started[p.id] : !!ls.get('tri:start:' + p.id, false));
+  function setStarted(pid, on) { state.started[pid] = on; if (on) ls.set('tri:start:' + pid, true); else ls.del('tri:start:' + pid); }
+  function overviewBody(M, p, isKraft) {
+    let rows = [], doneN = 0, label, setsOk = 0, setsAll = 0;
+    if (isKraft) {
+      const exs = exercises(p), d = draft(M, p);
+      rows = exs.map((e, i) => {
+        const lb = U.lib(e.name), t2 = target(p, e, lb), k2 = kind(lb, e), s2 = d.ex[i] || [];
+        const okS = s2.filter(x => x.ok), allOk = s2.length && s2.every(x => x.ok);
+        if (allOk) doneN++;
+        setsOk += okS.length; setsAll += s2.length;
+        let sub = `${t2.sets} × ${t2.reps}${k2 === 'time' ? ' s' : ''}${t2.side ? ' je Seite' : ''}`;
+        if (p.done && okS.length) { const kgs = okS.map(x => x.kg).filter(x => x != null); sub = `${okS.length} Sätze${k2 === 'w' && kgs.length ? ' · ' + fmtKg(Math.max(...kgs)) : ''}`; }
+        else if (!p.done) { const sg = suggest(lb, e, t2, lastFor(M, e.name, p.id)); if (k2 === 'w' && sg.kg != null) sub += ' · ' + fmtKg(sg.kg); }
+        return { name: e.name, sub, on: !!allOk || !!p.done, part: !allOk && okS.length > 0 };
+      });
+      label = 'Training starten';
+    } else {
+      const items = mobItems(p), ticks = p.done ? items.map((_, i) => i) : ls.get('tri:mob:' + p.id, []);
+      rows = items.map((it, i) => { const on = ticks.includes(i); if (on) doneN++; return { name: it.name, sub: it.dose, on, mob: true }; });
+      label = 'Mobility starten';
+    }
+    const begun = doneN > 0 || rows.some(r => r.part);
+    let h = '<div class="ov">';
+    rows.forEach((r, i) => {
+      const num = `<span class="ov-n${r.on ? ' on' : ''}" aria-hidden="true">${r.on ? CHECK : i + 1}</span>`;
+      const tx = `<span class="tx"><b>${esc(r.name)}</b><small>${esc(r.sub)}</small></span>`;
+      if (p.done) h += `<div class="ov-row${r.on ? ' done' : ''}">${num}${tx}</div>`;
+      else h += `<button class="ov-row${r.on ? ' done' : ''}" data-start="${esc(p.id)}|${i}" aria-label="${esc(r.name)}: hier starten">${num}${tx}</button>`;
+    });
+    h += '</div>';
+    if (p.done) h += isKraft ? `<button class="btn ghost" data-act="undo" data-id="${esc(p.id)}">Training bearbeiten</button>` : '';
+    else h += `<button class="btn" style="background:var(--c-d);color:var(--card)" data-start="${esc(p.id)}|-1">${begun ? 'Weitermachen' : label}</button>`;
+    if (state.msgs[p.id]) h += `<div class="msg">${esc(state.msgs[p.id])}</div>`;
+    return { html: h, progress: isKraft ? [setsOk, setsAll] : [doneN, rows.length] };
+  }
+  const backBar = (p, txt) => `<div class="run-top"><button class="link" data-stop="${esc(p.id)}">${CHEV_L}Übersicht</button><small>${txt}</small></div>`;
+
   /* ---------- Kraft ---------- */
   const exercises = p => p.workout.split('\n').map(s => s.trim()).filter(l => /^\d+\./.test(l)).map(parseExercise);
   function parseExercise(line) {
@@ -363,7 +403,7 @@
     const goal = `${tg.sets} × ${tg.reps}${k === 'time' ? ' s' : ''}${tg.side ? ' je Seite' : ''}`;
     const firstOpen = sets.findIndex(s => !s.ok);
     const done = !!p.done;
-    let h = `<div class="ex-card"><div class="ex-head"><small>Übung ${act + 1} von ${exs.length}</small><b>${esc(ex.name)}</b><span>Ziel ${goal}${hist ? ' · ' + esc(histText(hist, lib, ex)) : ''}</span></div>`;
+    let h = backBar(p, `Übung ${act + 1} von ${exs.length}`) + `<div class="ex-card"><div class="ex-head"><b>${esc(ex.name)}</b><span>Ziel ${goal}${hist ? ' · ' + esc(histText(hist, lib, ex)) : ''}</span></div>`;
     if (lib) h += `<div class="fig">${U.svg(lib, { id: 'live:' + encodeURIComponent(ex.name), label: 'Animation: ' + ex.name })}</div><p class="howto">${esc(lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(lib.cue)}</p>`;
     if (!done && sg.why) h += `<div class="sugg">${k === 'w' && sg.kg != null ? `<b>Heute ${fmtKg(sg.kg)}.</b> ` : ''}${esc(sg.why)}</div>`;
     h += `<div class="sets" role="group" aria-label="Sätze ${esc(ex.name)}"><div class="set head"><span>SATZ</span><span>${k === 'time' ? 'SEKUNDEN' : 'WDH'}</span><span>${k === 'w' ? 'KG' : ''}</span><span></span></div>`;
@@ -414,7 +454,7 @@
     const items = mobItems(p), ticks = p.done ? items.map((_, i) => i) : ls.get('tri:mob:' + p.id, []);
     let act = state.active[p.id];
     if (act == null) { act = items.findIndex((_, i) => !ticks.includes(i)); }
-    let h = '<div class="exlist">';
+    let h = backBar(p, `${ticks.length} von ${items.length} geschafft`) + '<div class="exlist">';
     items.forEach((it, i) => {
       const on = ticks.includes(i), open = i === act;
       h += `<div class="mob-ex${on ? ' done' : ''}${open ? ' active' : ''}"><div class="mob-row">
@@ -468,8 +508,10 @@
     const S = sp(p.sport), st = statusOf(p, M), t = M.match[p.id];
     const pill = st === 'done' ? `<span class="done-pill">${CHECK}Erledigt</span>` : st === 'miss' ? '<span class="miss-pill">Ausgelassen</span>' : `<span class="u-dur">${esc(unitMeta(p))}</span>`;
     let body = '', prog = null;
-    if (S.k === 'kraft') { const r = strengthBody(M, p); body = r.html; prog = r.progress; }
-    else if (S.k === 'mob') { const r = mobBody(M, p); body = r.html; prog = r.progress; }
+    if (S.k === 'kraft' || S.k === 'mob') {
+      const r = !isStarted(p) ? overviewBody(M, p, S.k === 'kraft') : S.k === 'kraft' ? strengthBody(M, p) : mobBody(M, p);
+      body = r.html; prog = r.progress;
+    }
     const title = cleanTitle(p);
     const top = `<div class="u-sport"><span class="dot-ico">${ICON[S.k]}</span><span>${esc(sportLabel(p))}</span></div><span class="u-right">${pill}${opts.fold ? CHEV_D : ''}</span>`;
     let h = `<section class="unit" style="${cv(S.k)}">${opts.fold ? `<button class="u-top" data-fold="${esc(p.id)}" aria-expanded="true" aria-label="${esc(p.title)} zuklappen">${top}</button>` : `<div class="u-top">${top}</div>`}
@@ -741,11 +783,10 @@
       if (!reduceMotion() && state.slide) {
         const cls = state.slide > 0 ? 'slide-l' : 'slide-r';
         app.classList.remove('slide-l', 'slide-r', 'view-in'); void app.offsetWidth; app.classList.add(cls);
-        setTimeout(() => app.classList.remove(cls), 450);
+        setTimeout(() => app.classList.remove(cls), 520);
       } else if (!reduceMotion()) {
         app.classList.remove('view-in'); void app.offsetWidth; app.classList.add('view-in');
-        let i = 0; app.querySelectorAll(':scope > *, :scope .col > *').forEach(c => { if (i < 10) c.style.setProperty('--i', i++); });
-        setTimeout(() => app.classList.remove('view-in'), 900);
+        setTimeout(() => app.classList.remove('view-in'), 400);
       }
       window.scrollTo(0, scrollPos[v] || 0);
       lastView = v; state.slide = 0;
@@ -759,7 +800,7 @@
     if (state.scrollEx) {
       const pid = state.scrollEx; state.scrollEx = null;
       const root = state.sheetId === pid ? $('#sheet') : app;
-      const el = root.querySelector('.ex-card');
+      const el = root.querySelector('.ex-card, .mob-ex.active, .run-top');
       if (el) el.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
     }
   }
@@ -850,24 +891,26 @@
       const mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
       if (!mode) {
         if (Math.abs(mx) < 10 && Math.abs(my) < 10) return;
-        mode = Math.abs(mx) > Math.abs(my) * 1.4 ? 'x' : 'off';
+        mode = Math.abs(mx) > Math.abs(my) * 1.8 ? 'x' : 'off';
         if (mode === 'x') app.style.transition = 'none';
       }
       if (mode !== 'x') return;
       e.preventDefault();
       const i = TABS.indexOf(current());
       const edge = (mx > 0 && i === 0) || (mx < 0 && i === TABS.length - 1);
-      dx = edge ? mx * 0.15 : mx * 0.45;
+      dx = edge ? mx * 0.12 : mx * 0.6;
       app.style.transform = `translateX(${dx}px)`;
-      app.style.opacity = String(1 - Math.min(0.35, Math.abs(dx) / 600));
     }, { passive: false });
     const end = () => {
       if (mode !== 'x') { mode = null; return; }
       mode = null;
       const i = TABS.indexOf(current()), v = Math.abs(dx) / Math.max(1, Date.now() - t0);
       const dir = dx < 0 ? 1 : -1, j = i + dir;
-      if ((Math.abs(dx) > 50 || (v > 0.35 && Math.abs(dx) > 18)) && j >= 0 && j < TABS.length) {
-        state.slide = dir; location.hash = '#' + TABS[j];
+      if ((Math.abs(dx) > 70 || (v > 0.5 && Math.abs(dx) > 30)) && j >= 0 && j < TABS.length) {
+        if (reduceMotion()) { state.slide = dir; location.hash = '#' + TABS[j]; return; }
+        app.style.transition = 'transform 180ms var(--ease-in), opacity 180ms linear';
+        app.style.transform = `translateX(${-dir * 40}px)`; app.style.opacity = '0';
+        setTimeout(() => { state.slide = dir; location.hash = '#' + TABS[j]; }, 170);
       } else {
         app.style.transition = 'transform var(--t-med) var(--ease-out), opacity var(--t-med) var(--ease-out)';
         app.style.transform = ''; app.style.opacity = '';
@@ -893,7 +936,7 @@
     state.busy[p.id] = true; delete state.msgs[p.id]; render();
     try {
       await api('erledigt', { id: p.id, wert: val });
-      p.done = val; patchPlan(p.id, val);
+      p.done = val; patchPlan(p.id, val); if (val) setStarted(p.id, false);
       if (val && state.open.heute === p.id) delete state.open.heute;
       if (val) toast(p.title + ' erledigt');
     } catch (e) { state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e); }
@@ -918,7 +961,7 @@
     try {
       await api('kraft', { id: p.id, zeilen });
       zeilen.forEach(z => state.data.kraftlog.push([z.datum, p.id, z.einheit, z.uebung, String(z.satz), String(z.wdh), String(z.sek), String(z.kg), z.ziel, z.gespeichert]));
-      patchPlan(p.id, today()); ls.del('tri:draft:' + p.id); delete state.drafts[p.id]; state.rest = null; delete state.active[p.id];
+      patchPlan(p.id, today()); ls.del('tri:draft:' + p.id); delete state.drafts[p.id]; state.rest = null; delete state.active[p.id]; setStarted(p.id, false);
       if (state.open.heute === p.id) delete state.open.heute;
       toast('Training gespeichert');
     } catch (e) { state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e) + '. Deine Sätze bleiben erhalten.'; }
@@ -990,6 +1033,13 @@
       const [pid, i] = el.dataset.delset.split('|'); const p = plan(pid); if (!p) return;
       const d = draft(M, p); d.ex[+i].pop(); putDraft(pid, d); render(); return;
     }
+    if ((el = q('[data-start]'))) {
+      const [pid, i] = el.dataset.start.split('|'); const p = plan(pid); if (!p) return;
+      setStarted(pid, true);
+      if (+i >= 0) state.active[pid] = +i; else delete state.active[pid];
+      state.scrollEx = pid; render(); return;
+    }
+    if ((el = q('[data-stop]'))) { setStarted(el.dataset.stop, false); state.timer = null; render(); return; }
     if ((el = q('[data-ex]'))) { const [pid, i] = el.dataset.ex.split('|'); state.active[pid] = +i; state.scrollEx = pid; render(); return; }
     if ((el = q('[data-mob-open]'))) { const [pid, i] = el.dataset.mobOpen.split('|'); state.active[pid] = state.active[pid] === +i ? -1 : +i; render(); return; }
     if ((el = q('[data-mob]'))) {

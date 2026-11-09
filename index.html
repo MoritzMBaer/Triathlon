@@ -204,6 +204,23 @@ input{font:inherit}
 .sprow .ic svg{width:19px;height:19px}
 .sprow small{display:block;font-size:12px;color:var(--muted)}
 
+/* Übersicht vor dem Start */
+.ov{background:var(--card);border-radius:24px;overflow:hidden}
+.ov-row{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:none;border:0;border-bottom:.5px solid var(--line);padding:12px 16px;min-height:56px;color:var(--fg)}
+.ov-row:last-child{border-bottom:0}
+.ov-row .tx{display:flex;flex-direction:column;min-width:0;flex-grow:1}
+.ov-row .tx b{font-size:15px;font-weight:600}
+.ov-row .tx small{font-size:13px;color:var(--muted)}
+.ov-row.done .tx b{color:var(--faint)}
+.ov-n{width:28px;height:28px;flex:none;border-radius:50%;background:var(--c-t);color:var(--c-d);display:grid;place-items:center;font-family:var(--round);font-weight:700;font-size:14px}
+.ov-n.on{background:var(--c);color:#fff}
+.ov-n svg{width:14px;height:14px}
+.run-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 4px}
+.run-top .link{display:inline-flex;align-items:center;gap:2px;padding-left:0}
+.run-top .link .chev{width:18px;height:18px}
+.run-top small{font-size:13px;color:var(--muted)}
+.ov-row:active{background-color:var(--fill-2)}
+
 /* Kraft */
 .ex-card{background:var(--card);border-radius:24px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
 .ex-head small{font-size:12px;font-weight:600;color:var(--c-d)}
@@ -295,7 +312,7 @@ nav.tabs a[aria-current="page"]{background:var(--ink);color:var(--on-ink)}
 
 /* Bewegung und Feedback: gemeinsame Tokens, Ankommen bremst ab, Gehen beschleunigt */
 :root{--ease-out:cubic-bezier(.22,1,.36,1);--ease-in:cubic-bezier(.4,0,1,1);--t-fast:120ms;--t-med:240ms;--t-slow:420ms}
-button,a,.tile,.row,.exrow{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+button,a,.tile,.row,.exrow,.ov-row{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 button,.tile,.row,.exrow,nav a{transition:transform var(--t-fast) var(--ease-out),background-color var(--t-med) var(--ease-out),color var(--t-med) var(--ease-out),opacity var(--t-fast) linear}
 button:not([disabled]):active,.tile:active,.row:active,.exrow:active,nav a:active{transform:scale(.97)}
 .tile:active,.exrow:active,.row:active{background-color:var(--fill-2)}
@@ -314,11 +331,11 @@ button.u-top:active{transform:none;opacity:.7}
 .day .uwrap{margin:6px 0 8px}
 .day .unit{border-radius:20px;padding:14px}
 #app{touch-action:pan-y}
-.slide-l{animation:slin-l 320ms var(--ease-out) both}
-.slide-r{animation:slin-r 320ms var(--ease-out) both}
-@keyframes slin-l{from{opacity:0;transform:translateX(48px)}}
-@keyframes slin-r{from{opacity:0;transform:translateX(-48px)}}
-.view-in>*,.view-in .col>*{animation:rise var(--t-med) var(--ease-out) both;animation-delay:calc(var(--i,0) * 35ms)}
+.slide-l{animation:slin-l 380ms var(--ease-out) both}
+.slide-r{animation:slin-r 380ms var(--ease-out) both}
+@keyframes slin-l{from{opacity:0;transform:translateX(28px)}}
+@keyframes slin-r{from{opacity:0;transform:translateX(-28px)}}
+.view-in{animation:fade 260ms var(--ease-out) both}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}}
 .sheet-bg{animation:fade var(--t-med) var(--ease-out) both}
 .sheet{animation:up var(--t-slow) var(--ease-out) both;will-change:transform;overscroll-behavior:contain}
