@@ -295,18 +295,11 @@
       label = 'Mobility starten';
     }
     const begun = doneN > 0 || rows.some(r => r.part);
-    let h = '<div class="ov">';
-    rows.forEach((r, i) => {
-      const num = `<span class="ov-n${r.on ? ' on' : ''}" aria-hidden="true">${r.on ? CHECK : i + 1}</span>`;
-      const tx = `<span class="tx"><b>${esc(r.name)}</b><small>${esc(r.sub)}</small></span>`;
-      if (p.done) h += `<div class="ov-row${r.on ? ' done' : ''}">${num}${tx}</div>`;
-      else h += `<button class="ov-row${r.on ? ' done' : ''}" data-start="${esc(p.id)}|${i}" aria-label="${esc(r.name)}: hier starten">${num}${tx}</button>`;
-    });
-    h += '</div>';
+    let h = '';
     if (p.done) h += isKraft ? `<button class="btn ghost" data-act="undo" data-id="${esc(p.id)}">Training bearbeiten</button>` : '';
     else h += `<button class="btn" style="background:var(--c-d);color:var(--card)" data-start="${esc(p.id)}|-1">${begun ? 'Weitermachen' : label}</button>`;
     if (state.msgs[p.id]) h += `<div class="msg">${esc(state.msgs[p.id])}</div>`;
-    return { html: h, progress: isKraft ? [setsOk, setsAll] : [doneN, rows.length] };
+    return { html: h, progress: isKraft ? [setsOk, setsAll] : [doneN, rows.length], names: rows.map(r => r.name) };
   }
   const backBar = (p, txt) => `<div class="run-top"><button class="link" data-stop="${esc(p.id)}">${CHEV_L}Übersicht</button><small>${txt}</small></div>`;
 
@@ -507,16 +500,22 @@
     opts = opts || {};
     const S = sp(p.sport), st = statusOf(p, M), t = M.match[p.id];
     const pill = st === 'done' ? `<span class="done-pill">${CHECK}Erledigt</span>` : st === 'miss' ? '<span class="miss-pill">Ausgelassen</span>' : `<span class="u-dur">${esc(unitMeta(p))}</span>`;
-    let body = '', prog = null;
+    let body = '', prog = null, compact = null;
     if (S.k === 'kraft' || S.k === 'mob') {
-      const r = !isStarted(p) ? overviewBody(M, p, S.k === 'kraft') : S.k === 'kraft' ? strengthBody(M, p) : mobBody(M, p);
-      body = r.html; prog = r.progress;
+      if (!isStarted(p)) { const r = overviewBody(M, p, S.k === 'kraft'); compact = r; }
+      else { const r = S.k === 'kraft' ? strengthBody(M, p) : mobBody(M, p); body = r.html; prog = r.progress; }
     }
     const title = cleanTitle(p);
     const top = `<div class="u-sport"><span class="dot-ico">${ICON[S.k]}</span><span>${esc(sportLabel(p))}</span></div><span class="u-right">${pill}${opts.fold ? CHEV_D : ''}</span>`;
     let h = `<section class="unit" style="${cv(S.k)}">${opts.fold ? `<button class="u-top" data-fold="${esc(p.id)}" aria-expanded="true" aria-label="${esc(p.title)} zuklappen">${top}</button>` : `<div class="u-top">${top}</div>`}
       <div class="u-title${title.length > 18 ? ' long' : ''}">${esc(title)}</div>`;
-    if (prog) {
+    if (compact) {
+      const [a, b] = compact.progress;
+      if (a > 0 && !p.done) h += `<div style="height:8px;background:var(--c-l);border-radius:99px;overflow:hidden"><div class="pfill" style="width:${b ? Math.round(a / b * 100) : 0}%;height:100%;background:var(--c);border-radius:99px"></div></div>`;
+      h += `<p class="u-sum">${esc(compact.names.join(' · '))}</p>`;
+      if (p.note) h += `<span class="note">${esc(p.note)}</span>`;
+      h += compact.html + '</section>';
+    } else if (prog) {
       const [a, b] = prog;
       h += `<div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--c-mu)"><span>${S.k === 'kraft' ? 'Sätze' : 'Geschafft'}</span><span class="num" style="font-weight:700">${a} von ${b}</span></div><div style="height:8px;background:var(--c-l);border-radius:99px;overflow:hidden"><div class="pfill" style="width:${b ? Math.round(a / b * 100) : 0}%;height:100%;background:var(--c);border-radius:99px"></div></div></div>`;
       if (p.note && S.k !== 'kraft') h += `<span class="note">${esc(p.note)}</span>`;
@@ -783,7 +782,7 @@
       if (!reduceMotion() && state.slide) {
         const cls = state.slide > 0 ? 'slide-l' : 'slide-r';
         app.classList.remove('slide-l', 'slide-r', 'view-in'); void app.offsetWidth; app.classList.add(cls);
-        setTimeout(() => app.classList.remove(cls), 520);
+        setTimeout(() => app.classList.remove(cls), 300);
       } else if (!reduceMotion()) {
         app.classList.remove('view-in'); void app.offsetWidth; app.classList.add('view-in');
         setTimeout(() => app.classList.remove('view-in'), 400);
@@ -891,14 +890,14 @@
       const mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
       if (!mode) {
         if (Math.abs(mx) < 10 && Math.abs(my) < 10) return;
-        mode = Math.abs(mx) > Math.abs(my) * 1.8 ? 'x' : 'off';
+        mode = Math.abs(mx) > Math.abs(my) * 1.5 ? 'x' : 'off';
         if (mode === 'x') app.style.transition = 'none';
       }
       if (mode !== 'x') return;
       e.preventDefault();
       const i = TABS.indexOf(current());
       const edge = (mx > 0 && i === 0) || (mx < 0 && i === TABS.length - 1);
-      dx = edge ? mx * 0.12 : mx * 0.6;
+      dx = edge ? mx * 0.15 : mx;
       app.style.transform = `translateX(${dx}px)`;
     }, { passive: false });
     const end = () => {
@@ -906,11 +905,11 @@
       mode = null;
       const i = TABS.indexOf(current()), v = Math.abs(dx) / Math.max(1, Date.now() - t0);
       const dir = dx < 0 ? 1 : -1, j = i + dir;
-      if ((Math.abs(dx) > 70 || (v > 0.5 && Math.abs(dx) > 30)) && j >= 0 && j < TABS.length) {
+      if ((Math.abs(dx) > 60 || (v > 0.35 && Math.abs(dx) > 20)) && j >= 0 && j < TABS.length) {
         if (reduceMotion()) { state.slide = dir; location.hash = '#' + TABS[j]; return; }
-        app.style.transition = 'transform 180ms var(--ease-in), opacity 180ms linear';
-        app.style.transform = `translateX(${-dir * 40}px)`; app.style.opacity = '0';
-        setTimeout(() => { state.slide = dir; location.hash = '#' + TABS[j]; }, 170);
+        app.style.transition = 'transform 110ms var(--ease-in), opacity 110ms linear';
+        app.style.transform = `translateX(${dx - dir * 40}px)`; app.style.opacity = '0';
+        setTimeout(() => { state.slide = dir; location.hash = '#' + TABS[j]; }, 100);
       } else {
         app.style.transition = 'transform var(--t-med) var(--ease-out), opacity var(--t-med) var(--ease-out)';
         app.style.transform = ''; app.style.opacity = '';

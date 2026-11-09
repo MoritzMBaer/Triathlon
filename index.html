@@ -205,6 +205,7 @@ input{font:inherit}
 .sprow small{display:block;font-size:12px;color:var(--muted)}
 
 /* Übersicht vor dem Start */
+.u-sum{margin:0;font-size:15px;line-height:1.45;color:var(--c-mu)}
 .ov{background:var(--card);border-radius:24px;overflow:hidden}
 .ov-row{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:none;border:0;border-bottom:.5px solid var(--line);padding:12px 16px;min-height:56px;color:var(--fg)}
 .ov-row:last-child{border-bottom:0}
@@ -331,10 +332,10 @@ button.u-top:active{transform:none;opacity:.7}
 .day .uwrap{margin:6px 0 8px}
 .day .unit{border-radius:20px;padding:14px}
 #app{touch-action:pan-y}
-.slide-l{animation:slin-l 380ms var(--ease-out) both}
-.slide-r{animation:slin-r 380ms var(--ease-out) both}
-@keyframes slin-l{from{opacity:0;transform:translateX(28px)}}
-@keyframes slin-r{from{opacity:0;transform:translateX(-28px)}}
+.slide-l{animation:slin-l 240ms var(--ease-out) both}
+.slide-r{animation:slin-r 240ms var(--ease-out) both}
+@keyframes slin-l{from{opacity:0;transform:translateX(20px)}}
+@keyframes slin-r{from{opacity:0;transform:translateX(-20px)}}
 .view-in{animation:fade 260ms var(--ease-out) both}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}}
 .sheet-bg{animation:fade var(--t-med) var(--ease-out) both}
