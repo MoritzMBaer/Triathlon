@@ -568,19 +568,13 @@
     return `<button class="tile" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-expanded="false" aria-label="${esc(p.title)} aufklappen"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(p.title)}</b><small>${esc(sub || sportLabel(p) + ' · ' + unitMeta(p))}</small></span>${right}</button>`;
   }
   /* Aufgeklappt oder als Kachel, je nachdem was gerade offen ist */
-  function openId(view, def) { return state.open[view] === undefined ? def : state.open[view]; }
+  function isOpen(view, id, def) { const m = state.open[view] || {}; return m[id] !== undefined ? m[id] : id === def; }
+  function wide() { return window.innerWidth >= 960; }
   function unitOrTile(M, p, sub, view, def) {
-    return openId(view, def) === p.id ? unitExpanded(M, p, { fold: true, showActual: statusOf(p, M) === 'done' }) : tile(M, p, sub);
+    return isOpen(view, p.id, def) ? unitExpanded(M, p, { fold: true, showActual: statusOf(p, M) === 'done' }) : tile(M, p, sub);
   }
   function statusCard(M, units) {
     const r = readiness(M);
-    const allDone = units.length && units.every(p => statusOf(p, M) === 'done');
-    if (allDone) {
-      const main = units.find(p => M.match[p.id]) || units[0];
-      const t = M.match[main.id];
-      const S = sp(main.sport);
-      return `<section class="card" style="${cv(S.k)}"><div class="status-h"><span class="st-ic" style="background:var(--c);color:#fff">${CHECK}</span><span class="tx"><b>Geschafft</b><small>${t ? 'Aus Garmin' + (t.time ? ' · ' + esc(t.time) + ' Uhr' : '') : 'Alle Einheiten erledigt'}</small></span><span class="right">${units.length > 1 ? units.length + ' Einheiten' : ''}</span></div>${t ? `<div style="padding:4px 16px 16px">${actualHTML(main, t)}</div>` : ''}</section>`;
-    }
     if (!r) return '';
     const L = r.last;
     const head = r.lvl === 'g' ? 'Bereit für das Training' : r.lvl === 'y' ? 'Heute lieber locker' : 'Heute Pause';
@@ -660,23 +654,63 @@
     let left = '';
     if (!units.length) left += `<section class="card" style="padding:18px"><b style="font-size:20px">Heute ist trainingsfrei</b><p style="margin:6px 0 0;color:var(--muted)">Erholung gehört zum Plan.</p></section>`;
     const def = cur ? cur.id : null;
-    units.forEach(p => {
+    if (units.length && !cur) {
+      left += doneSummary(M, units, now);
+      units.forEach(p => { if (isOpen('heute', p.id, null)) left += unitExpanded(M, p, { fold: true, showActual: true }); });
+    } else units.forEach(p => {
       left += unitOrTile(M, p, statusOf(p, M) !== 'done' ? (p === cur ? 'Heute · ' : 'Danach · ') + unitMeta(p) + (sp(p.sport).k === 'mob' ? ' · ' + mobItems(p).length + ' Übungen' : '') : null, 'heute', def);
     });
     let right = checkCard(M) + statusCard(M, units) + weekCard(M, monday(now), window.innerWidth >= 960);
-    if (nextMain) right += unitOrTile(M, nextMain, 'Morgen' + (M.shifts[tmr] ? ' · Dienst ' + M.shifts[tmr] : '') + (next.length > 1 ? ' · +' + (next.length - 1) + ' weitere' : ''), 'heute', def);
+    if (nextMain && !(units.length && !cur)) right += unitOrTile(M, nextMain, 'Morgen' + (M.shifts[tmr] ? ' · Dienst ' + M.shifts[tmr] : '') + (next.length > 1 ? ' · +' + (next.length - 1) + ' weitere' : ''), 'heute', def);
     return header('Heute', WDL[now.getDay()] + ', ' + fmtDay(now)) + banner() + `<div class="grid2"><div class="col">${left}</div><div class="col">${right}</div></div>`;
+  }
+  /* Alles erledigt: kurzer Rückblick auf den Tag statt leerer Seite */
+  function doneSummary(M, units, now) {
+    let total = 0;
+    const rows = units.map(p => {
+      const S = sp(p.sport), t = M.match[p.id];
+      const bits = [];
+      if (t) {
+        total += t.dur || p.dur || 0;
+        if (t.dur) bits.push(fmtH(t.dur));
+        if (t.km) bits.push(S.k === 'swim' ? Math.round(t.km * 1000).toLocaleString('de-DE') + ' m' : t.km.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' km');
+        if (t.watt) bits.push('Ø ' + Math.round(t.watt) + ' W');
+        else if (t.pace) bits.push(t.pace + ' /km');
+        if (t.hr) bits.push('Ø ' + Math.round(t.hr) + ' bpm');
+      } else if (S.k === 'kraft') {
+        total += p.dur || 0;
+        const ses = sessions(M).filter(x => x.pid === p.id).pop();
+        if (ses) {
+          const exs = new Set(ses.rows.map(r => r.ex)), vol = ses.rows.reduce((a, r) => a + (r.kg || 0) * (r.reps || 0), 0);
+          bits.push(exs.size + ' Übungen', ses.rows.length + ' Sätze');
+          if (vol) bits.push(Math.round(vol).toLocaleString('de-DE') + ' kg bewegt');
+        } else bits.push(unitMeta(p));
+      } else if (S.k === 'mob') { total += p.dur || 0; bits.push(mobItems(p).length + ' Übungen', unitMeta(p)); }
+      else { total += p.dur || 0; bits.push(unitMeta(p)); }
+      return `<button class="sum-row" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-label="${esc(p.title)} öffnen"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(cleanTitle(p))}</b><small>${esc(bits.filter(Boolean).join(' · '))}</small></span><span class="ok">${CHECK}</span></button>`;
+    }).join('');
+    const w = weekCounts(M, monday(now));
+    const pct = w.n ? Math.round(w.doneN / w.n * 100) : 0;
+    const nx = M.plan.find(p => p.date > today() && sp(p.sport).fam !== 'Mobility');
+    const nd = nx && parseISO(nx.date), tmr = iso(addDays(now, 1));
+    const nxLabel = nx ? (nx.date === tmr ? 'Morgen' : WDL[nd.getDay()]) : '';
+    return `<section class="card sum">
+      <div class="sum-h"><span class="sum-ic">${CHECK}</span><span class="tx"><b>Heute geschafft</b><small>${units.length === 1 ? '1 Einheit' : units.length + ' Einheiten'}${total ? ' · ' + fmtH(total) : ''}</small></span></div>
+      <div class="sum-list">${rows}</div>
+      <div class="sum-week"><div class="sum-wl"><span>Diese Woche</span><b>${w.doneN} von ${w.n} · ${fmtH(w.doneMin)} von ${fmtH(w.planMin)}</b></div><div class="sum-bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Wochenfortschritt"><i style="width:${pct}%"></i></div></div>
+      ${nx ? `<div class="sum-next" style="${cv(sp(nx.sport).k)}"><span class="ic">${ICON[sp(nx.sport).k]}</span><span class="tx"><small>Als Nächstes · ${esc(nxLabel)}${M.shifts[nx.date] ? ' · Dienst ' + esc(M.shifts[nx.date]) : ''}</small><b>${esc(cleanTitle(nx))}</b></span><span class="r">${esc(unitMeta(nx))}</span></div>` : ''}
+    </section>`;
   }
   function viewWoche(M) {
     const mon = addDays(monday(new Date()), state.weekOff * 7), sun = addDays(mon, 6);
     let h = header('Woche', 'KW ' + isoWeek(mon) + ' · ' + fmtShort(mon) + ' – ' + fmtShort(sun)) + banner();
     h += `<div class="wnav"><button data-week="-1" aria-label="Vorige Woche" title="Vorige Woche (←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div><b>${state.weekOff === 0 ? 'Diese Woche' : state.weekOff === 1 ? 'Nächste Woche' : state.weekOff === -1 ? 'Letzte Woche' : 'KW ' + isoWeek(mon)}</b><small>${fmtDay(mon)} – ${fmtDay(sun)}</small>${state.weekOff ? '<button class="link today-link" data-week-now title="Zur aktuellen Woche (T)">Zur aktuellen Woche</button>' : ''}</div><button data-week="1" aria-label="Nächste Woche" title="Nächste Woche (→)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>`;
-    h += weekCard(M, mon, true) + '<div class="wgrid">';
+    h += weekCard(M, mon, !wide()) + '<div class="wgrid">';
     for (let i = 0; i < 7; i++) {
       const d = addDays(mon, i), k = iso(d);
       const us = M.plan.filter(p => p.date === k);
-      h += `<section class="card day${k === today() ? ' today' : ''}"><div class="day-h"><b>${WDL[d.getDay()]}, ${fmtDay(d)}</b>${M.shifts[k] ? `<span class="shift">${esc(M.shifts[k])}</span>` : ''}</div>`;
-      h += us.length ? us.map(p => openId('woche', null) === p.id ? unitExpanded(M, p, { fold: true, showActual: true }) : rowHTML(M, p)).join('') : '<span class="free">Trainingsfrei</span>';
+      h += `<section class="card day${k === today() ? ' today' : ''}"><div class="day-h"><b><span class="dl">${WDL[d.getDay()]}, ${fmtDay(d)}</span><span class="ds">${WDL[d.getDay()]} <span>${fmtShort(d)}</span></span></b>${M.shifts[k] ? `<span class="shift">${esc(M.shifts[k])}</span>` : ''}</div>`;
+      h += us.length ? us.map(p => !wide() && isOpen('woche', p.id, null) ? unitExpanded(M, p, { fold: true, showActual: true }) : rowHTML(M, p)).join('') : '<span class="free">Trainingsfrei</span>';
       h += '</section>';
     }
     return h + '</div>';
@@ -684,7 +718,7 @@
   function rowHTML(M, p) {
     const S = sp(p.sport), st = statusOf(p, M);
     const right = st === 'done' ? `<span class="ok" style="background:var(--${S.k})">${CHECK}</span>` : st === 'miss' ? '<span class="r">Ausgelassen</span>' : `<span class="r">${esc(unitMeta(p))}</span>`;
-    return `<button class="row" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-expanded="false"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(p.title)}</b><small>${esc(p.sport)}</small></span>${right}</button>`;
+    return `<button class="row" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-expanded="false"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(p.title)}</b><small>${esc(p.sport)}<span class="m"> · ${esc(unitMeta(p))}</span></small></span>${right}</button>`;
   }
   function viewFortschritt(M) {
     const F = M.fitness, last = F[F.length - 1] || {};
@@ -692,17 +726,17 @@
     const done = past.filter(p => statusOf(p, M) === 'done').length;
     let h = header('Fortschritt', 'Seit dem Planstart') + banner();
     h += `<section class="card pcard"><span class="eyebrow">Stand heute</span><div class="big3"><div><b>${last.ctl == null ? '–' : Math.round(last.ctl)}</b><small>Fitness</small></div><div><b>${last.tsb == null ? '–' : (last.tsb > 0 ? '+' : '') + Math.round(last.tsb)}</b><small>Form</small></div><div><b>${past.length ? Math.round(done / past.length * 100) + ' %' : '–'}</b><small>Plan-Treue${past.length ? ` (${done}/${past.length})` : ''}</small></div></div></section>`;
-    h += '<div class="grid2"><div class="col">';
-    h += `<section class="card pcard chart"><span class="eyebrow">Fitness und Ermüdung · 12 Wochen</span>${fitChart(F.slice(-84))}<div class="clegend"><span><i style="background:var(--bike)"></i>Fitness</span><span><i style="background:var(--faint)"></i>Ermüdung</span></div></section>`;
-    h += `<section class="card pcard chart"><span class="eyebrow">Stunden pro Woche</span>${weekChart(M)}<div class="clegend"><span><i style="background:var(--fill)"></i>Geplant</span><span><i style="background:var(--fg)"></i>Absolviert</span></div></section>`;
-    h += '</div><div class="col">';
+    h = h.replace('<section class="card pcard"><span class="eyebrow">Stand heute', '<div class="pgrid"><div class="pcol"><section class="card pcard" style="order:1"><span class="eyebrow">Stand heute');
+    h += '<!--A-->';
+    h += '</div><div class="pcol">';
+    h += `<section class="card pcard chart" style="order:2"><span class="eyebrow">Fitness und Ermüdung · 12 Wochen</span>${fitChart(F.slice(-84))}<div class="clegend"><span><i style="background:var(--bike)"></i>Fitness</span><span><i style="background:var(--faint)"></i>Ermüdung</span></div></section>`;
+    h += `<section class="card pcard chart" style="order:3"><span class="eyebrow">Stunden pro Woche</span>${weekChart(M)}<div class="clegend"><span><i style="background:var(--fill)"></i>Geplant</span><span><i style="background:var(--fg)"></i>Absolviert</span></div></section>`;
     const from = iso(addDays(new Date(), -28)), rec = M.trainings.filter(t => t.date >= from);
-    h += `<section class="card pcard"><span class="eyebrow">Letzte 4 Wochen</span>${[['Schwimmen', 'swim'], ['Rad', 'bike'], ['Laufen', 'run']].map(([f, k]) => {
+    h = h.replace('<!--A-->', `<section class="card pcard" style="order:4"><span class="eyebrow">Letzte 4 Wochen</span>${[['Schwimmen', 'swim'], ['Rad', 'bike'], ['Laufen', 'run']].map(([f, k]) => {
       const xs = rec.filter(t => sp(t.sport).fam === f), km = xs.reduce((a, t) => a + (t.km || 0), 0), min = xs.reduce((a, t) => a + (t.dur || 0), 0);
       return `<div class="sprow" style="${cv(k)}"><span class="ic">${ICON[k]}</span><span><b>${f}</b><small>${xs.length} Einheiten · ${fmtH(min)}</small></span><b class="num">${f === 'Schwimmen' ? Math.round(km * 1000).toLocaleString('de-DE') + ' m' : Math.round(km).toLocaleString('de-DE') + ' km'}</b></div>`;
-    }).join('')}</section>`;
-    h += kraftProgress(M);
-    h += '</div></div>';
+    }).join('')}</section>`);
+    h += '</div><div class="pcol pk">' + kraftProgress(M) + '</div></div>';
     return h;
   }
   function kraftProgress(M) {
@@ -801,6 +835,7 @@
     document.querySelectorAll('nav a[data-v]').forEach(a => { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     placeIndicator();
     const app = $('#app');
+    app.dataset.view = v;
     let html;
     const M = model();
     if (v === 'einrichtung') html = viewSetup();
@@ -888,17 +923,17 @@
     return a;
   }
   function toggleUnit(id, open) {
-    const v = current(), M = model();
-    let prev = null;
-    if (v === 'heute' && M) { const cur = M.plan.find(p => p.date === today() && statusOf(p, M) !== 'done'); prev = openId('heute', cur ? cur.id : null); }
-    else prev = openId(v, null);
-    const h0 = heightOf(id), hp = prev && prev !== id ? heightOf(prev) : 0;
-    state.open[v] = open ? id : null;
+    const v = current();
+    /* Laptop-Woche: Einheit groß im Fenster statt in der schmalen Tagesspalte */
+    if (open && v === 'woche' && wide()) { state.sheetId = id; render(); return; }
+    const h0 = heightOf(id);
+    (state.open[v] = state.open[v] || {})[id] = open;
+    state.lastOpen = open ? id : null;
     render();
     /* Ziel-Layout messen, bevor die Höhenanimation startet */
     const el = open && document.querySelector(`[data-uid="${CSS.escape(id)}"]`);
     const r = el && el.getBoundingClientRect();
-    const anim = glide(id, h0); if (hp) glide(prev, hp);
+    const anim = glide(id, h0);
     if (el) {
       /* Karte bleibt stehen, solange sie ganz sichtbar ist. Ragt sie unten raus,
          rückt sie in die Mitte des freien Bereichs; ist sie höher als der Bildschirm,
@@ -983,7 +1018,7 @@
     try {
       await api('erledigt', { id: p.id, wert: val });
       p.done = val; patchPlan(p.id, val); if (val) setStarted(p.id, false);
-      if (val && state.open.heute === p.id) delete state.open.heute;
+      if (val && state.open.heute) delete state.open.heute[p.id];
       if (val) toast(p.title + ' erledigt');
     } catch (e) { state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e); }
     state.busy[p.id] = false; render();
@@ -1008,7 +1043,7 @@
       await api('kraft', { id: p.id, zeilen });
       zeilen.forEach(z => state.data.kraftlog.push([z.datum, p.id, z.einheit, z.uebung, String(z.satz), String(z.wdh), String(z.sek), String(z.kg), z.ziel, z.gespeichert]));
       patchPlan(p.id, today()); ls.del('tri:draft:' + p.id); delete state.drafts[p.id]; state.rest = null; delete state.active[p.id]; setStarted(p.id, false);
-      if (state.open.heute === p.id) delete state.open.heute;
+      if (state.open.heute) delete state.open.heute[p.id];
       toast('Training gespeichert');
     } catch (e) { state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e) + '. Deine Sätze bleiben erhalten.'; }
     state.busy[p.id] = false; render();
@@ -1172,7 +1207,8 @@
     if (v === 'woche' && (k === 'ArrowLeft' || k === 'ArrowRight')) { state.weekOff += k === 'ArrowLeft' ? -1 : 1; render(); e.preventDefault(); return; }
     if (v === 'woche' && (k === 't' || k === 'T') && state.weekOff) { state.weekOff = 0; render(); e.preventDefault(); return; }
     const M = model(), cur = v === 'heute' && M && M.plan.find(p => p.date === today() && statusOf(p, M) !== 'done');
-    const openNow = openId(v, cur ? cur.id : null);
+    const vis = M ? M.plan.filter(p => document.querySelector(`[data-fold="${CSS.escape(p.id)}"]`)).map(p => p.id) : [];
+    const openNow = vis.includes(state.lastOpen) ? state.lastOpen : vis.includes(cur && cur.id) ? cur.id : vis[0];
     if (k === 'Escape' && openNow) {
       const id = openNow;
       toggleUnit(id, false);

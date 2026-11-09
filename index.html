@@ -383,8 +383,84 @@ nav.tabs a[aria-current="page"]{background:transparent}
   .setup{max-width:640px}
 }
 @media (min-width:1360px){
-  .wgrid{grid-template-columns:repeat(4,minmax(0,1fr))}
   .grid2{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
+}
+
+
+/* ---------- Heute: Rückblick, wenn alles erledigt ist ---------- */
+.sum{padding:18px;display:flex;flex-direction:column;gap:14px}
+.sum-h{display:flex;align-items:center;gap:14px}
+.sum-ic{width:52px;height:52px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;flex:none;animation:pop .5s var(--ease-out) both}
+.sum-ic svg{width:26px;height:26px}
+.sum-h .tx{display:flex;flex-direction:column;gap:2px}
+.sum-h b{font-family:var(--round);font-size:24px;font-weight:800;line-height:1.1}
+.sum-h small{font-size:14px;color:var(--muted)}
+.sum-list{display:flex;flex-direction:column;gap:8px}
+.sum-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:var(--c-l);border-radius:16px;padding:12px 14px;min-height:56px}
+.sum-row .ic,.sum-next .ic{width:36px;height:36px;border-radius:50%;background:var(--c-t);color:var(--c-d);display:grid;place-items:center;flex:none}
+.sum-row .ic svg,.sum-next .ic svg{width:19px;height:19px}
+.sum-row .tx,.sum-next .tx{flex-grow:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sum-row b{font-size:16px;font-weight:700}
+.sum-row small{font-size:13px;color:var(--fg-2)}
+.sum-row .ok{width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;flex:none}
+.sum-row .ok svg{width:13px;height:13px}
+.sum-week{display:flex;flex-direction:column;gap:8px}
+.sum-wl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.sum-wl b{font-size:14px;color:var(--fg);font-variant-numeric:tabular-nums}
+.sum-bar{height:8px;border-radius:99px;background:var(--fill-2);overflow:hidden}
+.sum-bar i{display:block;height:100%;border-radius:99px;background:var(--ink)}
+.sum-next{display:flex;align-items:center;gap:12px;padding-top:12px;border-top:.5px solid var(--line)}
+.sum-next small{font-size:12px;font-weight:600;color:var(--muted)}
+.sum-next b{font-size:15px;font-weight:600}
+.sum-next .r{font-size:13px;color:var(--muted);white-space:nowrap}
+
+/* ---------- Fortschritt ---------- */
+.pgrid{display:flex;flex-direction:column;gap:12px}
+.pcol{display:contents}
+.pk>section{order:5}
+.row small .m{display:none}
+.day-h .ds{display:none}
+.sum-row{background:color-mix(in srgb,var(--c-l) 55%,var(--card))}
+
+@media (min-width:960px){
+  /* Einheit aus der Woche als Fenster in der Mitte */
+  .sheet-bg{align-items:center;padding:32px 32px 32px 272px}
+  .sheet{max-width:860px;max-height:calc(100dvh - 64px);border-radius:24px;padding:16px 20px 24px;box-shadow:var(--shadow)}
+  .sheet .grab{display:none}
+  .sheet{animation:dlgin var(--t-med) var(--ease-out) both}
+  .sheet-bg.closing .sheet{animation:dlgout 180ms var(--ease-in) both}
+  /* Fortschritt: alles auf einen Blick */
+  .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr) minmax(0,1fr);gap:16px;align-items:start}
+  .pcol{display:flex;flex-direction:column;gap:16px;min-width:0}
+  .pgrid .chart svg{max-height:min(28dvh,240px)}
+  .pgrid .sprow{padding-top:6px;padding-bottom:6px}
+  .pgrid .big3 b{font-size:clamp(22px,2vw,30px);white-space:nowrap}
+}
+@keyframes dlgin{from{opacity:0;transform:translateY(14px) scale(.98)}}
+@keyframes dlgout{to{opacity:0;transform:translateY(10px) scale(.98)}}
+
+@media (min-width:1100px){
+  /* Woche: sieben gleich große Tage, die ganze Woche ohne Scrollen */
+  .app[data-view="woche"]{height:100dvh;box-sizing:border-box;padding-bottom:28px}
+  .app[data-view="woche"] .wgrid{flex:1 1 0;min-height:260px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;align-items:stretch}
+  .wgrid .day{min-height:0;overflow-y:auto;padding:12px 10px;gap:4px;scrollbar-width:thin}
+  .wgrid .day-h{flex-direction:column;align-items:flex-start;gap:4px;padding:0 4px 8px;border-bottom:.5px solid var(--line);margin-bottom:4px}
+  .wgrid .day-h b{font-size:14px}
+  .wgrid .shift{font-size:11px;white-space:normal}
+  .wgrid .row{margin:0;width:100%;padding:8px 6px;align-items:flex-start;gap:8px}
+  .wgrid .row .ic{width:26px;height:26px}
+  .wgrid .row .ic svg{width:15px;height:15px}
+  .wgrid .row .tx b{font-size:13px;line-height:1.25}
+  .wgrid .row .tx small{font-size:11.5px;line-height:1.3}
+  .wgrid .row small .m{display:inline}
+  .wgrid .row .tx b{hyphens:auto;overflow-wrap:anywhere}
+  .wgrid .day-h .dl{display:none}
+  .wgrid .day-h b{width:100%}
+  .wgrid .day-h .ds{display:flex;justify-content:space-between;gap:6px;width:100%;font-size:15px}
+  .wgrid .day-h .ds span{font-weight:500;color:var(--muted)}
+  .wgrid .row .r{display:none}
+  .wgrid .row .ok{width:18px;height:18px;margin-top:4px}
+  .wgrid .free{font-size:13px;padding:4px}
 }
 
 /* ---------- Laptop: Maus, Tastatur, breite Fenster ---------- */
