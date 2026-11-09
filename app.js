@@ -869,9 +869,9 @@
       if (el) {
         /* Karte bleibt, wo sie steht – nur wenn ihr Kopf hinter Statusleiste oder Tab-Leiste verschwinden würde, sanft nachrücken */
         const r = el.getBoundingClientRect();
-        const sb = $('.statusbg'), top = (sb ? sb.offsetHeight : 0) + 12;
+        const sb = $('.statusbg'), top = (sb ? sb.offsetHeight : 0) + 4;
         const nav = $('nav.tabs'), nr = nav && nav.getBoundingClientRect();
-        const bottom = nr && nr.height ? nr.top - 12 : window.innerHeight - 24;
+        const bottom = nr && nr.height ? nr.top - 40 : window.innerHeight - 24;
         let dy = 0;
         if (r.top < top) dy = r.top - top;
         else if (r.top + 160 > bottom) dy = Math.min(r.top + 160 - bottom, r.top - top);
