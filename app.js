@@ -660,6 +660,7 @@
     } else units.forEach(p => {
       left += unitOrTile(M, p, statusOf(p, M) !== 'done' ? (p === cur ? 'Heute · ' : 'Danach · ') + unitMeta(p) + (sp(p.sport).k === 'mob' ? ' · ' + mobItems(p).length + ' Übungen' : '') : null, 'heute', def);
     });
+    if (wide()) left += nextDays(M, now);
     let right = checkCard(M) + statusCard(M, units);
     if (nextMain && !(units.length && !cur)) right += unitOrTile(M, nextMain, 'Morgen' + (M.shifts[tmr] ? ' · Dienst ' + M.shifts[tmr] : '') + (next.length > 1 ? ' · +' + (next.length - 1) + ' weitere' : ''), 'heute', def);
     right += weekCard(M, monday(now), window.innerWidth >= 960);
@@ -699,6 +700,18 @@
       ${nx ? `<div class="sum-next" style="${cv(sp(nx.sport).k)}"><span class="ic">${ICON[sp(nx.sport).k]}</span><span class="tx"><small>Als Nächstes · ${esc(nxLabel)}${M.shifts[nx.date] ? ' · Dienst ' + esc(M.shifts[nx.date]) : ''}</small><b>${esc(cleanTitle(nx))}</b></span><span class="r">${esc(unitMeta(nx))}</span></div>` : ''}
     </section>`;
   }
+  /* Laptop: Blick auf die kommenden Tage */
+  function nextDays(M, now) {
+    let h = '<section class="card ndays"><span class="eyebrow">Die nächsten Tage</span><div class="nd-list">';
+    for (let i = 1; i <= 4; i++) {
+      const d = addDays(now, i), k = iso(d);
+      const us = M.plan.filter(p => p.date === k && sp(p.sport).fam !== 'Mobility');
+      h += `<div class="nd-day"><div class="nd-h"><b>${i === 1 ? 'Morgen' : WDL[d.getDay()]}</b><small>${fmtShort(d)}</small>${M.shifts[k] ? `<span class="shift">${esc(M.shifts[k])}</span>` : ''}</div>`;
+      h += us.length ? us.map(p => { const S = sp(p.sport); return `<button class="nd-u" style="${cv(S.k)}" data-sheet="${esc(p.id)}"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(cleanTitle(p))}</b><small>${esc(sportLabel(p))} · ${esc(unitMeta(p))}</small></span></button>`; }).join('') : '<span class="free">Trainingsfrei</span>';
+      h += '</div>';
+    }
+    return h + '</div></section>';
+  }
   function viewWoche(M) {
     const mon = addDays(monday(new Date()), state.weekOff * 7), sun = addDays(mon, 6);
     let h = header('Woche', 'KW ' + isoWeek(mon) + ' · ' + fmtShort(mon) + ' – ' + fmtShort(sun)) + banner();
@@ -707,7 +720,7 @@
     for (let i = 0; i < 7; i++) {
       const d = addDays(mon, i), k = iso(d);
       const us = M.plan.filter(p => p.date === k);
-      h += `<section class="card day${k === today() ? ' today' : ''}"><div class="day-h"><b><span class="dl">${WDL[d.getDay()]}, ${fmtDay(d)}</span><span class="ds">${WDL[d.getDay()]} <span>${fmtShort(d)}</span></span></b>${M.shifts[k] ? `<span class="shift">${esc(M.shifts[k])}</span>` : ''}</div>`;
+      h += `<section class="card day${k === today() ? ' today' : ''}"><div class="day-h"><b><span class="dl">${WDL[d.getDay()]}, ${fmtDay(d)}</span><span class="ds">${WDL[d.getDay()]} <span>${fmtShort(d)}</span></span></b>${M.shifts[k] ? `<span class="shift">${esc(M.shifts[k])}</span>` : '<span class="shift none">Kein Dienst</span>'}</div>`;
       h += us.length ? us.map(p => !wide() && isOpen('woche', p.id, null) ? unitExpanded(M, p, { fold: true, showActual: true }) : rowHTML(M, p)).join('') : '<span class="free">Trainingsfrei</span>';
       h += '</section>';
     }
@@ -716,7 +729,7 @@
   function rowHTML(M, p) {
     const S = sp(p.sport), st = statusOf(p, M);
     const right = st === 'done' ? `<span class="ok" style="background:var(--${S.k})">${CHECK}</span>` : st === 'miss' ? '<span class="r">Ausgelassen</span>' : `<span class="r">${esc(unitMeta(p))}</span>`;
-    return `<button class="row" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-expanded="false"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(p.title)}</b><small>${esc(p.sport)}<span class="m"> · ${esc(unitMeta(p))}</span></small></span>${right}</button>`;
+    return `<button class="row" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-expanded="false"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(p.title)}</b><small>${esc(p.sport)}</small><small class="mt">${st === 'miss' ? 'Ausgelassen' : esc(unitMeta(p))}</small></span>${right}</button>`;
   }
   function viewFortschritt(M) {
     const F = M.fitness, last = F[F.length - 1] || {};
@@ -732,14 +745,16 @@
     const from = iso(addDays(new Date(), -28)), rec = M.trainings.filter(t => t.date >= from);
     h = h.replace('<!--A-->', `<section class="card pcard" style="order:4"><span class="eyebrow">Letzte 4 Wochen</span>${[['Schwimmen', 'swim'], ['Rad', 'bike'], ['Laufen', 'run']].map(([f, k]) => {
       const xs = rec.filter(t => sp(t.sport).fam === f), km = xs.reduce((a, t) => a + (t.km || 0), 0), min = xs.reduce((a, t) => a + (t.dur || 0), 0);
-      return `<div class="sprow" style="${cv(k)}"><span class="ic">${ICON[k]}</span><span><b>${f}</b><small>${xs.length} Einheiten · ${fmtH(min)}</small></span><b class="num">${f === 'Schwimmen' ? Math.round(km * 1000).toLocaleString('de-DE') + ' m' : Math.round(km).toLocaleString('de-DE') + ' km'}</b></div>`;
+      const pl = M.plan.filter(p => p.date >= from && p.date <= today() && sp(p.sport).fam === f).reduce((a, p) => a + p.dur, 0);
+      const pct = pl ? Math.min(100, Math.round(min / pl * 100)) : 0;
+      return `<div class="sprow" style="${cv(k)}"><span class="ic">${ICON[k]}</span><span><b>${f}</b><small>${xs.length} Einheiten · ${fmtH(min)}</small></span><b class="num">${f === 'Schwimmen' ? Math.round(km * 1000).toLocaleString('de-DE') + ' m' : Math.round(km).toLocaleString('de-DE') + ' km'}</b>${pl ? `<span class="spbar" title="${fmtH(min)} von ${fmtH(pl)} geplant"><i style="width:${pct}%"></i><em>${fmtH(min)} von ${fmtH(pl)} geplant</em></span>` : ''}</div>`;
     }).join('')}</section>`);
     h += '</div><div class="pcol pk">' + kraftProgress(M) + '</div></div>';
     return h;
   }
   function kraftProgress(M) {
     const S = sessions(M);
-    if (!S.length) return `<section class="card pcard" style="${cv('kraft')}"><span class="eyebrow">Kraft</span><span style="font-size:14px;color:var(--muted)">Sobald du die erste Krafteinheit gespeichert hast, siehst du hier deine Gewichte.</span></section>`;
+    if (!S.length) return `<section class="card pcard" style="${cv('kraft')}"><span class="eyebrow">Kraft</span><div class="kempty"><span class="ic">${ICON.kraft}</span><span>Sobald du die erste Krafteinheit gespeichert hast, siehst du hier deine Gewichte und wie sie steigen.</span></div></section>`;
     const best = {};
     S.forEach(s => s.rows.forEach(r => { if (r.kg != null) { const b = best[r.ex]; if (!b || r.kg > b.kg) best[r.ex] = { kg: r.kg, date: s.date }; } }));
     const rows = Object.entries(best).slice(0, 8).map(([ex, b]) => `<div class="sprow" style="${cv('kraft')}"><span class="ic">${ICON.kraft}</span><span><b>${esc(ex)}</b><small>${fmtShort(parseISO(b.date))}</small></span><b class="num">${fmtKg(b.kg)}</b></div>`).join('');
@@ -747,7 +762,7 @@
   }
   function fitChart(F) {
     if (F.length < 2) return '<p class="tiny">Noch zu wenige Tage im Sheet.</p>';
-    const W = 600, H = 200, pl = 34, pr = 10, pt = 10, pb = 24;
+    const W = 600, H = wide() ? 330 : 200, pl = 34, pr = 10, pt = 10, pb = 24;
     const vals = F.flatMap(f => [f.ctl, f.atl]).filter(v => v != null);
     const max = Math.ceil(Math.max(...vals, 10) / 20) * 20;
     const x = i => pl + i * (W - pl - pr) / (F.length - 1), y = v => pt + (H - pt - pb) * (1 - v / max);
@@ -769,7 +784,7 @@
       const act = A <= today() ? M.trainings.filter(t => t.date >= A && t.date <= B).reduce((s, t) => s + (t.dur || 0), 0) / 60 : 0;
       weeks.push({ a, plan, act, cur: today() >= A && today() <= B });
     }
-    const W = 600, H = 200, pl = 30, pr = 6, pt = 10, pb = 24;
+    const W = 600, H = wide() ? 330 : 200, pl = 30, pr = 6, pt = 10, pb = 24;
     const max = Math.max(2, Math.ceil(Math.max(...weeks.map(w => Math.max(w.plan, w.act)))));
     const bw = (W - pl - pr) / weeks.length, y = v => pt + (H - pt - pb) * (1 - v / max);
     let g = '';
@@ -1083,6 +1098,7 @@
     if (q('[data-reload]')) { load(true); return; }
     if ((el = q('[data-week]'))) { state.weekOff += +el.dataset.week; render(); return; }
     if (q('[data-week-now]')) { state.weekOff = 0; render(); return; }
+    if ((el = q('[data-sheet]'))) { state.sheetId = el.dataset.sheet; render(); return; }
     if ((el = q('[data-open]'))) { toggleUnit(el.dataset.open, true); return; }
     if ((el = q('[data-fold]'))) { toggleUnit(el.dataset.fold, false); return; }
     if (q('[data-close]') && (e.target.matches('[data-close]') || e.target.closest('button[data-close]'))) { closeSheet(); return; }
