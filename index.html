@@ -43,6 +43,8 @@
 }}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%}
+/* Fester, deckender Streifen hinter der Statusleiste: iOS blendet oben dann hart statt weich verschwommen */
+.statusbg{position:fixed;z-index:30;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--bg);pointer-events:none}
 body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.4;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;cursor:pointer}
 input{font:inherit}
@@ -50,7 +52,7 @@ input{font:inherit}
 .num,.r{font-family:var(--round);font-variant-numeric:tabular-nums}
 [hidden]{display:none!important}
 
-.app{padding:calc(14px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(110px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.app{padding:calc(24px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(110px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
 .head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:0 4px}
 .head .date{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em;text-transform:uppercase}
 .head h1{font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.15;margin:0}
@@ -376,6 +378,7 @@ nav.tabs a[aria-current="page"]{background:transparent}
 </style>
 </head>
 <body>
+<div class="statusbg" aria-hidden="true"></div>
 <nav class="side-nav" aria-label="Bereiche">
   <span class="brand">TRIATHLON</span>
   <a href="#heute" data-v="heute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>Heute</a>
