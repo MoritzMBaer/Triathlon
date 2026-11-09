@@ -619,9 +619,9 @@
     });
     return s + '</svg>';
   }
-  function weekCard(M, mon, strip) {
+  function weekCard(M, mon, strip, noRing) {
     const w = weekCounts(M, mon);
-    let h = `<section class="card"><div class="week">${ringsSVG(w.c)}<div class="tx"><small>${iso(mon) === iso(monday(new Date())) ? 'Diese Woche' : 'KW ' + isoWeek(mon)}</small><b>${w.doneN} von ${w.n} Einheiten</b><span style="font-size:13px;color:var(--fg-2)">${fmtH(w.doneMin)} von ${fmtH(w.planMin)}</span>
+    let h = `<section class="card"><div class="week">${noRing ? '' : ringsSVG(w.c)}<div class="tx"><small>${iso(mon) === iso(monday(new Date())) ? 'Diese Woche' : 'KW ' + isoWeek(mon)}</small><b>${w.doneN} von ${w.n} Einheiten</b><span style="font-size:13px;color:var(--fg-2)">${fmtH(w.doneMin)} von ${fmtH(w.planMin)}</span>
       <div class="legend">${RINGS.map(([f, k]) => `<span><i style="background:var(--${k})"></i>${f} ${w.c[f][1] ? w.c[f][0] + '/' + w.c[f][1] : '–'}</span>`).join('')}</div></div></div>`;
     if (strip) {
       h += '<div class="daystrip">' + [0, 1, 2, 3, 4, 5, 6].map(i => {
@@ -654,43 +654,47 @@
     let left = '';
     if (!units.length) left += `<section class="card" style="padding:18px"><b style="font-size:20px">Heute ist trainingsfrei</b><p style="margin:6px 0 0;color:var(--muted)">Erholung gehört zum Plan.</p></section>`;
     const def = cur ? cur.id : null;
-    if (units.length && !cur) {
+    if (units.length && !cur && wide()) {
       left += doneSummary(M, units, now);
       units.forEach(p => { if (isOpen('heute', p.id, null)) left += unitExpanded(M, p, { fold: true, showActual: true }); });
     } else units.forEach(p => {
+      if (statusOf(p, M) === 'done' && !isOpen('heute', p.id, def)) { left += doneRow(M, p, 'done-tile').html; return; }
       left += unitOrTile(M, p, statusOf(p, M) !== 'done' ? (p === cur ? 'Heute · ' : 'Danach · ') + unitMeta(p) + (sp(p.sport).k === 'mob' ? ' · ' + mobItems(p).length + ' Übungen' : '') : null, 'heute', def);
     });
     if (wide()) left += nextDays(M, now);
     let right = checkCard(M) + statusCard(M, units);
-    if (nextMain && !(units.length && !cur)) right += unitOrTile(M, nextMain, 'Morgen' + (M.shifts[tmr] ? ' · Dienst ' + M.shifts[tmr] : '') + (next.length > 1 ? ' · +' + (next.length - 1) + ' weitere' : ''), 'heute', def);
-    right += weekCard(M, monday(now), window.innerWidth >= 960);
+    if (nextMain && !(units.length && !cur && wide())) right += unitOrTile(M, nextMain, 'Morgen' + (M.shifts[tmr] ? ' · Dienst ' + M.shifts[tmr] : '') + (next.length > 1 ? ' · +' + (next.length - 1) + ' weitere' : ''), 'heute', def);
+    right += weekCard(M, monday(now), window.innerWidth >= 960, true);
     return header('Heute', WDL[now.getDay()] + ', ' + fmtDay(now)) + banner() + `<div class="grid2"><div class="col">${left}</div><div class="col">${right}</div></div>`;
+  }
+  /* Erledigte Einheit: Werte statt Plan, mit Haken */
+  function doneRow(M, p, cls) {
+    let total = 0;
+    const S = sp(p.sport), t = M.match[p.id];
+    const bits = [];
+    if (t) {
+      total += t.dur || p.dur || 0;
+      if (t.dur) bits.push(fmtH(t.dur));
+      if (t.km) bits.push(S.k === 'swim' ? Math.round(t.km * 1000).toLocaleString('de-DE') + ' m' : t.km.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' km');
+      if (t.watt) bits.push('Ø ' + Math.round(t.watt) + ' W');
+      else if (t.pace) bits.push(t.pace + ' /km');
+      if (t.hr) bits.push('Ø ' + Math.round(t.hr) + ' bpm');
+    } else if (S.k === 'kraft') {
+      total += p.dur || 0;
+      const ses = sessions(M).filter(x => x.pid === p.id).pop();
+      if (ses) {
+        const exs = new Set(ses.rows.map(r => r.ex)), vol = ses.rows.reduce((a, r) => a + (r.kg || 0) * (r.reps || 0), 0);
+        bits.push(exs.size + ' Übungen', ses.rows.length + ' Sätze');
+        if (vol) bits.push(Math.round(vol).toLocaleString('de-DE') + ' kg bewegt');
+      } else bits.push(unitMeta(p));
+    } else if (S.k === 'mob') { total += p.dur || 0; bits.push(mobItems(p).length + ' Übungen', unitMeta(p)); }
+    else { total += p.dur || 0; bits.push(unitMeta(p)); }
+    return { dur: total, html: `<button class="sum-row${cls ? ' ' + cls : ''}" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-label="${esc(p.title)} öffnen"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(cleanTitle(p))}</b><small>${esc(bits.filter(Boolean).join(' · '))}</small></span><span class="ok">${CHECK}</span></button>` };
   }
   /* Alles erledigt: kurzer Rückblick auf den Tag statt leerer Seite */
   function doneSummary(M, units, now) {
     let total = 0;
-    const rows = units.map(p => {
-      const S = sp(p.sport), t = M.match[p.id];
-      const bits = [];
-      if (t) {
-        total += t.dur || p.dur || 0;
-        if (t.dur) bits.push(fmtH(t.dur));
-        if (t.km) bits.push(S.k === 'swim' ? Math.round(t.km * 1000).toLocaleString('de-DE') + ' m' : t.km.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' km');
-        if (t.watt) bits.push('Ø ' + Math.round(t.watt) + ' W');
-        else if (t.pace) bits.push(t.pace + ' /km');
-        if (t.hr) bits.push('Ø ' + Math.round(t.hr) + ' bpm');
-      } else if (S.k === 'kraft') {
-        total += p.dur || 0;
-        const ses = sessions(M).filter(x => x.pid === p.id).pop();
-        if (ses) {
-          const exs = new Set(ses.rows.map(r => r.ex)), vol = ses.rows.reduce((a, r) => a + (r.kg || 0) * (r.reps || 0), 0);
-          bits.push(exs.size + ' Übungen', ses.rows.length + ' Sätze');
-          if (vol) bits.push(Math.round(vol).toLocaleString('de-DE') + ' kg bewegt');
-        } else bits.push(unitMeta(p));
-      } else if (S.k === 'mob') { total += p.dur || 0; bits.push(mobItems(p).length + ' Übungen', unitMeta(p)); }
-      else { total += p.dur || 0; bits.push(unitMeta(p)); }
-      return `<button class="sum-row" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-label="${esc(p.title)} öffnen"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(cleanTitle(p))}</b><small>${esc(bits.filter(Boolean).join(' · '))}</small></span><span class="ok">${CHECK}</span></button>`;
-    }).join('');
+    const rows = units.map(p => { const r = doneRow(M, p); total += r.dur; return r.html; }).join('');
     const nx = M.plan.find(p => p.date > today() && sp(p.sport).fam !== 'Mobility');
     const nd = nx && parseISO(nx.date), tmr = iso(addDays(now, 1));
     const nxLabel = nx ? (nx.date === tmr ? 'Morgen' : WDL[nd.getDay()]) : '';
