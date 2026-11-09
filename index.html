@@ -292,6 +292,41 @@ nav.tabs a[aria-current="page"]{background:var(--ink);color:var(--on-ink)}
 
 .skel{height:220px;border-radius:28px;background:var(--card);opacity:.6}
 
+
+/* Bewegung und Feedback: gemeinsame Tokens, Ankommen bremst ab, Gehen beschleunigt */
+:root{--ease-out:cubic-bezier(.22,1,.36,1);--ease-in:cubic-bezier(.4,0,1,1);--t-fast:120ms;--t-med:240ms;--t-slow:420ms}
+button,a,.tile,.row,.exrow{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+button,.tile,.row,.exrow,nav a{transition:transform var(--t-fast) var(--ease-out),background-color var(--t-med) var(--ease-out),color var(--t-med) var(--ease-out),opacity var(--t-fast) linear}
+button:not([disabled]):active,.tile:active,.row:active,.exrow:active,nav a:active{transform:scale(.97)}
+.tile:active,.exrow:active,.row:active{background-color:var(--fill-2)}
+.btn:not([disabled]):active{opacity:.85}
+.set{transition:background-color var(--t-med) var(--ease-out),box-shadow var(--t-med) var(--ease-out)}
+.set.ok .tick svg,.mcheck[aria-pressed="true"] svg,.done-pill svg{animation:pop var(--t-med) var(--ease-out)}
+@keyframes pop{0%{transform:scale(.3)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+.pfill{transition:width var(--t-slow) var(--ease-out)}
+svg.rings circle{transition:stroke-dasharray var(--t-slow) var(--ease-out)}
+.cbt button[aria-checked="true"]{animation:pop var(--t-med) var(--ease-out)}
+.view-in>*,.view-in .col>*{animation:rise var(--t-med) var(--ease-out) both;animation-delay:calc(var(--i,0) * 35ms)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+.sheet-bg{animation:fade var(--t-med) var(--ease-out) both}
+.sheet{animation:up var(--t-slow) var(--ease-out) both;will-change:transform;overscroll-behavior:contain}
+.sheet-bg.closing{animation:fadeout 200ms var(--ease-in) both}
+.sheet-bg.closing .sheet{animation:down 220ms var(--ease-in) both}
+@keyframes fade{from{opacity:0}}
+@keyframes fadeout{to{opacity:0}}
+@keyframes up{from{transform:translateY(100%)}}
+@keyframes down{to{transform:translateY(100%)}}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--fill);margin:0 auto 2px;flex:none}
+.toast{position:fixed;z-index:40;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:var(--ink);color:var(--on-ink);border-radius:999px;padding:10px 16px;font-size:15px;font-weight:600;box-shadow:var(--shadow);animation:toastin var(--t-med) var(--ease-out) both;white-space:nowrap}
+.toast svg{width:16px;height:16px}
+.toast.out{animation:toastout 200ms var(--ease-in) both}
+@keyframes toastin{from{opacity:0;transform:translate(-50%,-12px)}}
+@keyframes toastout{to{opacity:0;transform:translate(-50%,-12px)}}
+nav.tabs{isolation:isolate}
+nav.tabs .tab-ind{position:absolute;z-index:-1;top:5px;bottom:5px;left:0;border-radius:999px;background:var(--ink);transition:transform var(--t-med) var(--ease-out),width var(--t-med) var(--ease-out)}
+nav.tabs a[aria-current="page"]{background:transparent}
+.ex-card{scroll-margin-top:calc(16px + env(safe-area-inset-top,0px))}
+
 @media (min-width:960px){
   .app{max-width:1200px;padding-left:280px;padding-right:40px;padding-bottom:40px}
   nav.tabs{display:none}
@@ -321,12 +356,14 @@ nav.tabs a[aria-current="page"]{background:var(--ink);color:var(--on-ink)}
 </nav>
 <main class="app" id="app"><div class="skel"></div></main>
 <nav class="tabs" aria-label="Bereiche">
+  <span class="tab-ind" aria-hidden="true"></span>
   <a href="#heute" data-v="heute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>Heute</a>
   <a href="#woche" data-v="woche"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 10h17M8.5 3v4M15.5 3v4"/></svg>Woche</a>
   <a href="#fortschritt" data-v="fortschritt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5.5-5.5 4 4L21 7"/><path d="M15 7h6v6"/></svg>Fortschritt</a>
 </nav>
 <div id="restbar" class="restbar" hidden role="status" aria-live="polite"><b>Pause</b><button data-skiprest>Weiter</button></div>
 <div id="sheet" hidden></div>
+<script src="morphdom.min.js"></script>
 <script src="uebungen.js"></script>
 <script src="app.js"></script>
 </body>

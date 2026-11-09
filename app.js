@@ -475,7 +475,7 @@
       <div class="u-title${title.length > 18 ? ' long' : ''}">${esc(title)}</div>`;
     if (prog) {
       const [a, b] = prog;
-      h += `<div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--c-mu)"><span>${S.k === 'kraft' ? 'Sätze' : 'Geschafft'}</span><span class="num" style="font-weight:700">${a} von ${b}</span></div><div style="height:8px;background:var(--c-l);border-radius:99px;overflow:hidden"><div style="width:${b ? Math.round(a / b * 100) : 0}%;height:100%;background:var(--c);border-radius:99px"></div></div></div>`;
+      h += `<div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--c-mu)"><span>${S.k === 'kraft' ? 'Sätze' : 'Geschafft'}</span><span class="num" style="font-weight:700">${a} von ${b}</span></div><div style="height:8px;background:var(--c-l);border-radius:99px;overflow:hidden"><div class="pfill" style="width:${b ? Math.round(a / b * 100) : 0}%;height:100%;background:var(--c);border-radius:99px"></div></div></div>`;
       if (p.note && S.k !== 'kraft') h += `<span class="note">${esc(p.note)}</span>`;
       if (p.note && S.k === 'kraft') h += `<span class="note">${esc(p.note)}</span>`;
       h += `</section><div class="ubody" style="${cv(S.k)}">${body}</div>`;
@@ -693,35 +693,117 @@
 
   /* ---------- Rendern ---------- */
   function current() { const h = location.hash.slice(1); return ['heute', 'woche', 'fortschritt', 'einrichtung'].includes(h) ? h : 'heute'; }
-  let lastRender = '';
+  let lastRender = '', lastView = '', lastSheet = '';
+  const ORDER = ['heute', 'woche', 'fortschritt', 'einrichtung'];
+  const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const scrollPos = {};
+  function morph(el, html) {
+    if (!window.morphdom) { el.innerHTML = html; return; }
+    const wrap = el.cloneNode(false); wrap.innerHTML = html;
+    window.morphdom(el, wrap, {
+      childrenOnly: true,
+      onBeforeElUpdated(from, to) {
+        if (from.isEqualNode(to)) return false;
+        if (from.tagName === 'svg' && from.hasAttribute('data-fig') && from.getAttribute('data-fig') === to.getAttribute('data-fig') && from.getAttribute('data-fig')) return false;
+        if (from === document.activeElement && from.tagName === 'INPUT') return false;
+        return true;
+      }
+    });
+  }
+  function placeIndicator() {
+    const nav = document.querySelector('nav.tabs'), ind = nav && nav.querySelector('.tab-ind');
+    const a = nav && nav.querySelector('a[aria-current="page"]');
+    if (!ind) return;
+    if (!a) { ind.style.width = '0px'; return; }
+    ind.style.width = a.offsetWidth + 'px';
+    ind.style.transform = `translateX(${a.offsetLeft}px)`;
+  }
   function render() {
     const v = state.cfg && state.cfg.key ? current() : 'einrichtung';
     document.querySelectorAll('nav a[data-v]').forEach(a => { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    placeIndicator();
     const app = $('#app');
-    const focusId = document.activeElement && document.activeElement.id;
     let html;
     const M = model();
     if (v === 'einrichtung') html = viewSetup();
     else if (!M) html = header('Heute', 'Lade deine Daten …') + banner() + '<div class="skel"></div>';
     else html = v === 'woche' ? viewWoche(M) : v === 'fortschritt' ? viewFortschritt(M) : viewHeute(M);
-    if (html !== lastRender) {
-      const y = window.scrollY;
+    if (v !== lastView) {
+      if (lastView) scrollPos[lastView] = window.scrollY;
       app.innerHTML = html; lastRender = html;
-      window.scrollTo(0, y);
-      if (focusId && document.getElementById(focusId)) document.getElementById(focusId).focus();
+      if (!reduceMotion()) {
+        app.classList.remove('view-in'); void app.offsetWidth; app.classList.add('view-in');
+        let i = 0; app.querySelectorAll(':scope > *, :scope .col > *').forEach(c => { if (i < 10) c.style.setProperty('--i', i++); });
+        setTimeout(() => app.classList.remove('view-in'), 900);
+      }
+      window.scrollTo(0, scrollPos[v] || 0);
+      lastView = v;
+      U.animate(app);
+    } else if (html !== lastRender) {
+      morph(app, html); lastRender = html;
       U.animate(app);
     }
-    if (state.sheetId) renderSheet(); else { const s = $('#sheet'); s.hidden = true; s.innerHTML = ''; }
+    if (state.sheetId) renderSheet(); else if (!$('#sheet').hidden && !state.sheetClosing) closeSheetNow();
     tickRest();
+    if (state.scrollEx) {
+      const pid = state.scrollEx; state.scrollEx = null;
+      const root = state.sheetId === pid ? $('#sheet') : app;
+      const el = root.querySelector('.ex-card');
+      if (el) el.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
+    }
   }
   function renderSheet() {
     const M = model(); const p = M && M.plan.find(x => x.id === state.sheetId);
     const s = $('#sheet');
-    if (!p) { state.sheetId = null; s.hidden = true; return; }
+    if (!p) { state.sheetId = null; closeSheetNow(); return; }
     const d = parseISO(p.date);
-    const html = `<div class="sheet-bg" data-close><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(p.title)}"><div class="sheet-top"><small>${WDL[d.getDay()]}, ${fmtDay(d)}${M.shifts[p.date] ? ' · ' + esc(M.shifts[p.date]) : ''}</small><button data-close>Schließen</button></div>${unitExpanded(M, p, { showActual: true })}</div></div>`;
-    if (s.innerHTML !== html) { s.innerHTML = html; U.animate(s); }
-    s.hidden = false;
+    const inner = `<div class="grab" aria-hidden="true"></div><div class="sheet-top"><small>${WDL[d.getDay()]}, ${fmtDay(d)}${M.shifts[p.date] ? ' · ' + esc(M.shifts[p.date]) : ''}</small><button data-close>Schließen</button></div>${unitExpanded(M, p, { showActual: true })}`;
+    const sheet = s.querySelector('.sheet');
+    if (!sheet || s.hidden || s.dataset.id !== p.id) {
+      s.innerHTML = `<div class="sheet-bg" data-close><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(p.title)}">${inner}</div></div>`;
+      s.dataset.id = p.id; s.hidden = false; lastSheet = inner;
+      document.documentElement.style.overflow = 'hidden';
+      U.animate(s); bindSwipe(s.querySelector('.sheet'));
+      const btn = s.querySelector('button[data-close]'); if (btn) btn.focus({ preventScroll: true });
+    } else if (inner !== lastSheet) {
+      morph(sheet, inner); lastSheet = inner; U.animate(s);
+    }
+  }
+  function closeSheet() {
+    const s = $('#sheet'), bg = s.querySelector('.sheet-bg');
+    state.sheetId = null;
+    if (!bg || reduceMotion()) { closeSheetNow(); render(); return; }
+    state.sheetClosing = true;
+    bg.classList.add('closing');
+    setTimeout(() => { state.sheetClosing = false; closeSheetNow(); render(); }, 230);
+  }
+  function closeSheetNow() {
+    const s = $('#sheet'); s.hidden = true; s.innerHTML = ''; s.dataset.id = ''; lastSheet = '';
+    document.documentElement.style.overflow = '';
+  }
+  function bindSwipe(sheet) {
+    if (!sheet) return;
+    let y0 = null, dy = 0, t0 = 0;
+    sheet.addEventListener('touchstart', e => { if (sheet.scrollTop > 0) { y0 = null; return; } y0 = e.touches[0].clientY; dy = 0; t0 = Date.now(); sheet.style.transition = 'none'; }, { passive: true });
+    sheet.addEventListener('touchmove', e => { if (y0 == null) return; dy = Math.max(0, e.touches[0].clientY - y0); if (dy > 0) sheet.style.transform = `translateY(${dy}px)`; }, { passive: true });
+    sheet.addEventListener('touchend', () => {
+      if (y0 == null) return;
+      const fast = dy / Math.max(1, Date.now() - t0) > 0.6;
+      sheet.style.transition = 'transform var(--t-med) var(--ease-out)';
+      if (dy > 120 || (fast && dy > 40)) { sheet.style.transform = 'translateY(100%)'; setTimeout(() => { state.sheetId = null; closeSheetNow(); render(); }, 200); }
+      else sheet.style.transform = '';
+      y0 = null;
+    });
+  }
+  let toastTimer = 0;
+  function toast(msg) {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = 'toast'; t.setAttribute('role', 'status');
+    t.innerHTML = CHECK + '<span></span>'; t.querySelector('span').textContent = msg;
+    document.body.appendChild(t);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 220); }, 1800);
   }
 
   /* ---------- Speichern ---------- */
@@ -730,6 +812,7 @@
     try {
       await api('erledigt', { id: p.id, wert: val });
       p.done = val; patchPlan(p.id, val);
+      if (val) toast(p.title + ' erledigt');
     } catch (e) { state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e); }
     state.busy[p.id] = false; render();
   }
@@ -753,6 +836,7 @@
       await api('kraft', { id: p.id, zeilen });
       zeilen.forEach(z => state.data.kraftlog.push([z.datum, p.id, z.einheit, z.uebung, String(z.satz), String(z.wdh), String(z.sek), String(z.kg), z.ziel, z.gespeichert]));
       patchPlan(p.id, today()); ls.del('tri:draft:' + p.id); delete state.drafts[p.id]; state.rest = null; delete state.active[p.id];
+      toast('Training gespeichert');
     } catch (e) { state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e) + '. Deine Sätze bleiben erhalten.'; }
     state.busy[p.id] = false; render();
   }
@@ -768,6 +852,7 @@
       if (i > 0) rows[i] = row; else rows.push(row);
       state.data._at = Date.now(); ls.set('tri:data', state.data);
       state.checkDraft = null; state.checkEdit = false;
+      toast('Kurz-Check gespeichert');
     } catch (e) { state.checkMsg = 'Speichern hat nicht geklappt: ' + (e.message || e); }
     state.checkBusy = false; render();
   }
@@ -791,7 +876,7 @@
     if (q('[data-reload]')) { load(true); return; }
     if ((el = q('[data-week]'))) { state.weekOff += +el.dataset.week; render(); return; }
     if ((el = q('[data-open]'))) { state.sheetId = el.dataset.open; render(); return; }
-    if (q('[data-close]') && (e.target.matches('[data-close]') || e.target.closest('button[data-close]'))) { state.sheetId = null; render(); return; }
+    if (q('[data-close]') && (e.target.matches('[data-close]') || e.target.closest('button[data-close]'))) { closeSheet(); return; }
     if (q('[data-skiprest]')) { state.rest = null; tickRest(); return; }
     if (!M) return;
     const plan = id => M.plan.find(p => p.id === id);
@@ -801,16 +886,13 @@
       if (el.dataset.act === 'undo') setDone(p, '');
       return;
     }
-    if ((el = q('[data-step]'))) {
-      const [pid, i, j, f, dv] = el.dataset.step.split('|'); const p = plan(pid); if (!p) return;
-      const d = draft(M, p), s = d.ex[+i][+j]; s[f] = Math.max(0, (s[f] || 0) + +dv); putDraft(pid, d); render(); return;
-    }
+    if ((el = q('[data-step]'))) { if (holdUsed) { holdUsed = false; return; } doStep(el); return; }
     if ((el = q('[data-tick]'))) {
       const [pid, i, j] = el.dataset.tick.split('|'); const p = plan(pid); if (!p) return;
       const d = draft(M, p), s = d.ex[+i][+j]; s.ok = !s.ok; putDraft(pid, d);
       if (s.ok) {
         state.rest = { end: Date.now() + 90000 };
-        if (d.ex[+i].every(x => x.ok)) { const nx = d.ex.findIndex(x => x.some(y => !y.ok)); if (nx >= 0) state.active[pid] = nx; }
+        if (d.ex[+i].every(x => x.ok)) { const nx = d.ex.findIndex(x => x.some(y => !y.ok)); if (nx >= 0) { state.active[pid] = nx; state.scrollEx = pid; } }
       }
       render(); return;
     }
@@ -823,7 +905,7 @@
       const [pid, i] = el.dataset.delset.split('|'); const p = plan(pid); if (!p) return;
       const d = draft(M, p); d.ex[+i].pop(); putDraft(pid, d); render(); return;
     }
-    if ((el = q('[data-ex]'))) { const [pid, i] = el.dataset.ex.split('|'); state.active[pid] = +i; render(); return; }
+    if ((el = q('[data-ex]'))) { const [pid, i] = el.dataset.ex.split('|'); state.active[pid] = +i; state.scrollEx = pid; render(); return; }
     if ((el = q('[data-mob-open]'))) { const [pid, i] = el.dataset.mobOpen.split('|'); state.active[pid] = state.active[pid] === +i ? -1 : +i; render(); return; }
     if ((el = q('[data-mob]'))) {
       const [pid, i] = el.dataset.mob.split('|'); const p = plan(pid); if (!p) return;
@@ -861,6 +943,24 @@
     }
     if (q('[data-checkedit]')) { state.checkEdit = true; render(); return; }
   });
+
+  /* Gedrückt halten am Plus/Minus zählt schneller weiter */
+  let holdUsed = false, holdT = 0, holdI = 0;
+  function doStep(el) {
+    const M = model(); if (!M) return;
+    const [pid, i, j, f, dv] = el.dataset.step.split('|'); const p = M.plan.find(x => x.id === pid); if (!p) return;
+    const d = draft(M, p), s = d.ex[+i][+j]; s[f] = Math.max(0, (s[f] || 0) + +dv); putDraft(pid, d); render();
+  }
+  function stopHold() { clearTimeout(holdT); clearInterval(holdI); holdT = holdI = 0; }
+  document.addEventListener('pointerdown', e => {
+    const el = e.target.closest('[data-step]'); if (!el || el.disabled) return;
+    const key = el.dataset.step;
+    holdT = setTimeout(() => {
+      holdUsed = true;
+      holdI = setInterval(() => { const cur = document.querySelector(`[data-step="${key}"]`); if (cur) doStep(cur); else stopHold(); }, 90);
+    }, 420);
+  });
+  ['pointerup', 'pointercancel'].forEach(t => document.addEventListener(t, stopHold));
   function beepInit() { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch (e) { /* egal */ } }
   document.addEventListener('change', e => {
     const el = e.target.closest('[data-kg]'); if (!el) return;
@@ -879,11 +979,11 @@
     state.data = null; ls.del('tri:data'); cache = { at: -1 };
     load(true).then(() => { if (!state.err) location.hash = '#heute'; });
   });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.sheetId) { state.sheetId = null; render(); } });
-  window.addEventListener('hashchange', () => { state.sheetId = null; lastRender = ''; render(); window.scrollTo(0, 0); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.sheetId) closeSheet(); });
+  window.addEventListener('hashchange', () => { if (state.sheetId) { state.sheetId = null; closeSheetNow(); } render(); });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { cache = { at: -1 }; load(false); render(); } });
   let lastW = window.innerWidth;
-  window.addEventListener('resize', () => { if ((lastW >= 960) !== (window.innerWidth >= 960)) { lastW = window.innerWidth; lastRender = ''; render(); } });
+  window.addEventListener('resize', () => { if ((lastW >= 960) !== (window.innerWidth >= 960)) { lastW = window.innerWidth; lastRender = ''; render(); } placeIndicator(); });
 
   /* ---------- Start ---------- */
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
