@@ -836,7 +836,6 @@
   let lastRender = '', lastView = '', lastSheet = '';
   const ORDER = ['heute', 'woche', 'fortschritt', 'einrichtung'];
   const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const scrollPos = {};
   function morph(el, html) {
     if (!window.morphdom) { el.innerHTML = html; return; }
     const wrap = el.cloneNode(false); wrap.innerHTML = html;
@@ -877,7 +876,6 @@
     else if (!M) html = header('Heute', 'Lade deine Daten …') + banner() + '<div class="skel"></div>';
     else html = v === 'woche' ? viewWoche(M) : v === 'fortschritt' ? viewFortschritt(M) : viewHeute(M);
     if (v !== lastView) {
-      if (lastView) scrollPos[lastView] = window.scrollY;
       app.innerHTML = html; lastRender = html;
       app.style.transition = ''; app.style.transform = ''; app.style.opacity = '';
       if (!reduceMotion() && state.slide) {
@@ -888,7 +886,7 @@
         app.classList.remove('view-in'); void app.offsetWidth; app.classList.add('view-in');
         setTimeout(() => app.classList.remove('view-in'), 400);
       }
-      window.scrollTo(0, scrollPos[v] || 0);
+      window.scrollTo(0, 0);
       lastView = v; state.slide = 0;
       U.animate(app);
     } else if (html !== lastRender) {
@@ -1294,6 +1292,10 @@
     i = Math.max(0, Math.min(hs.length - 1, i));
     chartTip(svg, hs[i]); e.preventDefault();
   });
+  /* Tipp auf den Tab, der schon offen ist: sanft nach oben */
+  document.querySelectorAll('nav a[data-v]').forEach(a => a.addEventListener('click', () => {
+    if (a.dataset.v === current() && window.scrollY > 0) window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' });
+  }));
   window.addEventListener('hashchange', () => { if (state.sheetId) { state.sheetId = null; closeSheetNow(); } render(); });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { cache = { at: -1 }; load(false); render(); } });
   let lastW = window.innerWidth;
