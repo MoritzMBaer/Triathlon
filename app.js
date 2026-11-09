@@ -852,8 +852,9 @@
     const el = id && document.querySelector(`[data-uid="${CSS.escape(id)}"]`);
     if (!el || !h0 || reduceMotion() || !el.animate) return;
     const h1 = el.offsetHeight; if (Math.abs(h1 - h0) < 2) return;
-    el.animate([{ height: h0 + 'px', overflow: 'hidden' }, { height: h1 + 'px', overflow: 'hidden' }], { duration: 340, easing: 'cubic-bezier(.22,1,.36,1)' });
+    const a = el.animate([{ height: h0 + 'px', overflow: 'hidden' }, { height: h1 + 'px', overflow: 'hidden' }], { duration: 340, easing: 'cubic-bezier(.22,1,.36,1)' });
     if (h1 > h0) el.animate([{ opacity: .4 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
+    return a;
   }
   function toggleUnit(id, open) {
     const v = current(), M = model();
@@ -863,19 +864,27 @@
     const h0 = heightOf(id), hp = prev && prev !== id ? heightOf(prev) : 0;
     state.open[v] = open ? id : null;
     render();
-    glide(id, h0); if (hp) glide(prev, hp);
-    if (open) {
-      const el = document.querySelector(`[data-uid="${CSS.escape(id)}"]`);
-      if (el) {
-        /* Karte bleibt, wo sie steht – nur wenn ihr Kopf hinter Statusleiste oder Tab-Leiste verschwinden würde, sanft nachrücken */
-        const r = el.getBoundingClientRect();
-        const sb = $('.statusbg'), top = (sb ? sb.offsetHeight : 0) + 26;
-        const nav = $('nav.tabs'), nr = nav && nav.getBoundingClientRect();
-        const bottom = nr && nr.height ? nr.top - 40 : window.innerHeight - 24;
-        let dy = 0;
-        if (r.top < top) dy = r.top - top;
-        else if (r.top + 160 > bottom) dy = Math.min(r.top + 160 - bottom, r.top - top);
-        if (dy) window.scrollTo({ top: window.scrollY + dy, behavior: reduceMotion() ? 'auto' : 'smooth' });
+    /* Ziel-Layout messen, bevor die Höhenanimation startet */
+    const el = open && document.querySelector(`[data-uid="${CSS.escape(id)}"]`);
+    const r = el && el.getBoundingClientRect();
+    const anim = glide(id, h0); if (hp) glide(prev, hp);
+    if (el) {
+      /* Karte bleibt stehen, solange sie ganz sichtbar ist. Ragt sie unten raus,
+         rückt sie in die Mitte des freien Bereichs; ist sie höher als der Bildschirm,
+         rückt ihr Kopf direkt unter die Statusleiste. */
+      const sb = $('.statusbg'), top = (sb ? sb.offsetHeight : 0) + 16;
+      const nav = $('nav.tabs'), nr = nav && nav.getBoundingClientRect();
+      const bottom = nr && nr.height ? nr.top - 16 : window.innerHeight - 16;
+      const room = bottom - top;
+      let dy = 0;
+      if (r.top < top) dy = r.top - top;
+      else if (r.bottom > bottom) dy = r.height <= room ? (r.top + r.height / 2) - (top + room / 2) : r.top - top;
+      if (dy) {
+        const target = window.scrollY + dy;
+        const go = () => window.scrollTo({ top: target, behavior: reduceMotion() ? 'auto' : 'smooth' });
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        /* Kurz vor Seitenende erst scrollen, wenn die Karte ihre volle Höhe hat */
+        if (target > max + 1 && anim && anim.finished) anim.finished.then(go, go); else go();
       }
     }
   }
