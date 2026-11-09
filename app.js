@@ -867,8 +867,15 @@
     if (open) {
       const el = document.querySelector(`[data-uid="${CSS.escape(id)}"]`);
       if (el) {
+        /* Karte bleibt, wo sie steht – nur wenn ihr Kopf hinter Statusleiste oder Tab-Leiste verschwinden würde, sanft nachrücken */
         const r = el.getBoundingClientRect();
-        if (r.top < 8 || r.top > window.innerHeight * 0.55) window.scrollTo({ top: window.scrollY + r.top - 12, behavior: reduceMotion() ? 'auto' : 'smooth' });
+        const sb = $('.statusbg'), top = (sb ? sb.offsetHeight : 0) + 12;
+        const nav = $('nav.tabs'), nr = nav && nav.getBoundingClientRect();
+        const bottom = nr && nr.height ? nr.top - 12 : window.innerHeight - 24;
+        let dy = 0;
+        if (r.top < top) dy = r.top - top;
+        else if (r.top + 160 > bottom) dy = Math.min(r.top + 160 - bottom, r.top - top);
+        if (dy) window.scrollTo({ top: window.scrollY + dy, behavior: reduceMotion() ? 'auto' : 'smooth' });
       }
     }
   }
@@ -1036,7 +1043,8 @@
       const [pid, i] = el.dataset.start.split('|'); const p = plan(pid); if (!p) return;
       setStarted(pid, true);
       if (+i >= 0) state.active[pid] = +i; else delete state.active[pid];
-      state.scrollEx = pid; render(); return;
+      if (sp(p.sport).fam !== 'Mobility') state.scrollEx = pid; /* Mobility bleibt beim Start an Ort und Stelle */
+      render(); return;
     }
     if ((el = q('[data-stop]'))) { setStarted(el.dataset.stop, false); state.timer = null; render(); return; }
     if ((el = q('[data-ex]'))) { const [pid, i] = el.dataset.ex.split('|'); state.active[pid] = +i; state.scrollEx = pid; render(); return; }
