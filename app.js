@@ -869,7 +869,7 @@
       if (el) {
         /* Karte bleibt, wo sie steht – nur wenn ihr Kopf hinter Statusleiste oder Tab-Leiste verschwinden würde, sanft nachrücken */
         const r = el.getBoundingClientRect();
-        const sb = $('.statusbg'), top = (sb ? sb.offsetHeight : 0) + 4;
+        const sb = $('.statusbg'), top = (sb ? sb.offsetHeight : 0) + 26;
         const nav = $('nav.tabs'), nr = nav && nav.getBoundingClientRect();
         const bottom = nr && nr.height ? nr.top - 40 : window.innerHeight - 24;
         let dy = 0;
@@ -1121,6 +1121,8 @@
     state.data = null; ls.del('tri:data'); cache = { at: -1 };
     load(true).then(() => { if (!state.err) location.hash = '#heute'; });
   });
+  const onScroll = () => document.documentElement.classList.toggle('scrolled', window.scrollY > 4);
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.sheetId) closeSheet(); });
   window.addEventListener('hashchange', () => { if (state.sheetId) { state.sheetId = null; closeSheetNow(); } render(); });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { cache = { at: -1 }; load(false); render(); } });
