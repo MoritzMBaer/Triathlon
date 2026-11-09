@@ -441,8 +441,10 @@
       const name = s.replace(/\s+(\d+×)?\d+\s*s.*$/, '').replace(/\s+\d+×.*$/, '').replace(/,.*$/, '').replace(/\s+je(\s.*)?$/, '');
       const dose = s.slice(name.length).replace(/^[,\s]+/, '');
       const parts = [];
-      if (sec) vars.forEach(v => { for (let sd = 0; sd < sides; sd++) for (let st = 0; st < sets; st++) parts.push([sides === 2 ? (sd ? 'Rechte Seite' : 'Linke Seite') : '', v, sets > 1 ? `Satz ${st + 1}` : ''].filter(Boolean).join(' · ')); });
-      return { raw: s, name, dose, lib, sec: sec ? +sec : 0, parts };
+      if (sec) for (let sd = 0; sd < sides; sd++) vars.forEach(v => { for (let st = 0; st < sets; st++) parts.push([sides === 2 ? (sd ? 'Rechts' : 'Links') : '', v, sets > 1 ? `Satz ${st + 1}` : ''].filter(Boolean).join(' · ')); });
+      /* Ablauf in Klartext: jeder Teil bekommt seine eigene Zeit */
+      const seq = parts.length > 1 ? `${parts.length} × ${sec} s, jeder Teil einzeln: ${parts.join(' → ')}` : (sec ? `${sec} s halten` : '');
+      return { raw: s, name, dose, lib, sec: sec ? +sec : 0, parts, seq };
     });
   }
   function mobBody(M, p) {
@@ -460,6 +462,7 @@
         if (it.lib) h += `<div class="fig">${U.svg(it.lib, { id: 'live:' + encodeURIComponent(it.name), label: 'Animation: ' + it.name })}</div>`;
         h += '<div class="mob-r">';
         if (it.lib) h += `<p class="howto">${esc(it.lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(it.lib.cue)}</p>`;
+        if (it.seq && it.parts.length > 1) h += `<p class="seq"><b>Ablauf:</b> ${esc(it.seq)}</p>`;
         if (it.sec) h += timerHTML(p, i, it);
         h += '</div></div>';
       }
@@ -477,7 +480,7 @@
       <circle cx="42" cy="42" r="36" fill="none" stroke="var(--c-t)" stroke-width="7"/>
       <circle id="timer-arc" cx="42" cy="42" r="36" fill="none" stroke="var(--c)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(C * frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 42 42)"/>
       <text id="timer-txt" x="42" y="48" text-anchor="middle" font-family="ui-rounded,-apple-system,system-ui,sans-serif" font-size="20" font-weight="700" fill="var(--fg)">${Math.floor(left / 60)}:${pad(left % 60)}</text></svg>
-      <div class="tx"><small>${esc(it.parts[part] || 'Halten')}<br>Teil ${part + 1} von ${it.parts.length}</small>
+      <div class="tx"><small><b class="now">${esc(it.parts[part] || 'Halten')}</b><br>Teil ${part + 1} von ${it.parts.length}${it.parts[part + 1] ? ' · danach: ' + esc(it.parts[part + 1]) : ''}</small>
       <div class="bts"><button data-timer="${p.id}|${i}|toggle">${T && T.running ? 'Pause' : (T && T.left < it.sec ? 'Weiter' : 'Start')}</button><button class="go" data-timer="${p.id}|${i}|next">${part + 1 < it.parts.length ? 'Nächster Teil' : 'Fertig'}</button></div></div></div>`;
   }
   let audio = null;
@@ -489,11 +492,25 @@
       o.start(); o.stop(audio.currentTime + 0.25);
     } catch (e) { /* kein Ton möglich */ }
   }
+  /* Nächster Teil bereitlegen (nicht starten); nach dem letzten Teil Übung abhaken und die nächste öffnen */
+  function advanceTimer(T) {
+    const p = plan(T.pid); if (!p) { state.timer = null; return; }
+    const it = mobItems(p)[T.i];
+    if (it && T.part + 1 < it.parts.length) { T.part++; T.left = T.sec; T.endLeft = T.sec; T.running = false; return; }
+    state.timer = null;
+    const t = ls.get('tri:mob:' + T.pid, []);
+    if (!t.includes(T.i)) {
+      const nt = t.concat(T.i); ls.set('tri:mob:' + T.pid, nt);
+      const items = mobItems(p); state.active[T.pid] = items.findIndex((_, k) => !nt.includes(k));
+      if (nt.length === items.length) { setDone(p, today()); return true; }
+    }
+    return false;
+  }
   setInterval(() => {
     const T = state.timer;
     if (!T || !T.running) return;
     T.left = T.endLeft - (Date.now() - T.startedAt) / 1000;
-    if (T.left <= 0) { T.left = 0; T.running = false; beep(); render(); return; }
+    if (T.left <= 0) { beep(); if (!advanceTimer(T)) render(); return; }
     const txt = document.getElementById('timer-txt'), arc = document.getElementById('timer-arc');
     if (txt) { const l = Math.ceil(T.left); txt.textContent = Math.floor(l / 60) + ':' + pad(l % 60); }
     if (arc) { const C = 2 * Math.PI * 36; arc.setAttribute('stroke-dasharray', (C * T.left / T.sec).toFixed(1) + ' ' + C.toFixed(1)); }
@@ -1094,12 +1111,7 @@
       if (what === 'toggle') {
         if (T.running) { T.running = false; } else { if (T.left <= 0) T.left = T.sec; T.endLeft = T.left; T.startedAt = Date.now(); T.running = true; beepInit(); }
       } else {
-        if (T.part + 1 < it.parts.length) { T.part++; T.left = T.sec; T.endLeft = T.sec; T.startedAt = Date.now(); T.running = true; }
-        else {
-          state.timer = null;
-          const t = ls.get('tri:mob:' + pid, []);
-          if (!t.includes(+i)) { const nt = t.concat(+i); ls.set('tri:mob:' + pid, nt); const items = mobItems(p); state.active[pid] = items.findIndex((_, k) => !nt.includes(k)); if (nt.length === items.length) { setDone(p, today()); return; } }
-        }
+        if (advanceTimer(T)) return;
       }
       render(); return;
     }
