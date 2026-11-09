@@ -449,21 +449,22 @@
   }
   function mobBody(M, p) {
     const items = mobItems(p), ticks = p.done ? items.map((_, i) => i) : ls.get('tri:mob:' + p.id, []);
+    const review = !!p.done; /* erledigt: Übungen zum Nachlesen, ohne Timer und Abhaken */
     let act = state.active[p.id];
-    if (act == null) { act = items.findIndex((_, i) => !ticks.includes(i)); }
-    let h = backBar(p, `${ticks.length} von ${items.length} geschafft`) + '<div class="exlist">';
+    if (act == null) { act = review ? -1 : items.findIndex((_, i) => !ticks.includes(i)); }
+    let h = (review ? '' : backBar(p, `${ticks.length} von ${items.length} geschafft`)) + '<div class="exlist">';
     items.forEach((it, i) => {
       const on = ticks.includes(i), open = i === act;
-      h += `<div class="mob-ex${on ? ' done' : ''}${open ? ' active' : ''}"><div class="mob-row">
-        <button class="open" data-mob-open="${p.id}|${i}" aria-expanded="${open}"><span class="thumb">${it.lib ? U.svg(it.lib, { t: 0.6 }) : ''}</span><span class="tx"><b>${esc(it.name)}</b><small>${esc(it.dose)}${it.sec ? ' · Timer' : ''}</small></span></button>
-        <button class="mcheck" data-mob="${p.id}|${i}" aria-pressed="${on}" aria-label="${esc(it.name)} erledigt">${on ? CHECK : ''}</button></div>`;
+      h += `<div class="mob-ex${on && !review ? ' done' : ''}${open ? ' active' : ''}"><div class="mob-row">
+        <button class="open" data-mob-open="${p.id}|${i}" aria-expanded="${open}"><span class="thumb">${it.lib ? U.svg(it.lib, { t: 0.6 }) : ''}</span><span class="tx"><b>${esc(it.name)}</b><small>${esc(it.dose)}${it.sec && !review ? ' · Timer' : ''}</small></span></button>
+        ${review ? '' : `<button class="mcheck" data-mob="${p.id}|${i}" aria-pressed="${on}" aria-label="${esc(it.name)} erledigt">${on ? CHECK : ''}</button>`}</div>`;
       if (open) {
         h += `<div class="mob-detail${it.lib ? '' : ' solo'}">`;
         if (it.lib) h += `<div class="fig">${U.svg(it.lib, { id: 'live:' + encodeURIComponent(it.name), label: 'Animation: ' + it.name })}</div>`;
         h += '<div class="mob-r">';
         if (it.lib) h += `<p class="howto">${esc(it.lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(it.lib.cue)}</p>`;
         if (it.seq && it.parts.length > 1) h += `<p class="seq"><b>Ablauf:</b> ${esc(it.seq)}</p>`;
-        if (it.sec) h += timerHTML(p, i, it);
+        if (it.sec && !review) h += timerHTML(p, i, it);
         h += '</div></div>';
       }
       h += '</div>';
@@ -521,8 +522,9 @@
     opts = opts || {};
     const S = sp(p.sport), st = statusOf(p, M), t = M.match[p.id];
     const pill = st === 'done' ? `<span class="done-pill">${CHECK}Erledigt</span>` : st === 'miss' ? '<span class="miss-pill">Ausgelassen</span>' : `<span class="u-dur">${esc(unitMeta(p))}</span>`;
-    let body = '', prog = null, compact = null;
-    if (S.k === 'kraft' || S.k === 'mob') {
+    let body = '', prog = null, compact = null, review = false;
+    if (S.k === 'mob' && p.done) { body = mobBody(M, p).html; review = true; }
+    else if (S.k === 'kraft' || S.k === 'mob') {
       if (!isStarted(p)) { const r = overviewBody(M, p, S.k === 'kraft'); compact = r; }
       else { const r = S.k === 'kraft' ? strengthBody(M, p) : mobBody(M, p); body = r.html; prog = r.progress; }
     }
@@ -530,7 +532,11 @@
     const top = `<div class="u-sport"><span class="dot-ico">${ICON[S.k]}</span><span>${esc(sportLabel(p))}</span></div><span class="u-right">${pill}${opts.fold ? CHEV_D : ''}</span>`;
     let h = `<section class="unit" style="${cv(S.k)}">${opts.fold ? `<button class="u-top" data-fold="${esc(p.id)}" aria-expanded="true" aria-label="${esc(p.title)} zuklappen">${top}</button>` : `<div class="u-top">${top}</div>`}
       <div class="u-title${title.length > 18 ? ' long' : ''}">${esc(title)}</div>`;
-    if (compact) {
+    if (review) {
+      h += `<p class="u-sum">${esc(mobItems(p).length + ' Übungen · ' + unitMeta(p))}</p>`;
+      if (p.note) h += `<span class="note">${esc(p.note)}</span>`;
+      h += `</section><div class="ubody" style="${cv(S.k)}">${body}</div>`;
+    } else if (compact) {
       const [a, b] = compact.progress;
       if (a > 0 && !p.done) h += `<div style="height:8px;background:var(--c-l);border-radius:99px;overflow:hidden"><div class="pfill" style="width:${b ? Math.round(a / b * 100) : 0}%;height:100%;background:var(--c);border-radius:99px"></div></div>`;
       h += `<p class="u-sum">${esc(compact.names.join(' · '))}</p>`;
@@ -663,8 +669,11 @@
     });
     if (wide()) left += nextDays(M, now);
     let right = checkCard(M) + statusCard(M, units);
-    if (nextMain && !(units.length && !cur && wide())) right += unitOrTile(M, nextMain, 'Morgen' + (M.shifts[tmr] ? ' · Dienst ' + M.shifts[tmr] : '') + (next.length > 1 ? ' · +' + (next.length - 1) + ' weitere' : ''), 'heute', def);
-    right += weekCard(M, monday(now), window.innerWidth >= 960, true);
+    if (!wide()) right += morgenCard(M, now); /* Handy: was morgen ansteht statt Wochenkarte */
+    else {
+      if (nextMain && !(units.length && !cur)) right += unitOrTile(M, nextMain, 'Morgen' + (M.shifts[tmr] ? ' · Dienst ' + M.shifts[tmr] : '') + (next.length > 1 ? ' · +' + (next.length - 1) + ' weitere' : ''), 'heute', def);
+      right += weekCard(M, monday(now), true, true);
+    }
     return header('Heute', WDL[now.getDay()] + ', ' + fmtDay(now)) + banner() + `<div class="grid2"><div class="col">${left}</div><div class="col">${right}</div></div>`;
   }
   /* Erledigte Einheit: Werte statt Plan, mit Haken */
@@ -703,6 +712,14 @@
       <div class="sum-list">${rows}</div>
       ${nx ? `<div class="sum-next" style="${cv(sp(nx.sport).k)}"><span class="ic">${ICON[sp(nx.sport).k]}</span><span class="tx"><small>Als Nächstes · ${esc(nxLabel)}${M.shifts[nx.date] ? ' · Dienst ' + esc(M.shifts[nx.date]) : ''}</small><b>${esc(cleanTitle(nx))}</b></span><span class="r">${esc(unitMeta(nx))}</span></div>` : ''}
     </section>`;
+  }
+  /* Handy: alles, was morgen ansteht (inkl. Dienst und Mobility) */
+  function morgenCard(M, now) {
+    const d = addDays(now, 1), k = iso(d);
+    const us = M.plan.filter(p => p.date === k);
+    let h = `<section class="card ndays morgen"><div class="nd-day"><div class="nd-h"><b>Morgen</b><small>${WDL[d.getDay()]}, ${fmtShort(d)}</small>${M.shifts[k] ? `<span class="shift">${esc(M.shifts[k])}</span>` : ''}</div>`;
+    h += us.length ? us.map(p => { const S = sp(p.sport); return `<button class="nd-u" style="${cv(S.k)}" data-sheet="${esc(p.id)}"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(cleanTitle(p))}</b><small>${esc(sportLabel(p))} · ${esc(unitMeta(p))}${S.k === 'mob' ? ' · ' + mobItems(p).length + ' Übungen' : ''}</small></span></button>`; }).join('') : '<span class="free">Trainingsfrei</span>';
+    return h + '</div></section>';
   }
   /* Laptop: Blick auf die kommenden Tage */
   function nextDays(M, now) {
