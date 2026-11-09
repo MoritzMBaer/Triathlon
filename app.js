@@ -397,7 +397,9 @@
     const firstOpen = sets.findIndex(s => !s.ok);
     const done = !!p.done;
     let h = backBar(p, `Übung ${act + 1} von ${exs.length}`) + `<div class="ex-card"><div class="ex-head"><b>${esc(ex.name)}</b><span>Ziel ${goal}${hist ? ' · ' + esc(histText(hist, lib, ex)) : ''}</span></div>`;
+    h += `<div class="ex-body${lib ? '' : ' solo'}"><div class="ex-l">`;
     if (lib) h += `<div class="fig">${U.svg(lib, { id: 'live:' + encodeURIComponent(ex.name), label: 'Animation: ' + ex.name })}</div><p class="howto">${esc(lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(lib.cue)}</p>`;
+    h += '</div><div class="ex-r">';
     if (!done && sg.why) h += `<div class="sugg">${k === 'w' && sg.kg != null ? `<b>Heute ${fmtKg(sg.kg)}.</b> ` : ''}${esc(sg.why)}</div>`;
     h += `<div class="sets" role="group" aria-label="Sätze ${esc(ex.name)}"><div class="set head"><span>SATZ</span><span>${k === 'time' ? 'SEKUNDEN' : 'WDH'}</span><span>${k === 'w' ? 'KG' : ''}</span><span></span></div>`;
     sets.forEach((s, j) => {
@@ -409,7 +411,7 @@
     });
     h += '</div>';
     if (!done) h += `<div class="set-acts"><button class="link" data-addset="${p.id}|${act}">+ Satz hinzufügen</button>${sets.length > 1 ? `<button class="link" data-delset="${p.id}|${act}">Letzten Satz entfernen</button>` : ''}</div>`;
-    h += '</div>';
+    h += '</div></div></div>';
     h += '<div class="exlist">' + exs.map((e, i) => {
       if (i === act) return '';
       const lb = U.lib(e.name), t2 = target(p, e, lb), k2 = kind(lb, e), s2 = d.ex[i] || [];
@@ -454,10 +456,12 @@
         <button class="open" data-mob-open="${p.id}|${i}" aria-expanded="${open}"><span class="thumb">${it.lib ? U.svg(it.lib, { t: 0.6 }) : ''}</span><span class="tx"><b>${esc(it.name)}</b><small>${esc(it.dose)}${it.sec ? ' · Timer' : ''}</small></span></button>
         <button class="mcheck" data-mob="${p.id}|${i}" aria-pressed="${on}" aria-label="${esc(it.name)} erledigt">${on ? CHECK : ''}</button></div>`;
       if (open) {
-        h += '<div class="mob-detail">';
-        if (it.lib) h += `<div class="fig">${U.svg(it.lib, { id: 'live:' + encodeURIComponent(it.name), label: 'Animation: ' + it.name })}</div><p class="howto">${esc(it.lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(it.lib.cue)}</p>`;
+        h += `<div class="mob-detail${it.lib ? '' : ' solo'}">`;
+        if (it.lib) h += `<div class="fig">${U.svg(it.lib, { id: 'live:' + encodeURIComponent(it.name), label: 'Animation: ' + it.name })}</div>`;
+        h += '<div class="mob-r">';
+        if (it.lib) h += `<p class="howto">${esc(it.lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(it.lib.cue)}</p>`;
         if (it.sec) h += timerHTML(p, i, it);
-        h += '</div>';
+        h += '</div></div>';
       }
       h += '</div>';
     });
@@ -606,7 +610,7 @@
   }
   function weekCard(M, mon, strip) {
     const w = weekCounts(M, mon);
-    let h = `<section class="card"><div class="week">${ringsSVG(w.c)}<div class="tx"><small>${state.weekOff && !strip ? 'KW ' + isoWeek(mon) : 'Diese Woche'}</small><b>${w.doneN} von ${w.n} Einheiten</b><span style="font-size:13px;color:var(--fg-2)">${fmtH(w.doneMin)} von ${fmtH(w.planMin)}</span>
+    let h = `<section class="card"><div class="week">${ringsSVG(w.c)}<div class="tx"><small>${iso(mon) === iso(monday(new Date())) ? 'Diese Woche' : 'KW ' + isoWeek(mon)}</small><b>${w.doneN} von ${w.n} Einheiten</b><span style="font-size:13px;color:var(--fg-2)">${fmtH(w.doneMin)} von ${fmtH(w.planMin)}</span>
       <div class="legend">${RINGS.map(([f, k]) => `<span><i style="background:var(--${k})"></i>${f} ${w.c[f][1] ? w.c[f][0] + '/' + w.c[f][1] : '–'}</span>`).join('')}</div></div></div>`;
     if (strip) {
       h += '<div class="daystrip">' + [0, 1, 2, 3, 4, 5, 6].map(i => {
@@ -621,7 +625,7 @@
   /* ---------- Ansichten ---------- */
   function header(title, date) {
     const days = Math.ceil((RACE - new Date(new Date().toDateString())) / 864e5);
-    return `<header class="head"><div><div class="date">${esc(date)}</div><h1>${esc(title)}</h1></div><div class="side"><button class="iconbtn${state.loading ? ' spin' : ''}" data-reload aria-label="Aktualisieren"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="tiny">Tübingen in ${days} Tagen</span></div></header>`;
+    return `<header class="head"><div><div class="date">${esc(date)}</div><h1>${esc(title)}</h1></div><div class="side"><button class="iconbtn${state.loading ? ' spin' : ''}" data-reload aria-label="Aktualisieren" title="Aktualisieren (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="tiny head-count">Tübingen in ${days} Tagen</span></div></header>`;
   }
   function banner() {
     if (!state.err) return '';
@@ -649,7 +653,7 @@
   function viewWoche(M) {
     const mon = addDays(monday(new Date()), state.weekOff * 7), sun = addDays(mon, 6);
     let h = header('Woche', 'KW ' + isoWeek(mon) + ' · ' + fmtShort(mon) + ' – ' + fmtShort(sun)) + banner();
-    h += `<div class="wnav"><button data-week="-1" aria-label="Vorige Woche"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div><b>${state.weekOff === 0 ? 'Diese Woche' : state.weekOff === 1 ? 'Nächste Woche' : state.weekOff === -1 ? 'Letzte Woche' : 'KW ' + isoWeek(mon)}</b><small>${fmtDay(mon)} – ${fmtDay(sun)}</small></div><button data-week="1" aria-label="Nächste Woche"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>`;
+    h += `<div class="wnav"><button data-week="-1" aria-label="Vorige Woche" title="Vorige Woche (←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div><b>${state.weekOff === 0 ? 'Diese Woche' : state.weekOff === 1 ? 'Nächste Woche' : state.weekOff === -1 ? 'Letzte Woche' : 'KW ' + isoWeek(mon)}</b><small>${fmtDay(mon)} – ${fmtDay(sun)}</small>${state.weekOff ? '<button class="link today-link" data-week-now title="Zur aktuellen Woche (T)">Zur aktuellen Woche</button>' : ''}</div><button data-week="1" aria-label="Nächste Woche" title="Nächste Woche (→)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>`;
     h += weekCard(M, mon, true) + '<div class="wgrid">';
     for (let i = 0; i < 7; i++) {
       const d = addDays(mon, i), k = iso(d);
@@ -704,7 +708,9 @@
     for (let v = 0; v <= max; v += 20) g += `<line x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${pl - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}</text>`;
     const lbl = [0, Math.floor((F.length - 1) / 2), F.length - 1].map((i, j) => `<text x="${x(i)}" y="${H - 6}" text-anchor="${j === 0 ? 'start' : j === 2 ? 'end' : 'middle'}" font-size="11" fill="var(--muted)">${fmtShort(parseISO(F[i].date))}</text>`).join('');
     const L = F[F.length - 1];
-    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Verlauf von Fitness und Ermüdung">${g}<path d="${area}" fill="var(--bike-t)"/><path d="${line('atl')}" fill="none" stroke="var(--faint)" stroke-width="1.5" stroke-dasharray="4 3"/><path d="${line('ctl')}" fill="none" stroke="var(--bike)" stroke-width="2.5"/>${L.ctl != null ? `<circle cx="${x(F.length - 1)}" cy="${y(L.ctl)}" r="4" fill="var(--bike)"/>` : ''}${lbl}</svg>`;
+    const cw = (W - pl - pr) / (F.length - 1);
+    const hits = F.map((f, i) => `<rect class="hit" x="${(x(i) - cw / 2).toFixed(1)}" y="${pt}" width="${cw.toFixed(1)}" height="${H - pt - pb}" fill="transparent" data-gx="${x(i).toFixed(1)}" data-gy="${f.ctl == null ? '' : y(f.ctl).toFixed(1)}" data-tip="${esc(WDS[parseISO(f.date).getDay()] + ', ' + fmtShort(parseISO(f.date)) + '|Fitness ' + (f.ctl == null ? '–' : Math.round(f.ctl)) + ' · Ermüdung ' + (f.atl == null ? '–' : Math.round(f.atl)) + ' · Form ' + (f.ctl == null || f.atl == null ? '–' : (f.ctl - f.atl > 0 ? '+' : '') + Math.round(f.ctl - f.atl)))}"/>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" tabindex="0" data-chart aria-label="Verlauf von Fitness und Ermüdung. Mit den Pfeiltasten durch die Tage gehen.">${g}<path d="${area}" fill="var(--bike-t)"/><path d="${line('atl')}" fill="none" stroke="var(--faint)" stroke-width="1.5" stroke-dasharray="4 3"/><path d="${line('ctl')}" fill="none" stroke="var(--bike)" stroke-width="2.5"/>${L.ctl != null ? `<circle cx="${x(F.length - 1)}" cy="${y(L.ctl)}" r="4" fill="var(--bike)"/>` : ''}${lbl}<line class="guide" x1="0" x2="0" y1="${pt}" y2="${H - pb}" stroke="var(--muted)" stroke-width="1" opacity="0"/><circle class="gdot" r="4.5" fill="var(--bike)" stroke="var(--card)" stroke-width="2" opacity="0"/>${hits}</svg>`;
   }
   function weekChart(M) {
     const start = addDays(monday(new Date()), -5 * 7), weeks = [];
@@ -724,8 +730,9 @@
       if (w.plan) g += `<rect x="${x0}" y="${y(w.plan)}" width="${wd}" height="${y(0) - y(w.plan)}" rx="5" fill="var(--fill)"/>`;
       if (w.act) g += `<rect x="${x0 + wd * 0.22}" y="${y(w.act)}" width="${wd * 0.56}" height="${y(0) - y(w.act)}" rx="4" fill="var(--fg)"/>`;
       g += `<text x="${x0 + wd / 2}" y="${H - 6}" text-anchor="middle" font-size="11" fill="${w.cur ? 'var(--fg)' : 'var(--muted)'}" font-weight="${w.cur ? 700 : 400}">KW${isoWeek(w.a)}</text>`;
+      g += `<rect class="hit bar" x="${pl + i * bw}" y="${pt}" width="${bw}" height="${H - pt - pb}" rx="8" data-gx="${(x0 + wd / 2).toFixed(1)}" data-tip="${esc('KW ' + isoWeek(w.a) + ' · ' + fmtShort(w.a) + '|Geplant ' + fmtH(Math.round(w.plan * 60)) + ' · Absolviert ' + fmtH(Math.round(w.act * 60)))}"/>`;
     });
-    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Wochenstunden geplant und absolviert">${g}</svg>`;
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" tabindex="0" data-chart aria-label="Wochenstunden geplant und absolviert. Mit den Pfeiltasten durch die Wochen gehen.">${g}</svg>`;
   }
   function viewSetup() {
     const c = state.cfg || {};
@@ -765,8 +772,15 @@
     ind.style.width = a.offsetWidth + 'px';
     ind.style.transform = `translateX(${a.offsetLeft}px)`;
   }
+  function sideCount() {
+    const el = $('#side-count'); if (!el) return;
+    const days = Math.ceil((RACE - new Date(new Date().toDateString())) / 864e5);
+    const html = `<small>Mey Triathlon Tübingen</small><b class="num">${days}</b><span>Tage · ${fmtDay(RACE)} ${RACE.getFullYear()}</span>`;
+    if (el.innerHTML !== html) el.innerHTML = html;
+  }
   function render() {
     const v = state.cfg && state.cfg.key ? current() : 'einrichtung';
+    sideCount();
     document.querySelectorAll('nav a[data-v]').forEach(a => { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     placeIndicator();
     const app = $('#app');
@@ -1015,8 +1029,10 @@
     const M = model();
     const q = sel => e.target.closest(sel);
     let el;
+    if (q('a.skip')) { e.preventDefault(); const m = $('#app'); m.focus({ preventScroll: true }); const f = m.querySelector('button,[href],input,[tabindex="0"]'); if (f) f.focus(); return; }
     if (q('[data-reload]')) { load(true); return; }
     if ((el = q('[data-week]'))) { state.weekOff += +el.dataset.week; render(); return; }
+    if (q('[data-week-now]')) { state.weekOff = 0; render(); return; }
     if ((el = q('[data-open]'))) { toggleUnit(el.dataset.open, true); return; }
     if ((el = q('[data-fold]'))) { toggleUnit(el.dataset.fold, false); return; }
     if (q('[data-close]') && (e.target.matches('[data-close]') || e.target.closest('button[data-close]'))) { closeSheet(); return; }
@@ -1132,7 +1148,68 @@
   });
   const onScroll = () => document.documentElement.classList.toggle('scrolled', window.scrollY > 4);
   window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.sheetId) closeSheet(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && state.sheetId) { closeSheet(); return; }
+    if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
+    const t = e.target;
+    if (t.closest && t.closest('input,textarea,select,[contenteditable],[data-chart],.cbt')) return;
+    if (!(state.cfg && state.cfg.key)) return;
+    const v = current(), k = e.key;
+    if (k === '1' || k === '2' || k === '3') { const to = TABS[+k - 1]; if (to !== v) { state.slide = TABS.indexOf(to) > TABS.indexOf(v) ? 1 : -1; location.hash = '#' + to; } e.preventDefault(); return; }
+    if (k === 'r' || k === 'R') { load(true); e.preventDefault(); return; }
+    if (v === 'woche' && (k === 'ArrowLeft' || k === 'ArrowRight')) { state.weekOff += k === 'ArrowLeft' ? -1 : 1; render(); e.preventDefault(); return; }
+    if (v === 'woche' && (k === 't' || k === 'T') && state.weekOff) { state.weekOff = 0; render(); e.preventDefault(); return; }
+    const M = model(), cur = v === 'heute' && M && M.plan.find(p => p.date === today() && statusOf(p, M) !== 'done');
+    const openNow = openId(v, cur ? cur.id : null);
+    if (k === 'Escape' && openNow) {
+      const id = openNow;
+      toggleUnit(id, false);
+      const el = document.querySelector(`[data-open="${CSS.escape(id)}"]`); if (el) el.focus({ preventScroll: true });
+    }
+  });
+
+  /* Diagramme: Wert unter dem Mauszeiger bzw. per Pfeiltaste zeigen */
+  function chartTip(svg, hit) {
+    const box = svg.closest('.chart'); if (!box) return;
+    let tip = box.querySelector('.ctip');
+    svg.querySelectorAll('.hit.on').forEach(h => h.classList.remove('on'));
+    const guide = svg.querySelector('.guide'), dot = svg.querySelector('.gdot');
+    if (!hit) { if (tip) tip.hidden = true; if (guide) guide.setAttribute('opacity', 0); if (dot) dot.setAttribute('opacity', 0); return; }
+    hit.classList.add('on');
+    if (!tip) { tip = document.createElement('div'); tip.className = 'ctip'; tip.setAttribute('role', 'status'); box.appendChild(tip); }
+    const [a, b] = hit.dataset.tip.split('|');
+    tip.innerHTML = '<b></b><span></span>'; tip.querySelector('b').textContent = a; tip.querySelector('span').textContent = b;
+    tip.hidden = false;
+    const gx = +hit.dataset.gx;
+    if (guide) { guide.setAttribute('x1', gx); guide.setAttribute('x2', gx); guide.setAttribute('opacity', .5); }
+    if (dot) { if (hit.dataset.gy) { dot.setAttribute('cx', gx); dot.setAttribute('cy', hit.dataset.gy); dot.setAttribute('opacity', 1); } else dot.setAttribute('opacity', 0); }
+    const sr = svg.getBoundingClientRect(), br = box.getBoundingClientRect(), vb = svg.viewBox.baseVal;
+    const px = sr.left - br.left + gx * sr.width / vb.width;
+    const w = tip.offsetWidth;
+    tip.style.left = Math.max(8, Math.min(br.width - w - 8, px - w / 2)) + 'px';
+    tip.style.top = (sr.top - br.top - tip.offsetHeight - 6 + 10) + 'px';
+  }
+  document.addEventListener('pointermove', e => {
+    if (e.pointerType === 'touch') return;
+    const svg = e.target.closest && e.target.closest('svg[data-chart]');
+    document.querySelectorAll('svg[data-chart]').forEach(s => { if (s !== svg && s !== document.activeElement) chartTip(s, null); });
+    if (!svg) return;
+    const hit = e.target.closest('.hit');
+    if (hit) chartTip(svg, hit);
+  });
+  document.addEventListener('focusin', e => {
+    const svg = e.target.closest && e.target.closest('svg[data-chart]');
+    if (svg) { const hs = svg.querySelectorAll('.hit'); chartTip(svg, svg.querySelector('.hit.on') || hs[hs.length - 1]); }
+  });
+  document.addEventListener('focusout', e => { const svg = e.target.closest && e.target.closest('svg[data-chart]'); if (svg) chartTip(svg, null); });
+  document.addEventListener('keydown', e => {
+    const svg = e.target.closest && e.target.closest('svg[data-chart]');
+    if (!svg || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    const hs = [...svg.querySelectorAll('.hit')], cur = hs.indexOf(svg.querySelector('.hit.on'));
+    let i = e.key === 'Home' ? 0 : e.key === 'End' ? hs.length - 1 : (cur < 0 ? hs.length - 1 : cur) + (e.key === 'ArrowLeft' ? -1 : 1);
+    i = Math.max(0, Math.min(hs.length - 1, i));
+    chartTip(svg, hs[i]); e.preventDefault();
+  });
   window.addEventListener('hashchange', () => { if (state.sheetId) { state.sheetId = null; closeSheetNow(); } render(); });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { cache = { at: -1 }; load(false); render(); } });
   let lastW = window.innerWidth;

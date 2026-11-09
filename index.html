@@ -375,8 +375,6 @@ nav.tabs a[aria-current="page"]{background:transparent}
   .side-nav .grow{flex-grow:1}
   .grid2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px;align-items:start}
   .col{display:flex;flex-direction:column;gap:12px;min-width:0}
-  .restbar{bottom:28px;left:calc(50% + 120px)}
-  .toast{left:calc(50% + 120px)}
   .wgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
   .grid2{gap:24px}
   .setup{max-width:640px}
@@ -385,22 +383,95 @@ nav.tabs a[aria-current="page"]{background:transparent}
   .wgrid{grid-template-columns:repeat(4,minmax(0,1fr))}
   .grid2{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
 }
+
+/* ---------- Laptop: Maus, Tastatur, breite Fenster ---------- */
+.skip{position:fixed;z-index:50;left:12px;top:-60px;background:var(--ink);color:var(--on-ink);border-radius:12px;padding:10px 14px;font-weight:600;text-decoration:none}
+.skip:focus-visible{top:12px}
+#app:focus{outline:none}
+kbd{font-family:var(--round);font-size:11px;font-weight:700;line-height:1;min-width:20px;height:20px;padding:0 5px;display:inline-grid;place-items:center;border-radius:6px;background:var(--card);color:var(--muted);box-shadow:inset 0 -1px 0 var(--line),0 0 0 .5px var(--line)}
+.side-nav kbd,.side-keys,.side-count{display:none}
+.chart{position:relative}
+.chart svg[data-chart]{cursor:crosshair;border-radius:12px}
+.chart .hit{fill:transparent}
+.chart .hit.bar.on{fill:var(--fg);fill-opacity:.06}
+.ctip{position:absolute;z-index:5;pointer-events:none;display:flex;flex-direction:column;gap:1px;background:var(--ink);color:var(--on-ink);border-radius:10px;padding:7px 10px;font-size:12px;white-space:nowrap;box-shadow:var(--shadow)}
+.ctip b{font-size:12px}
+.ctip span{font-family:var(--round);font-variant-numeric:tabular-nums;opacity:.85}
+.wnav .today-link{display:block;width:auto;height:auto;min-height:32px;margin:2px auto 0;padding:4px 10px;border-radius:8px;background:none;font-size:13px;white-space:nowrap;color:var(--fg)}
+.ex-body{display:flex;flex-direction:column;gap:12px}
+.ex-l,.ex-r,.mob-r{display:flex;flex-direction:column;gap:12px;min-width:0}
+.ex-l:empty{display:none}
+.ubody{container-type:inline-size}
+
+
+/* Breite Einheit: Bild und Erklärung links, Sätze bzw. Timer rechts */
+@container (min-width:600px){
+  .ex-body:not(.solo){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:20px;align-items:start}
+  .ex-body .fig svg{max-height:240px}
+}
+@container (min-width:520px){
+  .mob-detail:not(.solo){display:grid;grid-template-columns:minmax(180px,.8fr) minmax(0,1.2fr);gap:16px;align-items:start;padding-top:4px}
+}
+
+@media (min-width:960px){
+  .side-nav kbd{display:inline-grid;margin-left:auto;background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
+  .side-nav a[aria-current="page"] kbd{color:var(--on-ink);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--on-ink) 35%,transparent)}
+  .side-count{display:flex;flex-direction:column;gap:2px;margin:0 2px 12px;padding:14px;border-radius:16px;background:var(--card)}
+  .side-count small{font-size:12px;font-weight:600;color:var(--muted)}
+  .side-count b{font-family:var(--round);font-size:34px;font-weight:800;line-height:1.05;letter-spacing:-.02em}
+  .side-count span{font-size:12px;color:var(--muted)}
+  .side-keys{display:block;margin:0;padding:0 12px;font-size:12px;line-height:2.1;color:var(--faint)}
+  .side-keys kbd{margin-right:3px}
+  .head-count{display:none}
+  .head h1{font-size:38px}
+  .unit{padding:22px}
+  .day .unit{padding:16px}
+  .ex-card,.check,.pcard{padding:18px 20px}
+  .mob-row{padding:10px 20px}
+  .mob-detail{padding:4px 20px 18px}
+  .exrow,.ov-row{padding-left:20px;padding-right:20px}
+  .restbar{bottom:28px;left:calc(50% + 120px)}
+  .toast{left:calc(50% + 120px);top:20px}
+}
+
+/* Nur mit Maus/Trackpad: dezente Hover-Zustände statt Druck-Animation */
+@media (hover:hover) and (pointer:fine){
+  .tile:hover,.exrow:hover,.ov-row:hover,.mob-row:hover{background-color:color-mix(in srgb,var(--card) 94%,var(--fg))}
+  .mob-ex.active .mob-row:hover{background-color:var(--fill)}
+  .row{margin:0 -8px;padding-left:8px;padding-right:8px;width:calc(100% + 16px);border-radius:12px}
+  .row:hover{background-color:var(--fill-2)}
+  .row:hover .r,.tile:hover .chev,.exrow:hover .chev{color:var(--fg)}
+  button.u-top:hover{opacity:.78}
+  .iconbtn:hover,.wnav button:hover,.sheet-top button:hover{background:var(--fill)}
+  .cbt button:hover:not([aria-checked="true"]),.stp button:hover:not([disabled]),.timer .bts button:hover:not(.go){background:var(--fill)}
+  .btn:hover:not([disabled]){filter:brightness(1.12)}
+  .btn.ghost:hover:not([disabled]){filter:none;background:var(--fill)}
+  .link:hover{text-decoration:underline;text-underline-offset:3px}
+  .tick:hover:not([disabled]),.mcheck:hover{border-color:var(--c,var(--fg));color:var(--c,var(--fg))}
+  .set.ok .tick:hover{color:#fff}
+  .side-nav a:hover:not([aria-current="page"]){background:var(--fill)}
+  .set input:hover:not([disabled]){box-shadow:inset 0 0 0 1px var(--chev)}
+  button:not([disabled]):active,.tile:active,.row:active,.exrow:active,nav a:active{transform:scale(.99)}
+  .day .uwrap{margin:6px -2px 8px}
+}
 @media (max-width:959px){.grid2,.col{display:flex;flex-direction:column;gap:12px}.wgrid{display:flex;flex-direction:column;gap:8px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
+<a class="skip" href="#app">Zum Inhalt springen</a>
 <div class="statusbg" aria-hidden="true"></div>
 <div class="navbg" aria-hidden="true"></div>
 <nav class="side-nav" aria-label="Bereiche">
   <span class="brand">TRIATHLON</span>
-  <a href="#heute" data-v="heute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>Heute</a>
-  <a href="#woche" data-v="woche"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 10h17M8.5 3v4M15.5 3v4"/></svg>Woche</a>
-  <a href="#fortschritt" data-v="fortschritt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5.5-5.5 4 4L21 7"/><path d="M15 7h6v6"/></svg>Fortschritt</a>
+  <a href="#heute" data-v="heute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>Heute<kbd>1</kbd></a>
+  <a href="#woche" data-v="woche"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 10h17M8.5 3v4M15.5 3v4"/></svg>Woche<kbd>2</kbd></a>
+  <a href="#fortschritt" data-v="fortschritt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5.5-5.5 4 4L21 7"/><path d="M15 7h6v6"/></svg>Fortschritt<kbd>3</kbd></a>
   <span class="grow"></span>
-  <span class="tiny" id="side-count" style="padding:0 12px"></span>
+  <div class="side-count" id="side-count"></div>
+  <p class="side-keys"><kbd>R</kbd> aktualisieren<br><kbd>←</kbd><kbd>→</kbd> Woche wechseln<br><kbd>Esc</kbd> Einheit zuklappen</p>
 </nav>
-<main class="app" id="app"><div class="skel"></div></main>
+<main class="app" id="app" tabindex="-1"><div class="skel"></div></main>
 <nav class="tabs" aria-label="Bereiche">
   <span class="tab-ind" aria-hidden="true"></span>
   <a href="#heute" data-v="heute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>Heute</a>
