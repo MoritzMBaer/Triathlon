@@ -61,7 +61,7 @@
     cfg: ls.get('tri:cfg', null),
     data: ls.get('tri:data', null),
     loading: false, err: null, busy: {}, msgs: {},
-    weekOff: 0, sheetId: null, active: {}, drafts: {},
+    weekOff: 0, sheetId: null, active: {}, drafts: {}, open: {}, slide: 0,
     rest: null, timer: null, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
   };
 
@@ -471,7 +471,8 @@
     if (S.k === 'kraft') { const r = strengthBody(M, p); body = r.html; prog = r.progress; }
     else if (S.k === 'mob') { const r = mobBody(M, p); body = r.html; prog = r.progress; }
     const title = cleanTitle(p);
-    let h = `<section class="unit" style="${cv(S.k)}"><div class="u-top"><div class="u-sport"><span class="dot-ico">${ICON[S.k]}</span><span>${esc(sportLabel(p))}</span></div>${pill}</div>
+    const top = `<div class="u-sport"><span class="dot-ico">${ICON[S.k]}</span><span>${esc(sportLabel(p))}</span></div><span class="u-right">${pill}${opts.fold ? CHEV_D : ''}</span>`;
+    let h = `<section class="unit" style="${cv(S.k)}">${opts.fold ? `<button class="u-top" data-fold="${esc(p.id)}" aria-expanded="true" aria-label="${esc(p.title)} zuklappen">${top}</button>` : `<div class="u-top">${top}</div>`}
       <div class="u-title${title.length > 18 ? ' long' : ''}">${esc(title)}</div>`;
     if (prog) {
       const [a, b] = prog;
@@ -486,7 +487,7 @@
       if (t && opts.showActual) h += actualHTML(p, t);
       h += '</section>';
     }
-    return h;
+    return opts.fold ? `<div class="uwrap" data-uid="${esc(p.id)}">${h}</div>` : h;
   }
   function actualHTML(p, t) {
     const c = [];
@@ -502,7 +503,12 @@
   function tile(M, p, sub) {
     const S = sp(p.sport), st = statusOf(p, M);
     const right = st === 'done' ? `<span class="done-pill">${CHECK}Erledigt</span>` : st === 'miss' ? '<span class="miss-pill">Ausgelassen</span>' : CHEV_D;
-    return `<button class="tile" style="${cv(S.k)}" data-open="${esc(p.id)}" aria-label="${esc(p.title)} öffnen"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(p.title)}</b><small>${esc(sub || sportLabel(p) + ' · ' + unitMeta(p))}</small></span>${right}</button>`;
+    return `<button class="tile" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-expanded="false" aria-label="${esc(p.title)} aufklappen"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(p.title)}</b><small>${esc(sub || sportLabel(p) + ' · ' + unitMeta(p))}</small></span>${right}</button>`;
+  }
+  /* Aufgeklappt oder als Kachel, je nachdem was gerade offen ist */
+  function openId(view, def) { return state.open[view] === undefined ? def : state.open[view]; }
+  function unitOrTile(M, p, sub, view, def) {
+    return openId(view, def) === p.id ? unitExpanded(M, p, { fold: true, showActual: statusOf(p, M) === 'done' }) : tile(M, p, sub);
   }
   function statusCard(M, units) {
     const r = readiness(M);
@@ -591,12 +597,12 @@
     const nextMain = next.find(p => sp(p.sport).fam !== 'Mobility') || next[0];
     let left = '';
     if (!units.length) left += `<section class="card" style="padding:18px"><b style="font-size:20px">Heute ist trainingsfrei</b><p style="margin:6px 0 0;color:var(--muted)">Erholung gehört zum Plan.</p></section>`;
+    const def = cur ? cur.id : null;
     units.forEach(p => {
-      if (p === cur) left += unitExpanded(M, p);
-      else left += tile(M, p, p.date === tk && statusOf(p, M) !== 'done' ? 'Danach · ' + unitMeta(p) + (sp(p.sport).k === 'mob' ? ' · ' + mobItems(p).length + ' Übungen' : '') : null);
+      left += unitOrTile(M, p, statusOf(p, M) !== 'done' ? (p === cur ? 'Jetzt · ' : 'Danach · ') + unitMeta(p) + (sp(p.sport).k === 'mob' ? ' · ' + mobItems(p).length + ' Übungen' : '') : null, 'heute', def);
     });
     let right = checkCard(M) + statusCard(M, units) + weekCard(M, monday(now), window.innerWidth >= 960);
-    if (nextMain) right += tile(M, nextMain, 'Morgen' + (M.shifts[tmr] ? ' · Dienst ' + M.shifts[tmr] : '') + (next.length > 1 ? ' · +' + (next.length - 1) + ' weitere' : ''));
+    if (nextMain) right += unitOrTile(M, nextMain, 'Morgen' + (M.shifts[tmr] ? ' · Dienst ' + M.shifts[tmr] : '') + (next.length > 1 ? ' · +' + (next.length - 1) + ' weitere' : ''), 'heute', def);
     return header('Heute', WDL[now.getDay()] + ', ' + fmtDay(now)) + banner() + `<div class="grid2"><div class="col">${left}</div><div class="col">${right}</div></div>`;
   }
   function viewWoche(M) {
@@ -608,7 +614,7 @@
       const d = addDays(mon, i), k = iso(d);
       const us = M.plan.filter(p => p.date === k);
       h += `<section class="card day${k === today() ? ' today' : ''}"><div class="day-h"><b>${WDL[d.getDay()]}, ${fmtDay(d)}</b>${M.shifts[k] ? `<span class="shift">${esc(M.shifts[k])}</span>` : ''}</div>`;
-      h += us.length ? us.map(p => rowHTML(M, p)).join('') : '<span class="free">Trainingsfrei</span>';
+      h += us.length ? us.map(p => openId('woche', null) === p.id ? unitExpanded(M, p, { fold: true, showActual: true }) : rowHTML(M, p)).join('') : '<span class="free">Trainingsfrei</span>';
       h += '</section>';
     }
     return h + '</div>';
@@ -616,7 +622,7 @@
   function rowHTML(M, p) {
     const S = sp(p.sport), st = statusOf(p, M);
     const right = st === 'done' ? `<span class="ok" style="background:var(--${S.k})">${CHECK}</span>` : st === 'miss' ? '<span class="r">Ausgelassen</span>' : `<span class="r">${esc(unitMeta(p))}</span>`;
-    return `<button class="row" style="${cv(S.k)}" data-open="${esc(p.id)}"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(p.title)}</b><small>${esc(p.sport)}</small></span>${right}</button>`;
+    return `<button class="row" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-expanded="false"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(p.title)}</b><small>${esc(p.sport)}</small></span>${right}</button>`;
   }
   function viewFortschritt(M) {
     const F = M.fitness, last = F[F.length - 1] || {};
@@ -731,13 +737,18 @@
     if (v !== lastView) {
       if (lastView) scrollPos[lastView] = window.scrollY;
       app.innerHTML = html; lastRender = html;
-      if (!reduceMotion()) {
+      app.style.transition = ''; app.style.transform = ''; app.style.opacity = '';
+      if (!reduceMotion() && state.slide) {
+        const cls = state.slide > 0 ? 'slide-l' : 'slide-r';
+        app.classList.remove('slide-l', 'slide-r', 'view-in'); void app.offsetWidth; app.classList.add(cls);
+        setTimeout(() => app.classList.remove(cls), 450);
+      } else if (!reduceMotion()) {
         app.classList.remove('view-in'); void app.offsetWidth; app.classList.add('view-in');
         let i = 0; app.querySelectorAll(':scope > *, :scope .col > *').forEach(c => { if (i < 10) c.style.setProperty('--i', i++); });
         setTimeout(() => app.classList.remove('view-in'), 900);
       }
       window.scrollTo(0, scrollPos[v] || 0);
-      lastView = v;
+      lastView = v; state.slide = 0;
       U.animate(app);
     } else if (html !== lastRender) {
       morph(app, html); lastRender = html;
@@ -795,6 +806,77 @@
       y0 = null;
     });
   }
+  /* Aufklappen an Ort und Stelle: Höhe gleitet, der Rest rutscht mit */
+  function heightOf(id) { const el = id && document.querySelector(`[data-uid="${CSS.escape(id)}"]`); return el ? el.offsetHeight : 0; }
+  function glide(id, h0) {
+    const el = id && document.querySelector(`[data-uid="${CSS.escape(id)}"]`);
+    if (!el || !h0 || reduceMotion() || !el.animate) return;
+    const h1 = el.offsetHeight; if (Math.abs(h1 - h0) < 2) return;
+    el.animate([{ height: h0 + 'px', overflow: 'hidden' }, { height: h1 + 'px', overflow: 'hidden' }], { duration: 340, easing: 'cubic-bezier(.22,1,.36,1)' });
+    if (h1 > h0) el.animate([{ opacity: .4 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
+  }
+  function toggleUnit(id, open) {
+    const v = current(), M = model();
+    let prev = null;
+    if (v === 'heute' && M) { const cur = M.plan.find(p => p.date === today() && statusOf(p, M) !== 'done'); prev = openId('heute', cur ? cur.id : null); }
+    else prev = openId(v, null);
+    const h0 = heightOf(id), hp = prev && prev !== id ? heightOf(prev) : 0;
+    state.open[v] = open ? id : null;
+    render();
+    glide(id, h0); if (hp) glide(prev, hp);
+    if (open) {
+      const el = document.querySelector(`[data-uid="${CSS.escape(id)}"]`);
+      if (el) {
+        const r = el.getBoundingClientRect();
+        if (r.top < 8 || r.top > window.innerHeight * 0.55) window.scrollTo({ top: window.scrollY + r.top - 12, behavior: reduceMotion() ? 'auto' : 'smooth' });
+      }
+    }
+  }
+
+  /* Wischen zwischen Heute, Woche und Fortschritt */
+  const TABS = ['heute', 'woche', 'fortschritt'];
+  (function swipeTabs() {
+    const app = $('#app');
+    let x0 = 0, y0 = 0, t0 = 0, dx = 0, mode = null;
+    const blocked = t => t.closest('input,textarea,select,.cbt,[data-step],.sets,.timer,.nosw') || !$('#sheet').hidden;
+    app.addEventListener('touchstart', e => {
+      mode = null;
+      if (e.touches.length !== 1 || blocked(e.target) || !TABS.includes(current()) || !(state.cfg && state.cfg.key)) { mode = 'off'; return; }
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); dx = 0;
+      if (x0 < 24 || x0 > window.innerWidth - 24) mode = 'off'; /* Bildschirmrand gehört dem System */
+    }, { passive: true });
+    app.addEventListener('touchmove', e => {
+      if (mode === 'off') return;
+      const mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
+      if (!mode) {
+        if (Math.abs(mx) < 10 && Math.abs(my) < 10) return;
+        mode = Math.abs(mx) > Math.abs(my) * 1.4 ? 'x' : 'off';
+        if (mode === 'x') app.style.transition = 'none';
+      }
+      if (mode !== 'x') return;
+      e.preventDefault();
+      const i = TABS.indexOf(current());
+      const edge = (mx > 0 && i === 0) || (mx < 0 && i === TABS.length - 1);
+      dx = edge ? mx * 0.15 : mx * 0.45;
+      app.style.transform = `translateX(${dx}px)`;
+      app.style.opacity = String(1 - Math.min(0.35, Math.abs(dx) / 600));
+    }, { passive: false });
+    const end = () => {
+      if (mode !== 'x') { mode = null; return; }
+      mode = null;
+      const i = TABS.indexOf(current()), v = Math.abs(dx) / Math.max(1, Date.now() - t0);
+      const dir = dx < 0 ? 1 : -1, j = i + dir;
+      if ((Math.abs(dx) > 50 || (v > 0.35 && Math.abs(dx) > 18)) && j >= 0 && j < TABS.length) {
+        state.slide = dir; location.hash = '#' + TABS[j];
+      } else {
+        app.style.transition = 'transform var(--t-med) var(--ease-out), opacity var(--t-med) var(--ease-out)';
+        app.style.transform = ''; app.style.opacity = '';
+      }
+    };
+    app.addEventListener('touchend', end);
+    app.addEventListener('touchcancel', end);
+  })();
+
   let toastTimer = 0;
   function toast(msg) {
     document.querySelectorAll('.toast').forEach(t => t.remove());
@@ -812,6 +894,7 @@
     try {
       await api('erledigt', { id: p.id, wert: val });
       p.done = val; patchPlan(p.id, val);
+      if (val && state.open.heute === p.id) delete state.open.heute;
       if (val) toast(p.title + ' erledigt');
     } catch (e) { state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e); }
     state.busy[p.id] = false; render();
@@ -836,6 +919,7 @@
       await api('kraft', { id: p.id, zeilen });
       zeilen.forEach(z => state.data.kraftlog.push([z.datum, p.id, z.einheit, z.uebung, String(z.satz), String(z.wdh), String(z.sek), String(z.kg), z.ziel, z.gespeichert]));
       patchPlan(p.id, today()); ls.del('tri:draft:' + p.id); delete state.drafts[p.id]; state.rest = null; delete state.active[p.id];
+      if (state.open.heute === p.id) delete state.open.heute;
       toast('Training gespeichert');
     } catch (e) { state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e) + '. Deine Sätze bleiben erhalten.'; }
     state.busy[p.id] = false; render();
@@ -875,7 +959,8 @@
     let el;
     if (q('[data-reload]')) { load(true); return; }
     if ((el = q('[data-week]'))) { state.weekOff += +el.dataset.week; render(); return; }
-    if ((el = q('[data-open]'))) { state.sheetId = el.dataset.open; render(); return; }
+    if ((el = q('[data-open]'))) { toggleUnit(el.dataset.open, true); return; }
+    if ((el = q('[data-fold]'))) { toggleUnit(el.dataset.fold, false); return; }
     if (q('[data-close]') && (e.target.matches('[data-close]') || e.target.closest('button[data-close]'))) { closeSheet(); return; }
     if (q('[data-skiprest]')) { state.rest = null; tickRest(); return; }
     if (!M) return;
