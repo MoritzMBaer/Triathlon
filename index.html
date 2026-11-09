@@ -159,7 +159,7 @@ input{font:inherit}
 .week .tx{display:flex;flex-direction:column;gap:4px;min-width:0;flex-grow:1}
 .week .tx small{font-size:12px;font-weight:600;color:var(--muted)}
 .week .tx b{font-family:var(--round);font-size:20px;font-weight:700;line-height:1.15}
-.legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;font-size:13px;color:var(--muted);padding-top:2px}
+.legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));max-width:640px;gap:4px 12px;font-size:13px;color:var(--muted);padding-top:2px}
 .legend span{display:flex;align-items:center;gap:5px;white-space:nowrap}
 .legend i{width:8px;height:8px;border-radius:50%;flex:none}
 .daystrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;padding:0 16px 14px}
@@ -365,7 +365,7 @@ nav.tabs a[aria-current="page"]{background:transparent}
 .ex-card{scroll-margin-top:calc(16px + env(safe-area-inset-top,0px))}
 
 @media (min-width:960px){
-  .app{max-width:1200px;padding-top:32px;padding-left:280px;padding-right:40px;padding-bottom:40px}
+  .app{max-width:none;margin:0 0 0 240px;padding:32px max(40px,calc((100vw - 240px - 1680px) / 2)) 40px;gap:16px}
   nav.tabs,.navbg{display:none}
   .side-nav{display:flex;position:fixed;top:0;bottom:0;left:0;width:240px;flex-direction:column;gap:4px;padding:calc(28px + env(safe-area-inset-top,0px)) 14px 24px;background:var(--fill-2);border-right:.5px solid var(--line)}
   .side-nav .brand{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.04em;padding:0 12px 14px}
@@ -375,8 +375,15 @@ nav.tabs a[aria-current="page"]{background:transparent}
   .side-nav .grow{flex-grow:1}
   .grid2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px;align-items:start}
   .col{display:flex;flex-direction:column;gap:12px;min-width:0}
-  .restbar{bottom:28px}
-  .wgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .restbar{bottom:28px;left:calc(50% + 120px)}
+  .toast{left:calc(50% + 120px)}
+  .wgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+  .grid2{gap:24px}
+  .setup{max-width:640px}
+}
+@media (min-width:1360px){
+  .wgrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .grid2{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
 }
 @media (max-width:959px){.grid2,.col{display:flex;flex-direction:column;gap:12px}.wgrid{display:flex;flex-direction:column;gap:8px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
