@@ -640,7 +640,7 @@
     if (!units.length) left += `<section class="card" style="padding:18px"><b style="font-size:20px">Heute ist trainingsfrei</b><p style="margin:6px 0 0;color:var(--muted)">Erholung gehört zum Plan.</p></section>`;
     const def = cur ? cur.id : null;
     units.forEach(p => {
-      left += unitOrTile(M, p, statusOf(p, M) !== 'done' ? (p === cur ? 'Jetzt · ' : 'Danach · ') + unitMeta(p) + (sp(p.sport).k === 'mob' ? ' · ' + mobItems(p).length + ' Übungen' : '') : null, 'heute', def);
+      left += unitOrTile(M, p, statusOf(p, M) !== 'done' ? (p === cur ? 'Heute · ' : 'Danach · ') + unitMeta(p) + (sp(p.sport).k === 'mob' ? ' · ' + mobItems(p).length + ' Übungen' : '') : null, 'heute', def);
     });
     let right = checkCard(M) + statusCard(M, units) + weekCard(M, monday(now), window.innerWidth >= 960);
     if (nextMain) right += unitOrTile(M, nextMain, 'Morgen' + (M.shifts[tmr] ? ' · Dienst ' + M.shifts[tmr] : '') + (next.length > 1 ? ' · +' + (next.length - 1) + ' weitere' : ''), 'heute', def);
