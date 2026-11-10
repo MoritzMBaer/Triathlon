@@ -602,7 +602,7 @@
     if (ck && !state.checkEdit) return `<div class="feel${inner ? ' in' : ''}"><span class="ft"><span class="fl">Check</span> Körper <b>${ck.legs}</b> · Energie <b>${ck.energy}</b> · Motivation <b>${ck.mot}</b></span><button class="link" data-checkedit aria-label="Kurz-Check ändern">Ändern</button></div>`;
     const rows = [['legs', 'Körper', 'müde', 'frisch'], ['energy', 'Energie', 'leer', 'voll'], ['mot', 'Motivation', 'keine', 'hoch']];
     const cur = k => d[k] != null ? d[k] : ck ? ck[k] : null;
-    return `<${inner ? 'div' : 'section'} class="${inner ? 'check in' : 'card check'}"><span class="eyebrow">Kurz-Check: wie fühlst du dich?</span>${rows.map(([k, lab, lo, hi]) => `<div class="crow"><span class="lab">${lab}<small>${lo} – ${hi}</small></span><div class="cbt" role="radiogroup" aria-label="${lab}">${[1, 2, 3, 4, 5].map(n => `<button role="radio" aria-checked="${cur(k) === n}" data-check="${k}|${n}">${n}</button>`).join('')}</div></div>`).join('')}
+    return `<${inner ? 'div' : 'section'} class="${inner ? 'check in' : 'card check'}"><span class="ck-h"><span class="eyebrow">Kurz-Check: wie fühlst du dich?</span>${ck && state.checkEdit ? '<button class="link" data-checkdone>Fertig</button>' : ''}</span>${rows.map(([k, lab, lo, hi]) => `<div class="crow"><span class="lab">${lab}<small>${lo} – ${hi}</small></span><div class="cbt" role="radiogroup" aria-label="${lab}">${[1, 2, 3, 4, 5].map(n => `<button role="radio" aria-checked="${cur(k) === n}" data-check="${k}|${n}">${n}</button>`).join('')}</div></div>`).join('')}
       ${state.checkBusy ? '<span class="tiny">Speichere …</span>' : state.checkMsg ? `<span class="msg">${esc(state.checkMsg)}</span>` : ''}</${inner ? 'div' : 'section'}>`;
   }
   function weekCounts(M, mon) {
@@ -1128,6 +1128,11 @@
     const M = model();
     const q = sel => e.target.closest(sel);
     let el;
+    /* Kurz-Check ändern: Tipp außerhalb oder auf „Fertig“ schließt ohne Änderung */
+    if (state.checkEdit && (q('[data-checkdone]') || !q('.check'))) {
+      state.checkEdit = false; state.checkDraft = null; render();
+      if (q('[data-checkdone]') || !q('button,a,input,[data-jump]')) return;
+    }
     if (q('a.skip')) { e.preventDefault(); const m = $('#app'); m.focus({ preventScroll: true }); const f = m.querySelector('button,[href],input,[tabindex="0"]'); if (f) f.focus(); return; }
     if (q('[data-reload]')) { load(true); return; }
     if ((el = q('[data-jump]'))) {
