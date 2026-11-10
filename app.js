@@ -858,7 +858,7 @@
   function jumpTo(k) {
     const t = document.getElementById('tag-' + k);
     if (!t) return false;
-    t.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
+    t.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: t.offsetHeight > window.innerHeight * .7 ? 'start' : 'center' });
     t.classList.remove('flash'); void t.offsetWidth; t.classList.add('flash');
     return true;
   }
