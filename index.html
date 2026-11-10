@@ -195,8 +195,9 @@ input{font:inherit}
 .legend i{width:8px;height:8px;border-radius:50%;flex:none}
 .daystrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;padding:0 16px 14px}
 .daystrip .dsd{display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;border-radius:12px;border:0;background:none;min-height:44px}
-.daystrip .dsd.today{background:var(--ink)}
-.daystrip .dsd.today small{color:var(--on-ink)!important}
+.daystrip .dn{font-family:var(--round);font-size:15px;font-weight:600;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;margin-top:-2px}
+.daystrip .dsd.today .dn{background:var(--ok);color:var(--on-ink)}
+.daystrip .dsd.today small{color:var(--ok)!important}
 .daystrip .dsd.we:not(.today){background:var(--fill-2)}
 button.dsd:active{background:var(--fill)}
 .daystrip small{font-size:11px;color:var(--muted)}
@@ -209,13 +210,14 @@ button.dsd:active{background:var(--fill)}
 
 /* Woche-Ansicht */
 .wnav{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.wnav button{width:44px;height:44px;border-radius:50%;border:0;background:var(--card);display:grid;place-items:center}
+.wnav button{width:40px;height:40px;border-radius:50%;border:0;background:var(--card);display:grid;place-items:center}
 .wnav button svg{width:18px;height:18px}
 .wnav div{text-align:center}
-.wnav b{display:block;font-size:20px}
+.wnav b{display:block;font-size:17px;font-family:var(--round)}
 .wnav small{font-size:13px;color:var(--muted)}
 .day{padding:12px 16px;display:flex;flex-direction:column;gap:2px}
-.day.today{box-shadow:inset 0 0 0 1.5px var(--fg)}
+.day.today{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--ok) 55%,transparent)}
+.tday{font-style:normal;font-size:12px;font-weight:700;color:var(--on-ink);background:var(--ok);border-radius:99px;padding:2px 8px;margin-left:8px;vertical-align:2px}
 .day-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;padding-bottom:4px}
 .day-h b{font-size:15px}
 .shift{font-size:12px;font-weight:600;color:var(--muted);background:var(--fill-2);border-radius:6px;padding:2px 8px}

@@ -632,14 +632,14 @@
   }
   function weekCard(M, mon, strip, noRing, jump) {
     const w = weekCounts(M, mon);
-    let h = `<section class="card"><div class="week">${noRing ? '' : ringsSVG(w.c)}<div class="tx"><small>${iso(mon) === today() ? 'Nächste 7 Tage' : iso(mon) === iso(monday(new Date())) ? 'Diese Woche' : fmtShort(mon) + ' – ' + fmtShort(addDays(mon, 6))}</small><b>${w.doneN} von ${w.n} Einheiten</b><span style="font-size:13px;color:var(--fg-2)">${fmtH(w.doneMin)} von ${fmtH(w.planMin)}</span>
-      <div class="legend">${RINGS.map(([f, k]) => `<span><i style="background:var(--${k})"></i>${f} ${w.c[f][1] ? w.c[f][0] + '/' + w.c[f][1] : '–'}</span>`).join('')}</div></div></div>`;
+    let h = `<section class="card"><div class="week">${noRing ? '' : ringsSVG(w.c)}<div class="tx"><small>${iso(mon) === today() ? 'Nächste 7 Tage' : iso(mon) === iso(monday(new Date())) ? 'Diese Woche' : fmtShort(mon) + ' – ' + fmtShort(addDays(mon, 6))}</small>${iso(mon) === today() && !w.doneN ? `<b>${w.n === 1 ? '1 Einheit' : w.n + ' Einheiten'} · ${fmtH(w.planMin)}</b>` : `<b>${w.doneN} von ${w.n} Einheiten</b><span style="font-size:13px;color:var(--fg-2)">${fmtH(w.doneMin)} von ${fmtH(w.planMin)}</span>`}
+      <div class="legend">${RINGS.map(([f, k]) => `<span><i style="background:var(--${k})"></i>${f} ${w.c[f][1] ? (iso(mon) === today() && !w.doneN ? w.c[f][1] + '×' : w.c[f][0] + '/' + w.c[f][1]) : '–'}</span>`).join('')}</div></div></div>`;
     if (strip) {
       h += '<div class="daystrip">' + [0, 1, 2, 3, 4, 5, 6].map(i => {
         const d = addDays(mon, i), k = iso(d);
         const us = M.plan.filter(p => p.date === k && sp(p.sport).ring);
         const tag = jump ? 'button' : 'div', at = jump ? ` data-jump="${k}" aria-label="Zu ${WDL[d.getDay()]}, ${fmtDay(d)} springen"` : '';
-        return `<${tag} class="dsd${k === today() ? ' today' : ''}${d.getDay() % 6 === 0 ? ' we' : ''}"${at}><small>${WDS[d.getDay()]}</small><span class="dots">${us.map(p => `<i class="${statusOf(p, M) === 'done' ? '' : 'o'}" style="background:var(--${sp(p.sport).k});--cc:var(--${sp(p.sport).k})"></i>`).join('')}</span></${tag}>`;
+        return `<${tag} class="dsd${k === today() ? ' today' : ''}${d.getDay() % 6 === 0 ? ' we' : ''}"${at}><small>${WDS[d.getDay()]}</small><span class="dn">${d.getDate()}</span><span class="dots">${us.map(p => `<i class="${statusOf(p, M) === 'done' ? '' : 'o'}" style="background:var(--${sp(p.sport).k});--cc:var(--${sp(p.sport).k})"></i>`).join('')}</span></${tag}>`;
       }).join('') + '</div>';
     }
     return h + '</section>';
@@ -754,13 +754,13 @@
     const mon = addDays(new Date(new Date().toDateString()), state.weekOff * 7), sun = addDays(mon, 6);
     const n = Math.abs(state.weekOff), when = state.weekOff === 0 ? 'Ab heute' : (state.weekOff > 0 ? 'In ' : 'Vor ') + (n === 1 ? 'einer Woche' : n + ' Wochen');
     const chev = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="${d}"/></svg>`;
-    let h = header('Woche', fmtShort(mon) + ' – ' + fmtShort(sun)) + banner();
-    h += `<div class="wnav"><button data-week="-1" aria-label="7 Tage zurück" title="7 Tage zurück (←)">${chev('m15 18-6-6 6-6')}</button><div><b>${when}</b><small>${WDS[mon.getDay()]} ${fmtShort(mon)} – ${WDS[sun.getDay()]} ${fmtShort(sun)}</small>${state.weekOff ? '<button class="link today-link" data-week-now title="Zu heute (T)">Zu heute</button>' : ''}</div><button data-week="1" aria-label="7 Tage weiter" title="7 Tage weiter (→)">${chev('m9 18 6-6-6-6')}</button></div>`;
-    h += weekCard(M, mon, !wide(), false, true) + '<div class="wgrid">';
+    let h = header('Woche', when) + banner();
+    h += `<div class="wnav"><button data-week="-1" aria-label="7 Tage zurück" title="7 Tage zurück (←)">${chev('m15 18-6-6 6-6')}</button><div><b>${WDS[mon.getDay()]} ${fmtShort(mon)} – ${WDS[sun.getDay()]} ${fmtShort(sun)}</b>${state.weekOff ? '<button class="link today-link" data-week-now title="Zu heute (T)">Zu heute</button>' : ''}</div><button data-week="1" aria-label="7 Tage weiter" title="7 Tage weiter (→)">${chev('m9 18 6-6-6-6')}</button></div>`;
+    h += weekCard(M, mon, !wide(), true, true) + '<div class="wgrid">';
     for (let i = 0; i < 7; i++) {
       const d = addDays(mon, i), k = iso(d);
       const us = M.plan.filter(p => p.date === k);
-      h += `<section class="card day${k === today() ? ' today' : ''}${d.getDay() % 6 === 0 ? ' we' : ''}" id="tag-${k}"><div class="day-h"><b><span class="dl">${WDL[d.getDay()]}, ${fmtDay(d)}</span><span class="ds">${WDL[d.getDay()]} <span>${fmtShort(d)}</span></span></b>${M.shifts[k] ? `<span class="shift">${esc(M.shifts[k])}</span>` : '<span class="shift none">Kein Dienst</span>'}</div>`;
+      h += `<section class="card day${k === today() ? ' today' : ''}${d.getDay() % 6 === 0 ? ' we' : ''}" id="tag-${k}"><div class="day-h"><b><span class="dl">${WDL[d.getDay()]}, ${fmtDay(d)}${k === today() ? '<em class="tday">Heute</em>' : ''}</span><span class="ds">${WDL[d.getDay()]} <span>${fmtShort(d)}</span></span></b>${M.shifts[k] ? `<span class="shift">${esc(M.shifts[k])}</span>` : '<span class="shift none">Kein Dienst</span>'}</div>`;
       h += us.length ? us.map(p => !wide() && isOpen('woche', p.id, null) ? unitExpanded(M, p, { fold: true, showActual: true }) : rowHTML(M, p)).join('') : '<span class="free">Trainingsfrei</span>';
       h += '</section>';
     }
