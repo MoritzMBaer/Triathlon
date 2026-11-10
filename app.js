@@ -590,9 +590,8 @@
     if (L.score != null) k.push(`Score <b>${Math.round(L.score)}</b>`);
     if (L.hrv != null) k.push(`HRV <b>${Math.round(L.hrv)}</b>`);
     if (L.rhr != null) k.push(`Ruhepuls <b>${L.rhr}</b>`);
-    k.push(`Form <b>${L.tsb == null ? '–' : (L.tsb > 0 ? '+' : '') + de1(L.tsb)}</b>`);
     const nt = [r.stale ? 'Werte von gestern, die heutigen fehlen noch' : '', ...r.notes].filter(Boolean);
-    return `<section class="card stcard" aria-label="Tagesform"><div class="st-h"><span class="st-dot ${r.lvl}" aria-hidden="true"></span><b>${head}</b></div>
+    return `<section class="card stcard" aria-label="Tagesform"><div class="st-h"><span class="st-dot ${r.lvl}" aria-hidden="true"></span><b>${head}</b><span class="st-form">Form <b>${L.tsb == null ? '–' : (L.tsb > 0 ? '+' : '') + de1(L.tsb)}</b></span></div>
       ${r.flags.length ? `<div class="st-fl">${esc(r.flags.join(' · '))}</div>` : ''}
       <div class="st-k">${k.map(x => `<span>${x}</span>`).join('')}</div>
       ${adv ? `<div class="advice ${r.lvl}">${esc(adv)}</div>` : ''}
@@ -600,8 +599,8 @@
   }
   function checkCard(M, inner) {
     const ck = M.check.find(c => c.date === today()), d = state.checkDraft || {};
-    if (ck && !state.checkEdit) return `<div class="feel${inner ? ' in' : ''}"><span class="ft"><span class="fl">Check</span> Beine <b>${ck.legs}</b> · Energie <b>${ck.energy}</b> · Motivation <b>${ck.mot}</b></span><button class="link" data-checkedit aria-label="Kurz-Check ändern">Ändern</button></div>`;
-    const rows = [['legs', 'Beine', 'schwer', 'frisch'], ['energy', 'Energie', 'leer', 'voll'], ['mot', 'Motivation', 'keine', 'hoch']];
+    if (ck && !state.checkEdit) return `<div class="feel${inner ? ' in' : ''}"><span class="ft"><span class="fl">Check</span> Körper <b>${ck.legs}</b> · Energie <b>${ck.energy}</b> · Motivation <b>${ck.mot}</b></span><button class="link" data-checkedit aria-label="Kurz-Check ändern">Ändern</button></div>`;
+    const rows = [['legs', 'Körper', 'müde', 'frisch'], ['energy', 'Energie', 'leer', 'voll'], ['mot', 'Motivation', 'keine', 'hoch']];
     const cur = k => d[k] != null ? d[k] : ck ? ck[k] : null;
     return `<${inner ? 'div' : 'section'} class="${inner ? 'check in' : 'card check'}"><span class="eyebrow">Kurz-Check: wie fühlst du dich?</span>${rows.map(([k, lab, lo, hi]) => `<div class="crow"><span class="lab">${lab}<small>${lo} – ${hi}</small></span><div class="cbt" role="radiogroup" aria-label="${lab}">${[1, 2, 3, 4, 5].map(n => `<button role="radio" aria-checked="${cur(k) === n}" data-check="${k}|${n}">${n}</button>`).join('')}</div></div>`).join('')}
       ${state.checkBusy ? '<span class="tiny">Speichere …</span>' : state.checkMsg ? `<span class="msg">${esc(state.checkMsg)}</span>` : ''}</${inner ? 'div' : 'section'}>`;
@@ -780,8 +779,8 @@
     h += '</div><div class="pcol">';
     h += `<section class="card pcard chart" style="order:2"><span class="eyebrow">Fitness und Ermüdung · 12 Wochen</span>${fitChart(F.slice(-84))}<div class="clegend"><span><i style="background:var(--bike)"></i>Fitness</span><span><i style="background:var(--faint)"></i>Ermüdung</span></div></section>`;
     h += `<section class="card pcard chart" style="order:3"><span class="eyebrow">Stunden pro Woche</span>${weekChart(M)}<div class="clegend"><span><i style="background:var(--fill)"></i>Geplant</span><span><i style="background:var(--fg)"></i>Absolviert</span></div></section>`;
-    const from = iso(addDays(new Date(), -28)), rec = M.trainings.filter(t => t.date >= from);
-    h = h.replace('<!--A-->', `<section class="card pcard" style="order:4"><span class="eyebrow">Letzte 4 Wochen</span>${[['Schwimmen', 'swim'], ['Rad', 'bike'], ['Laufen', 'run']].map(([f, k]) => {
+    const from = M.plan.length ? M.plan.reduce((a, p) => p.date < a ? p.date : a, M.plan[0].date) : iso(addDays(new Date(), -28)), rec = M.trainings.filter(t => t.date >= from && t.date <= today());
+    h = h.replace('<!--A-->', `<section class="card pcard" style="order:4"><span class="eyebrow">Seit Planstart · ${fmtShort(parseISO(from))}</span>${[['Schwimmen', 'swim'], ['Rad', 'bike'], ['Laufen', 'run']].map(([f, k]) => {
       const xs = rec.filter(t => sp(t.sport).fam === f), km = xs.reduce((a, t) => a + (t.km || 0), 0), min = xs.reduce((a, t) => a + (t.dur || 0), 0);
       return `<div class="sprow" style="${cv(k)}"><span class="ic">${ICON[k]}</span><span><b>${f}</b><small>${xs.length === 1 ? '1 Einheit' : xs.length + ' Einheiten'}</small></span><span class="spv"><b class="num">${f === 'Schwimmen' ? Math.round(km * 1000).toLocaleString('de-DE') + ' m' : Math.round(km).toLocaleString('de-DE') + ' km'}</b><small class="num">${xs.length ? fmtH(min) : '–'}</small></span></div>`;
     }).join('')}</section>`);
