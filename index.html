@@ -23,7 +23,7 @@
   --swim:#4F86B8; --swim-t:#E1ECF6; --swim-d:#2F5F8A; --swim-l:#B8D0E6; --swim-tr:#DCE7F2; --swim-hl:#2F5F8A; --swim-sep:#C3D6EA; --swim-mu:#4A5F73;
   --kraft:#8C7BC2; --kraft-t:#ECE8F6; --kraft-d:#5E4E99; --kraft-l:#CFC6EA; --kraft-tr:#ECE8F6; --kraft-hl:#5E4E99; --kraft-sep:#D6CFEE; --kraft-mu:#5B5470;
   --mob:#4BA3A3; --mob-t:#E0F0F0; --mob-d:#2F7474; --mob-l:#B5DADA; --mob-tr:#E0F0F0; --mob-hl:#2F7474; --mob-sep:#C2DEDE; --mob-mu:#4A6262;
-  --warn:#B7791F; --warn-t:#FBEFD9; --bad:#C0392B; --bad-t:#F9E1DE;
+  --ok:#248A3D; --warn:#B7791F; --warn-t:#FBEFD9; --bad:#C0392B; --bad-t:#F9E1DE;
   --nav-bg:rgba(255,255,255,.88); --shadow:0 8px 24px rgba(0,0,0,.08);
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;
   --round:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
@@ -37,7 +37,7 @@
   --swim:#6A9FCF; --swim-t:#182838; --swim-d:#9CC4E8; --swim-l:#2C4B68; --swim-tr:#1C2B3A; --swim-hl:#B5D4F0; --swim-sep:#33506B; --swim-mu:#B3C6D8;
   --kraft:#A797DB; --kraft-t:#241F36; --kraft-d:#C9BDF2; --kraft-l:#463B6E; --kraft-tr:#2A2440; --kraft-hl:#D6CCF7; --kraft-sep:#4A4170; --kraft-mu:#C6BEDF;
   --mob:#5EBDBD; --mob-t:#152E2E; --mob-d:#8FDCD9; --mob-l:#2A5555; --mob-tr:#163434; --mob-hl:#A8E8E5; --mob-sep:#2E5656; --mob-mu:#B1D6D6;
-  --warn:#F0B44C; --warn-t:#3A2C12; --bad:#F2766A; --bad-t:#3D1C19;
+  --ok:#30D158; --warn:#F0B44C; --warn-t:#3A2C12; --bad:#F2766A; --bad-t:#3D1C19;
   --nav-bg:rgba(44,44,46,.9); --shadow:0 8px 24px rgba(0,0,0,.5);
   color-scheme:dark;
 }}
@@ -128,6 +128,8 @@ input{font:inherit}
 .status-h{display:flex;align-items:center;gap:12px;padding:12px 16px 10px}
 .st-ic{width:28px;height:28px;border-radius:50%;background:var(--fill);color:var(--fg);display:grid;place-items:center;flex:none}
 .st-ic svg{width:15px;height:15px}
+/* Ampel grün: klares iOS-Grün, damit es nicht wie das Lauf-Grün wirkt */
+.st-ic.g{background:color-mix(in srgb,var(--ok) 18%,var(--card));color:var(--ok)}
 .st-ic.y{background:var(--warn-t);color:var(--warn)}
 .st-ic.r{background:var(--bad-t);color:var(--bad)}
 .status-h .tx{flex-grow:1;display:flex;flex-direction:column;min-width:0}
@@ -141,6 +143,21 @@ input{font:inherit}
 .advice{margin:0 16px 14px;padding:10px 12px;border-radius:12px;font-size:14px;background:var(--warn-t)}
 .advice.r{background:var(--bad-t)}
 .hint{padding:0 16px 12px;font-size:12px;color:var(--faint)}
+/* Status und Kurz-Check in einer kompakten Kachel */
+.stcard .status-h{padding:10px 16px 6px}
+.stcard .kpi4{padding:0 8px 10px}
+.stcard .kpi4 b{font-size:17px}
+.stcard .advice{margin:0 12px 10px;padding:8px 10px;font-size:13px}
+.stcard .hint{padding:0 16px 10px;font-size:11.5px}
+.check.in{border-top:.5px solid var(--line);margin:0 16px;padding:10px 0 12px;gap:6px}
+.check.in .eyebrow{font-size:11.5px}
+.check.in .cbt button{height:40px;font-size:16px}
+.crow .lab small{display:block;font-size:11px;font-weight:400;color:var(--faint)}
+.feel.in{border-top:.5px solid var(--line);margin:0 16px;padding:4px 0;flex-wrap:nowrap}
+.feel .ft{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feel .ft b{color:var(--fg);font-weight:600;font-family:var(--round)}
+.feel .fl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-right:4px}
+.feel .link{flex:none;font-size:13px;min-height:32px}
 
 /* Kurz-Check */
 .check{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
@@ -150,7 +167,6 @@ input{font:inherit}
 .cbt{display:flex;gap:6px}
 .cbt button{flex:1;min-width:0;height:44px;border-radius:12px;border:0;background:var(--fill-2);font-family:var(--round);font-size:17px;font-weight:700}
 .cbt button[aria-checked="true"]{background:var(--ink);color:var(--on-ink)}
-.cscale{grid-column:2;display:flex;justify-content:space-between;font-size:11px;color:var(--faint)}
 .feel{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--muted);padding:0 6px}
 
 /* Woche */
@@ -424,6 +440,7 @@ nav.tabs a[aria-current="page"]{background:transparent}
 .spbar{grid-column:2/4;position:relative;display:block;height:6px;border-radius:99px;background:var(--fill-2);margin-top:2px}
 .spbar i{position:absolute;inset:0 auto 0 0;border-radius:99px;background:var(--c)}
 .spbar em{position:absolute;top:9px;left:0;font-style:normal;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.spbar em b{color:var(--fg);font-weight:600}
 .sprow:has(.spbar){padding-bottom:18px}
 .kempty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;flex:1;font-size:14px;line-height:1.45;color:var(--muted);padding:12px 8px}
 .kempty .ic{width:56px;height:56px;border-radius:50%;background:var(--c-t);color:var(--c-d);display:grid;place-items:center}
@@ -434,6 +451,16 @@ nav.tabs a[aria-current="page"]{background:transparent}
 .mhead b{font-size:20px;font-weight:700}
 .mhead small{font-size:14px;color:var(--muted)}
 .mhead .shift{margin-left:auto;align-self:center}
+/* Mac: morgen als großer Block unter den heutigen Einheiten */
+.mwrap{display:flex;flex-direction:column;gap:12px}
+.mhead.wide{padding:14px 4px 0}
+.mhead.wide b{font-size:24px}
+.mu{display:flex;flex-direction:column;gap:10px;width:100%;text-align:left;border:0;background:var(--c-t);border-radius:28px;padding:18px 20px;color:var(--fg)}
+.mu-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mu-t{font-size:30px;font-weight:800;letter-spacing:-.025em;line-height:1.05;text-wrap:balance}
+.mu-n{font-size:15px;color:var(--c-mu)}
+.mu.sm{padding:12px 20px}
+.mu:hover{filter:brightness(.985)}
 .nd-day{display:flex;flex-direction:column;gap:6px;background:var(--fill-2);border-radius:16px;padding:12px}
 .nd-h{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;padding-bottom:2px}
 .nd-h b{font-size:15px}

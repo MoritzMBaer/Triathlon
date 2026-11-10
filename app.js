@@ -581,24 +581,24 @@
   }
   function statusCard(M, units) {
     const r = readiness(M);
-    if (!r) return '';
+    if (!r) return checkCard(M);
     const L = r.last;
     const head = r.lvl === 'g' ? 'Bereit für das Training' : r.lvl === 'y' ? 'Heute lieber locker' : 'Heute Pause';
     const icon = r.lvl === 'g' ? CHECK : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M12 7v6M12 17h.01"/></svg>';
     const adv = advice(r, units);
     const k = (v, n) => `<div><b>${v == null ? '–' : v}</b><span>${n}</span></div>`;
-    return `<section class="card"><div class="status-h"><span class="st-ic ${r.lvl === 'g' ? '' : r.lvl}">${icon}</span><span class="tx"><b>${head}</b>${r.flags.length ? `<small>${esc(r.flags.join(' · '))}</small>` : ''}</span><span class="right">Form ${L.tsb == null ? '–' : (L.tsb > 0 ? '+' : '') + de1(L.tsb)}</span></div>
+    return `<section class="card stcard"><div class="status-h"><span class="st-ic ${r.lvl}">${icon}</span><span class="tx"><b>${head}</b>${r.flags.length ? `<small>${esc(r.flags.join(' · '))}</small>` : ''}</span><span class="right">Form ${L.tsb == null ? '–' : (L.tsb > 0 ? '+' : '') + de1(L.tsb)}</span></div>
       <div class="kpi4">${k(L.sleep == null ? null : de1(L.sleep) + ' h', 'Schlaf')}${k(L.score == null ? null : Math.round(L.score), 'Score')}${k(L.hrv == null ? null : Math.round(L.hrv), 'HRV')}${k(L.rhr, 'Ruhepuls')}</div>
       ${adv ? `<div class="advice ${r.lvl}">${esc(adv)}</div>` : ''}
-      ${r.stale || r.notes.length ? `<div class="hint">${esc([r.stale ? 'Werte von gestern, die heutigen fehlen noch' : '', ...r.notes].filter(Boolean).join('. '))}.</div>` : ''}</section>`;
+      ${r.stale || r.notes.length ? `<div class="hint">${esc([r.stale ? 'Werte von gestern, die heutigen fehlen noch' : '', ...r.notes].filter(Boolean).join('. '))}.</div>` : ''}${checkCard(M, true)}</section>`;
   }
-  function checkCard(M) {
+  function checkCard(M, inner) {
     const ck = M.check.find(c => c.date === today()), d = state.checkDraft || {};
-    if (ck && !state.checkEdit) return `<div class="feel"><span>Kurz-Check: Beine ${ck.legs} · Energie ${ck.energy} · Motivation ${ck.mot}</span><button class="link" data-checkedit>Ändern</button></div>`;
+    if (ck && !state.checkEdit) return `<div class="feel${inner ? ' in' : ''}"><span class="ft"><span class="fl">Check</span> Beine <b>${ck.legs}</b> · Energie <b>${ck.energy}</b> · Motivation <b>${ck.mot}</b></span><button class="link" data-checkedit aria-label="Kurz-Check ändern">Ändern</button></div>`;
     const rows = [['legs', 'Beine', 'schwer', 'frisch'], ['energy', 'Energie', 'leer', 'voll'], ['mot', 'Motivation', 'keine', 'hoch']];
     const cur = k => d[k] != null ? d[k] : ck ? ck[k] : null;
-    return `<section class="card check"><span class="eyebrow">Kurz-Check: wie fühlst du dich?</span>${rows.map(([k, lab, lo, hi]) => `<div class="crow"><span class="lab">${lab}</span><div class="cbt" role="radiogroup" aria-label="${lab}">${[1, 2, 3, 4, 5].map(n => `<button role="radio" aria-checked="${cur(k) === n}" data-check="${k}|${n}">${n}</button>`).join('')}</div><span class="cscale"><span>${lo}</span><span>${hi}</span></span></div>`).join('')}
-      ${state.checkBusy ? '<span class="tiny">Speichere …</span>' : state.checkMsg ? `<span class="msg">${esc(state.checkMsg)}</span>` : ''}</section>`;
+    return `<${inner ? 'div' : 'section'} class="${inner ? 'check in' : 'card check'}"><span class="eyebrow">Kurz-Check: wie fühlst du dich?</span>${rows.map(([k, lab, lo, hi]) => `<div class="crow"><span class="lab">${lab}<small>${lo} – ${hi}</small></span><div class="cbt" role="radiogroup" aria-label="${lab}">${[1, 2, 3, 4, 5].map(n => `<button role="radio" aria-checked="${cur(k) === n}" data-check="${k}|${n}">${n}</button>`).join('')}</div></div>`).join('')}
+      ${state.checkBusy ? '<span class="tiny">Speichere …</span>' : state.checkMsg ? `<span class="msg">${esc(state.checkMsg)}</span>` : ''}</${inner ? 'div' : 'section'}>`;
   }
   function weekCounts(M, mon) {
     const a = iso(mon), b = iso(addDays(mon, 6));
@@ -667,11 +667,10 @@
       if (statusOf(p, M) === 'done' && !isOpen('heute', p.id, def)) { left += doneRow(M, p, 'done-tile').html; return; }
       left += unitOrTile(M, p, statusOf(p, M) !== 'done' ? (p === cur ? 'Heute · ' : 'Danach · ') + unitMeta(p) + (sp(p.sport).k === 'mob' ? ' · ' + mobItems(p).length + ' Übungen' : '') : null, 'heute', def);
     });
-    if (wide()) left += nextDays(M, now);
-    let right = checkCard(M) + statusCard(M, units);
+    if (wide()) left += morgenWide(M, now);
+    let right = statusCard(M, units);
     if (!wide()) right += morgenCard(M, now); /* Handy: was morgen ansteht statt Wochenkarte */
     else {
-      if (nextMain && !(units.length && !cur)) right += unitOrTile(M, nextMain, 'Morgen' + (M.shifts[tmr] ? ' · Dienst ' + M.shifts[tmr] : '') + (next.length > 1 ? ' · +' + (next.length - 1) + ' weitere' : ''), 'heute', def);
       right += weekCard(M, monday(now), true, true);
     }
     return header('Heute', WDL[now.getDay()] + ', ' + fmtDay(now)) + banner() + `<div class="grid2"><div class="col">${left}</div><div class="col">${right}</div></div>`;
@@ -722,6 +721,17 @@
     if (!us.length) return h + '<section class="card" style="padding:16px"><span class="free">Trainingsfrei</span></section>';
     return h + us.map(p => unitOrTile(M, p, 'Morgen · ' + unitMeta(p) + (sp(p.sport).k === 'mob' ? ' · ' + mobItems(p).length + ' Übungen' : ''), 'heute', null)).join('');
   }
+  /* Laptop: nur der morgige Tag, groß im Stil der Einheiten; Tippen öffnet die Details */
+  function morgenWide(M, now) {
+    const d = addDays(now, 1), k = iso(d);
+    const us = M.plan.filter(p => p.date === k);
+    let h = `<div class="mwrap"><div class="mhead wide"><b>Morgen</b><small>${WDL[d.getDay()]}, ${fmtShort(d)}</small>${M.shifts[k] ? `<span class="shift">${esc(M.shifts[k])}</span>` : ''}</div>`;
+    if (!us.length) return h + '<section class="card" style="padding:18px"><span class="free">Trainingsfrei</span></section></div>';
+    return h + us.map(p => {
+      const S = sp(p.sport), mob = S.k === 'mob', n = mob ? mobItems(p).length : 0;
+      return `<button class="mu${mob ? ' sm' : ''}" style="${cv(S.k)}" data-sheet="${esc(p.id)}" aria-label="${esc(p.title)} für morgen ansehen"><span class="mu-top"><span class="u-sport"><span class="dot-ico">${ICON[S.k]}</span><span>${esc(sportLabel(p))}</span></span><span class="u-dur">${esc(unitMeta(p))}${mob ? ' · ' + n + (n === 1 ? ' Übung' : ' Übungen') : ''}</span></span>${mob ? '' : `<span class="mu-t">${esc(cleanTitle(p))}</span>`}${p.note && !mob ? `<span class="mu-n">${esc(p.note)}</span>` : ''}</button>`;
+    }).join('') + '</div>';
+  }
   /* Laptop: Blick auf die kommenden Tage */
   function nextDays(M, now) {
     let h = '<section class="card ndays"><span class="eyebrow">Die nächsten Tage</span><div class="nd-list">';
@@ -767,9 +777,11 @@
     const from = iso(addDays(new Date(), -28)), rec = M.trainings.filter(t => t.date >= from);
     h = h.replace('<!--A-->', `<section class="card pcard" style="order:4"><span class="eyebrow">Letzte 4 Wochen</span>${[['Schwimmen', 'swim'], ['Rad', 'bike'], ['Laufen', 'run']].map(([f, k]) => {
       const xs = rec.filter(t => sp(t.sport).fam === f), km = xs.reduce((a, t) => a + (t.km || 0), 0), min = xs.reduce((a, t) => a + (t.dur || 0), 0);
-      const pl = M.plan.filter(p => p.date >= from && p.date <= today() && sp(p.sport).fam === f).reduce((a, p) => a + p.dur, 0);
-      const pct = pl ? Math.min(100, Math.round(min / pl * 100)) : 0;
-      return `<div class="sprow" style="${cv(k)}"><span class="ic">${ICON[k]}</span><span><b>${f}</b><small>${xs.length} Einheiten · ${fmtH(min)}</small></span><b class="num">${f === 'Schwimmen' ? Math.round(km * 1000).toLocaleString('de-DE') + ' m' : Math.round(km).toLocaleString('de-DE') + ' km'}</b>${pl ? `<span class="spbar" title="${fmtH(min)} von ${fmtH(pl)} geplant"><i style="width:${pct}%"></i><em>${fmtH(min)} von ${fmtH(pl)} geplant</em></span>` : ''}</div>`;
+      const ps = M.plan.length ? M.plan.reduce((a, p) => p.date < a ? p.date : a, M.plan[0].date) : from, pf = ps > from ? ps : from;
+      const pl = M.plan.filter(p => p.date >= pf && p.date <= today() && sp(p.sport).fam === f).reduce((a, p) => a + p.dur, 0);
+      const pm = M.trainings.filter(t => t.date >= pf && t.date <= today() && sp(t.sport).fam === f).reduce((a, t) => a + (t.dur || 0), 0);
+      const pct = pl ? Math.min(100, Math.round(pm / pl * 100)) : 0, since = pf > from ? ' seit ' + fmtShort(parseISO(pf)) : '';
+      return `<div class="sprow" style="${cv(k)}"><span class="ic">${ICON[k]}</span><span><b>${f}</b><small>${xs.length} Einheiten · ${fmtH(min)}</small></span><b class="num">${f === 'Schwimmen' ? Math.round(km * 1000).toLocaleString('de-DE') + ' m' : Math.round(km).toLocaleString('de-DE') + ' km'}</b>${pl ? `<span class="spbar" title="${fmtH(pm)} absolviert, ${fmtH(pl)} geplant${since}"><i style="width:${pct}%"></i><em><b>${fmtH(pm)}</b> absolviert · ${fmtH(pl)} geplant${since}</em></span>` : ''}</div>`;
     }).join('')}</section>`);
     h += '</div><div class="pcol pk">' + kraftProgress(M) + '</div></div>';
     return h;
