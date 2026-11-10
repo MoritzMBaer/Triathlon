@@ -783,11 +783,7 @@
     const from = iso(addDays(new Date(), -28)), rec = M.trainings.filter(t => t.date >= from);
     h = h.replace('<!--A-->', `<section class="card pcard" style="order:4"><span class="eyebrow">Letzte 4 Wochen</span>${[['Schwimmen', 'swim'], ['Rad', 'bike'], ['Laufen', 'run']].map(([f, k]) => {
       const xs = rec.filter(t => sp(t.sport).fam === f), km = xs.reduce((a, t) => a + (t.km || 0), 0), min = xs.reduce((a, t) => a + (t.dur || 0), 0);
-      const ps = M.plan.length ? M.plan.reduce((a, p) => p.date < a ? p.date : a, M.plan[0].date) : from, pf = ps > from ? ps : from;
-      const pl = M.plan.filter(p => p.date >= pf && p.date <= today() && sp(p.sport).fam === f).reduce((a, p) => a + p.dur, 0);
-      const pm = M.trainings.filter(t => t.date >= pf && t.date <= today() && sp(t.sport).fam === f).reduce((a, t) => a + (t.dur || 0), 0);
-      const pct = pl ? Math.min(100, Math.round(pm / pl * 100)) : 0, since = pf > from ? ' seit ' + fmtShort(parseISO(pf)) : '';
-      return `<div class="sprow" style="${cv(k)}"><span class="ic">${ICON[k]}</span><span><b>${f}</b><small>${xs.length} Einheiten · ${fmtH(min)}</small></span><b class="num">${f === 'Schwimmen' ? Math.round(km * 1000).toLocaleString('de-DE') + ' m' : Math.round(km).toLocaleString('de-DE') + ' km'}</b>${pl ? `<span class="spbar" title="${fmtH(pm)} absolviert, ${fmtH(pl)} geplant${since}"><i style="width:${pct}%"></i><em><b>${fmtH(pm)}</b> absolviert · ${fmtH(pl)} geplant${since}</em></span>` : ''}</div>`;
+      return `<div class="sprow" style="${cv(k)}"><span class="ic">${ICON[k]}</span><span><b>${f}</b><small>${xs.length === 1 ? '1 Einheit' : xs.length + ' Einheiten'}</small></span><span class="spv"><b class="num">${f === 'Schwimmen' ? Math.round(km * 1000).toLocaleString('de-DE') + ' m' : Math.round(km).toLocaleString('de-DE') + ' km'}</b><small class="num">${xs.length ? fmtH(min) : '–'}</small></span></div>`;
     }).join('')}</section>`);
     h += '</div><div class="pcol pk">' + kraftProgress(M) + '</div></div>';
     return h;
