@@ -677,7 +677,7 @@
     let right = wide() ? statusCard(M, units) : '';
     if (!wide()) right += morgenCard(M, now); /* Handy: was morgen ansteht statt Wochenkarte */
     else {
-      right += weekCard(M, monday(now), true, true);
+      right += weekCard(M, monday(now), true, true, true);
     }
     return header('Heute', WDL[now.getDay()] + ', ' + fmtDay(now)) + banner() + `<div class="grid2"><div class="col">${left}</div><div class="col">${right}</div></div>`;
   }
@@ -846,6 +846,14 @@
   }
 
   /* ---------- Rendern ---------- */
+  /* Zum Tag in der Wochenansicht scrollen und ihn kurz hervorheben */
+  function jumpTo(k) {
+    const t = document.getElementById('tag-' + k);
+    if (!t) return false;
+    t.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
+    t.classList.remove('flash'); void t.offsetWidth; t.classList.add('flash');
+    return true;
+  }
   function current() { const h = location.hash.slice(1); return ['heute', 'woche', 'fortschritt', 'einrichtung'].includes(h) ? h : 'heute'; }
   let lastRender = '', lastView = '', lastSheet = '';
   const ORDER = ['heute', 'woche', 'fortschritt', 'einrichtung'];
@@ -1136,8 +1144,7 @@
     if (q('a.skip')) { e.preventDefault(); const m = $('#app'); m.focus({ preventScroll: true }); const f = m.querySelector('button,[href],input,[tabindex="0"]'); if (f) f.focus(); return; }
     if (q('[data-reload]')) { load(true); return; }
     if ((el = q('[data-jump]'))) {
-      const t = document.getElementById('tag-' + el.dataset.jump);
-      if (t) { t.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); t.classList.remove('flash'); void t.offsetWidth; t.classList.add('flash'); }
+      if (!jumpTo(el.dataset.jump)) { state.weekOff = 0; state.pendingJump = el.dataset.jump; location.hash = '#woche'; }
       return;
     }
     if ((el = q('[data-week]'))) { state.weekOff += +el.dataset.week; render(); return; }
@@ -1320,7 +1327,7 @@
   document.querySelectorAll('nav a[data-v]').forEach(a => a.addEventListener('click', () => {
     if (a.dataset.v === current() && window.scrollY > 0) window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' });
   }));
-  window.addEventListener('hashchange', () => { if (state.sheetId) { state.sheetId = null; closeSheetNow(); } render(); });
+  window.addEventListener('hashchange', () => { if (state.sheetId) { state.sheetId = null; closeSheetNow(); } render(); if (state.pendingJump) { const k = state.pendingJump; state.pendingJump = null; requestAnimationFrame(() => setTimeout(() => jumpTo(k), 60)); } });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { cache = { at: -1 }; load(false); render(); } });
   let lastW = window.innerWidth;
   window.addEventListener('resize', () => { if ((lastW >= 960) !== (window.innerWidth >= 960)) { lastW = window.innerWidth; lastRender = ''; render(); } placeIndicator(); });
