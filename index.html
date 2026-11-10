@@ -4,8 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Triathlon</title>
-<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" id="themecolor" content="#F2F2F7">
+<script>
+/* iOS-Home-Bildschirm-Apps übernehmen bei mehreren theme-color-Angaben oft die dunkle; darum eine Angabe, die hier passend gesetzt wird */
+(function(){var m=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)'),t=document.getElementById('themecolor');function s(){t.setAttribute('content',m&&m.matches?'#000000':'#F2F2F7')}s();if(m){m.addEventListener?m.addEventListener('change',s):m.addListener(s)}})();
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
