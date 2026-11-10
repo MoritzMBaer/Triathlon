@@ -1,5 +1,5 @@
 /* Offline-Fähigkeit: App-Dateien zuerst aus dem Netz, sonst aus dem Zwischenspeicher. Daten laufen nie über den Cache. */
-const CACHE = 'tri-v29';
+const CACHE = 'tri-v30';
 const FILES = ['./', './index.html', './app.js', './uebungen.js', './morphdom.min.js', './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png'];
 
 self.addEventListener('install', e => {

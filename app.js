@@ -632,14 +632,14 @@
   }
   function weekCard(M, mon, strip, noRing, jump) {
     const w = weekCounts(M, mon);
-    let h = `<section class="card"><div class="week">${noRing ? '' : ringsSVG(w.c)}<div class="tx"><small>${iso(mon) === iso(monday(new Date())) ? 'Diese Woche' : 'KW ' + isoWeek(mon)}</small><b>${w.doneN} von ${w.n} Einheiten</b><span style="font-size:13px;color:var(--fg-2)">${fmtH(w.doneMin)} von ${fmtH(w.planMin)}</span>
+    let h = `<section class="card"><div class="week">${noRing ? '' : ringsSVG(w.c)}<div class="tx"><small>${iso(mon) === today() ? 'Nächste 7 Tage' : iso(mon) === iso(monday(new Date())) ? 'Diese Woche' : fmtShort(mon) + ' – ' + fmtShort(addDays(mon, 6))}</small><b>${w.doneN} von ${w.n} Einheiten</b><span style="font-size:13px;color:var(--fg-2)">${fmtH(w.doneMin)} von ${fmtH(w.planMin)}</span>
       <div class="legend">${RINGS.map(([f, k]) => `<span><i style="background:var(--${k})"></i>${f} ${w.c[f][1] ? w.c[f][0] + '/' + w.c[f][1] : '–'}</span>`).join('')}</div></div></div>`;
     if (strip) {
       h += '<div class="daystrip">' + [0, 1, 2, 3, 4, 5, 6].map(i => {
         const d = addDays(mon, i), k = iso(d);
         const us = M.plan.filter(p => p.date === k && sp(p.sport).ring);
         const tag = jump ? 'button' : 'div', at = jump ? ` data-jump="${k}" aria-label="Zu ${WDL[d.getDay()]}, ${fmtDay(d)} springen"` : '';
-        return `<${tag} class="dsd${k === today() ? ' today' : ''}"${at}><small>${WDS[d.getDay()]}</small><span class="dots">${us.map(p => `<i class="${statusOf(p, M) === 'done' ? '' : 'o'}" style="background:var(--${sp(p.sport).k});--cc:var(--${sp(p.sport).k})"></i>`).join('')}</span></${tag}>`;
+        return `<${tag} class="dsd${k === today() ? ' today' : ''}${d.getDay() % 6 === 0 ? ' we' : ''}"${at}><small>${WDS[d.getDay()]}</small><span class="dots">${us.map(p => `<i class="${statusOf(p, M) === 'done' ? '' : 'o'}" style="background:var(--${sp(p.sport).k});--cc:var(--${sp(p.sport).k})"></i>`).join('')}</span></${tag}>`;
       }).join('') + '</div>';
     }
     return h + '</section>';
@@ -751,14 +751,16 @@
     return h + '</div></section>';
   }
   function viewWoche(M) {
-    const mon = addDays(monday(new Date()), state.weekOff * 7), sun = addDays(mon, 6);
-    let h = header('Woche', 'KW ' + isoWeek(mon) + ' · ' + fmtShort(mon) + ' – ' + fmtShort(sun)) + banner();
-    h += `<div class="wnav"><button data-week="-1" aria-label="Vorige Woche" title="Vorige Woche (←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div><b>${state.weekOff === 0 ? 'Diese Woche' : state.weekOff === 1 ? 'Nächste Woche' : state.weekOff === -1 ? 'Letzte Woche' : 'KW ' + isoWeek(mon)}</b><small>${fmtDay(mon)} – ${fmtDay(sun)}</small>${state.weekOff ? '<button class="link today-link" data-week-now title="Zur aktuellen Woche (T)">Zur aktuellen Woche</button>' : ''}</div><button data-week="1" aria-label="Nächste Woche" title="Nächste Woche (→)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>`;
+    const mon = addDays(new Date(new Date().toDateString()), state.weekOff * 7), sun = addDays(mon, 6);
+    const n = Math.abs(state.weekOff), when = state.weekOff === 0 ? 'Ab heute' : (state.weekOff > 0 ? 'In ' : 'Vor ') + (n === 1 ? 'einer Woche' : n + ' Wochen');
+    const chev = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="${d}"/></svg>`;
+    let h = header('Woche', fmtShort(mon) + ' – ' + fmtShort(sun)) + banner();
+    h += `<div class="wnav"><button data-week="-1" aria-label="7 Tage zurück" title="7 Tage zurück (←)">${chev('m15 18-6-6 6-6')}</button><div><b>${when}</b><small>${WDS[mon.getDay()]} ${fmtShort(mon)} – ${WDS[sun.getDay()]} ${fmtShort(sun)}</small>${state.weekOff ? '<button class="link today-link" data-week-now title="Zu heute (T)">Zu heute</button>' : ''}</div><button data-week="1" aria-label="7 Tage weiter" title="7 Tage weiter (→)">${chev('m9 18 6-6-6-6')}</button></div>`;
     h += weekCard(M, mon, !wide(), false, true) + '<div class="wgrid">';
     for (let i = 0; i < 7; i++) {
       const d = addDays(mon, i), k = iso(d);
       const us = M.plan.filter(p => p.date === k);
-      h += `<section class="card day${k === today() ? ' today' : ''}" id="tag-${k}"><div class="day-h"><b><span class="dl">${WDL[d.getDay()]}, ${fmtDay(d)}</span><span class="ds">${WDL[d.getDay()]} <span>${fmtShort(d)}</span></span></b>${M.shifts[k] ? `<span class="shift">${esc(M.shifts[k])}</span>` : '<span class="shift none">Kein Dienst</span>'}</div>`;
+      h += `<section class="card day${k === today() ? ' today' : ''}${d.getDay() % 6 === 0 ? ' we' : ''}" id="tag-${k}"><div class="day-h"><b><span class="dl">${WDL[d.getDay()]}, ${fmtDay(d)}</span><span class="ds">${WDL[d.getDay()]} <span>${fmtShort(d)}</span></span></b>${M.shifts[k] ? `<span class="shift">${esc(M.shifts[k])}</span>` : '<span class="shift none">Kein Dienst</span>'}</div>`;
       h += us.length ? us.map(p => !wide() && isOpen('woche', p.id, null) ? unitExpanded(M, p, { fold: true, showActual: true }) : rowHTML(M, p)).join('') : '<span class="free">Trainingsfrei</span>';
       h += '</section>';
     }
@@ -1144,7 +1146,7 @@
     if (q('a.skip')) { e.preventDefault(); const m = $('#app'); m.focus({ preventScroll: true }); const f = m.querySelector('button,[href],input,[tabindex="0"]'); if (f) f.focus(); return; }
     if (q('[data-reload]')) { load(true); return; }
     if ((el = q('[data-jump]'))) {
-      if (!jumpTo(el.dataset.jump)) { state.weekOff = 0; state.pendingJump = el.dataset.jump; location.hash = '#woche'; }
+      if (!jumpTo(el.dataset.jump)) { const diff = Math.round((parseISO(el.dataset.jump) - new Date(new Date().toDateString())) / 864e5); state.weekOff = Math.floor(diff / 7); state.pendingJump = el.dataset.jump; if (location.hash === '#woche') { render(); requestAnimationFrame(() => jumpTo(state.pendingJump)); state.pendingJump = null; } else location.hash = '#woche'; }
       return;
     }
     if ((el = q('[data-week]'))) { state.weekOff += +el.dataset.week; render(); return; }
@@ -1258,7 +1260,7 @@
     state.data = null; ls.del('tri:data'); cache = { at: -1 };
     load(true).then(() => { if (!state.err) location.hash = '#heute'; });
   });
-  const onScroll = () => document.documentElement.classList.toggle('scrolled', window.scrollY > 4);
+  const onScroll = () => document.documentElement.classList.toggle('scrolled', window.scrollY > 24);
   window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && state.sheetId) { closeSheet(); return; }
