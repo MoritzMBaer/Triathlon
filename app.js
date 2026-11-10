@@ -495,23 +495,28 @@
   }
   /* Nächster Teil bereitlegen (nicht starten); nach dem letzten Teil Übung abhaken und die nächste öffnen */
   function advanceTimer(T) {
-    const p = plan(T.pid); if (!p) { state.timer = null; return; }
+    T.running = false;
+    const M = model(), p = M && M.plan.find(x => x.id === T.pid);
+    if (!p) { state.timer = null; return; }
     const it = mobItems(p)[T.i];
     if (it && T.part + 1 < it.parts.length) { T.part++; T.left = T.sec; T.endLeft = T.sec; T.running = false; return; }
     state.timer = null;
-    const t = ls.get('tri:mob:' + T.pid, []);
-    if (!t.includes(T.i)) {
-      const nt = t.concat(T.i); ls.set('tri:mob:' + T.pid, nt);
-      const items = mobItems(p); state.active[T.pid] = items.findIndex((_, k) => !nt.includes(k));
-      if (nt.length === items.length) { setDone(p, today()); return true; }
-    }
+    const t = ls.get('tri:mob:' + T.pid, []), items = mobItems(p);
+    const nt = t.includes(T.i) ? t : t.concat(T.i);
+    ls.set('tri:mob:' + T.pid, nt);
+    state.active[T.pid] = items.findIndex((_, k) => !nt.includes(k));
+    if (nt.length === items.length && !p.done) { setDone(p, today()); return true; }
     return false;
   }
   setInterval(() => {
     const T = state.timer;
     if (!T || !T.running) return;
     T.left = T.endLeft - (Date.now() - T.startedAt) / 1000;
-    if (T.left <= 0) { beep(); if (!advanceTimer(T)) render(); return; }
+    if (T.left <= 0) {
+      T.running = false; beep(); /* Timer ist vorbei: anhalten, weiterschalten, aber nicht selbst neu starten */
+      try { if (!advanceTimer(T)) render(); } catch (e) { state.timer = null; render(); }
+      return;
+    }
     const txt = document.getElementById('timer-txt'), arc = document.getElementById('timer-arc');
     if (txt) { const l = Math.ceil(T.left); txt.textContent = Math.floor(l / 60) + ':' + pad(l % 60); }
     if (arc) { const C = 2 * Math.PI * 36; arc.setAttribute('stroke-dasharray', (C * T.left / T.sec).toFixed(1) + ' ' + C.toFixed(1)); }
