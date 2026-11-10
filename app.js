@@ -584,13 +584,19 @@
     if (!r) return checkCard(M);
     const L = r.last;
     const head = r.lvl === 'g' ? 'Bereit für das Training' : r.lvl === 'y' ? 'Heute lieber locker' : 'Heute Pause';
-    const icon = r.lvl === 'g' ? CHECK : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M12 7v6M12 17h.01"/></svg>';
     const adv = advice(r, units);
-    const k = (v, n) => `<div><b>${v == null ? '–' : v}</b><span>${n}</span></div>`;
-    return `<section class="card stcard"><div class="status-h"><span class="st-ic ${r.lvl}">${icon}</span><span class="tx"><b>${head}</b>${r.flags.length ? `<small>${esc(r.flags.join(' · '))}</small>` : ''}</span><span class="right">Form ${L.tsb == null ? '–' : (L.tsb > 0 ? '+' : '') + de1(L.tsb)}</span></div>
-      <div class="kpi4">${k(L.sleep == null ? null : de1(L.sleep) + ' h', 'Schlaf')}${k(L.score == null ? null : Math.round(L.score), 'Score')}${k(L.hrv == null ? null : Math.round(L.hrv), 'HRV')}${k(L.rhr, 'Ruhepuls')}</div>
+    const k = [];
+    if (L.sleep != null) k.push(`Schlaf <b>${de1(L.sleep)} h</b>`);
+    if (L.score != null) k.push(`Score <b>${Math.round(L.score)}</b>`);
+    if (L.hrv != null) k.push(`HRV <b>${Math.round(L.hrv)}</b>`);
+    if (L.rhr != null) k.push(`Ruhepuls <b>${L.rhr}</b>`);
+    k.push(`Form <b>${L.tsb == null ? '–' : (L.tsb > 0 ? '+' : '') + de1(L.tsb)}</b>`);
+    const nt = [r.stale ? 'Werte von gestern, die heutigen fehlen noch' : '', ...r.notes].filter(Boolean);
+    return `<section class="card stcard" aria-label="Tagesform"><div class="st-h"><span class="st-dot ${r.lvl}" aria-hidden="true"></span><b>${head}</b></div>
+      ${r.flags.length ? `<div class="st-fl">${esc(r.flags.join(' · '))}</div>` : ''}
+      <div class="st-k">${k.map(x => `<span>${x}</span>`).join('')}</div>
       ${adv ? `<div class="advice ${r.lvl}">${esc(adv)}</div>` : ''}
-      ${r.stale || r.notes.length ? `<div class="hint">${esc([r.stale ? 'Werte von gestern, die heutigen fehlen noch' : '', ...r.notes].filter(Boolean).join('. '))}.</div>` : ''}${checkCard(M, true)}</section>`;
+      ${nt.length ? `<div class="hint">${esc(nt.join('. '))}.</div>` : ''}${checkCard(M, true)}</section>`;
   }
   function checkCard(M, inner) {
     const ck = M.check.find(c => c.date === today()), d = state.checkDraft || {};
@@ -657,7 +663,7 @@
     const tmr = iso(addDays(now, 1));
     const next = M.plan.filter(p => p.date === tmr);
     const nextMain = next.find(p => sp(p.sport).fam !== 'Mobility') || next[0];
-    let left = '';
+    let left = wide() ? '' : statusCard(M, units);
     if (!units.length) left += `<section class="card" style="padding:18px"><b style="font-size:20px">Heute ist trainingsfrei</b><p style="margin:6px 0 0;color:var(--muted)">Erholung gehört zum Plan.</p></section>`;
     const def = cur ? cur.id : null;
     if (units.length && !cur && wide()) {
@@ -668,7 +674,7 @@
       left += unitOrTile(M, p, statusOf(p, M) !== 'done' ? (p === cur ? 'Heute · ' : 'Danach · ') + unitMeta(p) + (sp(p.sport).k === 'mob' ? ' · ' + mobItems(p).length + ' Übungen' : '') : null, 'heute', def);
     });
     if (wide()) left += morgenWide(M, now);
-    let right = statusCard(M, units);
+    let right = wide() ? statusCard(M, units) : '';
     if (!wide()) right += morgenCard(M, now); /* Handy: was morgen ansteht statt Wochenkarte */
     else {
       right += weekCard(M, monday(now), true, true);

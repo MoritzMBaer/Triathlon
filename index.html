@@ -82,7 +82,8 @@ input{font:inherit}
 .unit{background:var(--c-t);border-radius:28px;padding:18px;display:flex;flex-direction:column;gap:14px}
 .u-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .u-sport{display:flex;align-items:center;gap:8px;min-width:0}
-.dot-ico{width:34px;height:34px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;flex:none}
+.dot-ico,.u-sport .dot-ico{width:34px;height:34px;border-radius:50%;background:var(--c-d);color:#fff;display:grid;place-items:center;flex:none}
+@media (prefers-color-scheme: dark){.dot-ico,.u-sport .dot-ico{background:var(--c);color:#1C1C1E}}
 .dot-ico svg{width:20px;height:20px}
 .u-sport span{font-size:14px;font-weight:600;color:var(--c-d)}
 .u-dur{font-family:var(--round);font-size:15px;font-weight:700;color:var(--c-d);white-space:nowrap}
@@ -128,8 +129,6 @@ input{font:inherit}
 .status-h{display:flex;align-items:center;gap:12px;padding:12px 16px 10px}
 .st-ic{width:28px;height:28px;border-radius:50%;background:var(--fill);color:var(--fg);display:grid;place-items:center;flex:none}
 .st-ic svg{width:15px;height:15px}
-/* Ampel grün: klares iOS-Grün, damit es nicht wie das Lauf-Grün wirkt */
-.st-ic.g{background:color-mix(in srgb,var(--ok) 18%,var(--card));color:var(--ok)}
 .st-ic.y{background:var(--warn-t);color:var(--warn)}
 .st-ic.r{background:var(--bad-t);color:var(--bad)}
 .status-h .tx{flex-grow:1;display:flex;flex-direction:column;min-width:0}
@@ -143,17 +142,22 @@ input{font:inherit}
 .advice{margin:0 16px 14px;padding:10px 12px;border-radius:12px;font-size:14px;background:var(--warn-t)}
 .advice.r{background:var(--bad-t)}
 .hint{padding:0 16px 12px;font-size:12px;color:var(--faint)}
-/* Status und Kurz-Check in einer kompakten Kachel */
-.stcard .status-h{padding:10px 16px 6px}
-.stcard .kpi4{padding:0 8px 10px}
-.stcard .kpi4 b{font-size:17px}
-.stcard .advice{margin:0 12px 10px;padding:8px 10px;font-size:13px}
-.stcard .hint{padding:0 16px 10px;font-size:11.5px}
-.check.in{border-top:.5px solid var(--line);margin:0 16px;padding:10px 0 12px;gap:6px}
+/* Tagesform und Kurz-Check: eine dezente Kachel, Ampel nur als Punkt */
+.stcard{padding:12px 16px;display:flex;flex-direction:column;gap:6px}
+.st-h{display:flex;align-items:center;gap:10px}
+.st-h b{font-size:15px;font-weight:600}
+.st-dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--faint)}
+.st-dot.g{background:var(--ok)}.st-dot.y{background:var(--warn)}.st-dot.r{background:var(--bad)}
+.st-fl{font-size:13px;color:var(--fg-2)}
+.st-k{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:12.5px;color:var(--muted)}
+.st-k b{font-family:var(--round);font-weight:600;color:var(--fg)}
+.stcard .advice{margin:2px 0 0;padding:8px 10px;font-size:13px}
+.stcard .hint{padding:0;font-size:11.5px}
+.check.in{border-top:.5px solid var(--line);margin:4px 0 0;padding:8px 0 0;gap:6px}
 .check.in .eyebrow{font-size:11.5px}
 .check.in .cbt button{height:40px;font-size:16px}
 .crow .lab small{display:block;font-size:11px;font-weight:400;color:var(--faint)}
-.feel.in{border-top:.5px solid var(--line);margin:0 16px;padding:4px 0;flex-wrap:nowrap}
+.feel.in{border-top:.5px solid var(--line);margin:4px 0 -6px;padding:2px 0 0;flex-wrap:nowrap}
 .feel .ft{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .feel .ft b{color:var(--fg);font-weight:600;font-family:var(--round)}
 .feel .fl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-right:4px}
