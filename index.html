@@ -196,8 +196,8 @@ input{font:inherit}
 .daystrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;padding:0 16px 14px}
 .daystrip .dsd{display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;border-radius:12px;border:0;background:none;min-height:44px}
 .daystrip .dn{font-family:var(--round);font-size:15px;font-weight:600;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;margin-top:-2px}
-.daystrip .dsd.today .dn{background:var(--ok);color:var(--on-ink)}
-.daystrip .dsd.today small{color:var(--ok)!important}
+.daystrip .dsd.today .dn{background:var(--ink);color:var(--on-ink)}
+.daystrip .dsd.today small{color:var(--fg)!important;font-weight:700}
 .daystrip .dsd.we:not(.today){background:var(--fill-2)}
 button.dsd:active{background:var(--fill)}
 .daystrip small{font-size:11px;color:var(--muted)}
@@ -219,7 +219,7 @@ button.dsd:active{background:var(--fill)}
 .day.today{box-shadow:none}
 .day.past{opacity:.5}
 .past-h{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);padding:10px 6px 0}
-.tday{font-style:normal;font-size:12px;font-weight:700;color:var(--on-ink);background:var(--ok);border-radius:99px;padding:2px 8px;margin-left:8px;vertical-align:2px}
+.tday{font-style:normal;font-size:12px;font-weight:700;color:var(--on-ink);background:var(--ink);border-radius:99px;padding:2px 8px;margin-left:8px;vertical-align:2px}
 .day-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;padding-bottom:4px}
 .day-h b{font-size:15px}
 .shift{font-size:12px;font-weight:600;color:var(--muted);background:var(--fill-2);border-radius:6px;padding:2px 8px}
