@@ -486,13 +486,13 @@
     items.forEach((it, i) => {
       const on = ticks.includes(i), open = i === act;
       h += `<div class="mob-ex${on && !review ? ' done' : ''}${open ? ' active' : ''}"><div class="mob-row">
-        <button class="open" data-mob-open="${p.id}|${i}" aria-expanded="${open}"><span class="tx"><b>${esc(it.name)}</b><small>${esc(it.dose)}${it.sec && !review ? ' · Timer' : ''}</small></span></button>
+        <button class="open" data-mob-open="${p.id}|${i}" aria-expanded="${open}"><span class="thumb">${it.lib ? U.svg(it.lib, { t: 0.6 }) : ''}</span><span class="tx"><b>${esc(it.name)}</b><small>${esc(it.dose)}${it.sec && !review ? ' · Timer' : ''}</small></span></button>
         ${review ? '' : `<button class="mcheck" data-mob="${p.id}|${i}" aria-pressed="${on}" aria-label="${esc(it.name)} erledigt">${on ? CHECK : ''}</button>`}</div>`;
       if (open) {
         h += `<div class="mob-detail${it.lib ? '' : ' solo'}">`;
         if (it.lib) h += `<div class="mob-l"><div class="fig">${U.svg(it.lib, { id: 'live:' + encodeURIComponent(it.name), label: 'Animation: ' + it.name })}</div>${U.bodyMap(it.lib)}</div>`;
         h += '<div class="mob-r">';
-        if (it.lib) h += `<p class="howto">${esc(it.lib.how)} <span class="cue">${esc(it.lib.cue)}</span></p>`;
+        if (it.lib) h += `<p class="howto">${esc(it.lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(it.lib.cue)}</p>`;
         h += mobStepsHTML(p, i, it, review);
         if (it.sec && !review) h += timerHTML(p, i, it);
         h += '</div></div>';
@@ -510,22 +510,21 @@
     const cur = review || !it.sec ? -1 : (T ? T.part : 0);
     const groups = [];
     it.steps.forEach((st, k) => { (groups[st.set] = groups[st.set] || []).push([st, k]); });
-    let h = `<div class="mseq"><b>Ablauf</b><span class="mseq-s">${esc(it.stepsSum)}</span><div class="chips">`;
+    let h = `<div class="mseq"><div class="mseq-h"><b>Ablauf</b><span>${esc(it.stepsSum)}</span></div>`;
     groups.forEach((g, gi) => {
-      if (groups.length > 1) h += `<span class="mseq-g">Satz ${gi + 1}</span>`;
-      h += g.map(([st, k]) => {
+      if (groups.length > 1) h += `<div class="mseq-g">Satz ${gi + 1}</div>`;
+      h += '<ol>' + g.map(([st, k]) => {
         const c = k < cur ? 'done' : k === cur ? 'now' : '';
-        return `<span class="chip${c ? ' ' + c : ''}"${c === 'now' ? ' aria-current="step"' : ''}>${c === 'done' ? CHECK : ''}${esc(st.label.replace(' – Knie ', ' · '))}${it.sec ? '' : ' ' + esc(st.sub)}</span>`;
-      }).join('');
+        return `<li${c ? ` class="${c}"` : ''}${c === 'now' ? ' aria-current="step"' : ''}><span class="sn">${c === 'done' ? CHECK : k + 1}</span><span class="sl">${esc(st.label)}</span><span class="ss">${esc(st.sub)}</span></li>`;
+      }).join('') + '</ol>';
     });
-    h += '</div>';
     return h + '</div>';
   }
   function timerHTML(p, i, it) {
     const T = state.timer && state.timer.pid === p.id && state.timer.i === i ? state.timer : null;
     const part = T ? T.part : 0, left = T ? Math.max(0, Math.ceil(T.left)) : it.sec;
     const C = 2 * Math.PI * 36, frac = left / it.sec;
-    return `<div class="timer" id="timer"><svg width="64" height="64" viewBox="0 0 84 84" role="img" aria-label="Timer: noch ${left} Sekunden">
+    return `<div class="timer" id="timer"><svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label="Timer: noch ${left} Sekunden">
       <circle cx="42" cy="42" r="36" fill="none" stroke="var(--c-t)" stroke-width="7"/>
       <circle id="timer-arc" cx="42" cy="42" r="36" fill="none" stroke="var(--c)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(C * frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 42 42)"/>
       <text id="timer-txt" x="42" y="48" text-anchor="middle" font-family="ui-rounded,-apple-system,system-ui,sans-serif" font-size="20" font-weight="700" fill="var(--fg)">${Math.floor(left / 60)}:${pad(left % 60)}</text></svg>

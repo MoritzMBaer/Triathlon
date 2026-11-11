@@ -348,6 +348,7 @@ button.dsd:active{background:var(--fill)}
 .mob-row .tx b{font-size:15px;font-weight:600}
 .mob-row .tx small{font-size:12px;color:var(--muted)}
 .mob-ex.done .tx b{color:var(--faint);text-decoration:line-through}
+.mob-ex.done .thumb{opacity:.55}
 .mcheck{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--chev);background:var(--card);flex:none;display:grid;place-items:center;color:#fff}
 .mcheck svg{width:16px;height:16px}
 .mcheck[aria-pressed="true"]{background:var(--c);border-color:var(--c)}
@@ -359,33 +360,24 @@ button.dsd:active{background:var(--fill)}
 .timer small .now{font-size:16px;color:var(--fg)}
 .seq{font-size:14px;line-height:1.4;margin:0;color:var(--muted)}
 .seq b{color:var(--fg)}
-.mseq{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px}
-.mseq>b{font-size:14px;font-weight:700}
-.mseq-s{font-size:13px;color:var(--muted)}
-.mseq .chips{flex-basis:100%;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-top:4px}
-.mseq-g{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--c-d);margin-left:2px}
-.mseq-g:not(:first-child){margin-left:8px}
-.chip{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 10px;border-radius:999px;background:var(--card);font-size:13px;font-weight:500;color:var(--fg-2);white-space:nowrap;transition:background-color .2s ease}
-.chip svg{width:12px;height:12px}
-.chip.now{background:var(--c-d);color:#fff;font-weight:700}
-.chip.done{background:var(--c-t);color:var(--c-d)}
-@media (prefers-reduced-motion:reduce){.chip{transition:none}}
-/* Mobility ausgeklappt: kompakt */
-.mob-detail{gap:8px}
-.mob-detail .mob-l{flex-direction:row;gap:8px}
-.mob-detail .fig{flex:1.4;min-width:0;padding:4px 8px 2px;border-radius:14px}
-.mob-detail .fig svg{max-height:110px}
-.mob-detail .musc{flex:1;min-width:0;flex-direction:column;justify-content:center;gap:4px;padding:6px 8px;border-radius:14px;text-align:center}
-.mob-detail .musc svg{width:72px}
-.mob-detail .musc-tx b{font-size:12px;line-height:1.3}
-.mob-detail .musc-tx small{font-size:10px}
-.mob-detail .mob-r{gap:8px}
-.mob-detail .howto{font-size:14px;line-height:1.4}
-.mob-detail .howto .cue{color:var(--c-d)}
-.mob-detail .timer{padding:8px 12px;gap:12px;border-radius:14px}
-.mob-detail .timer .tx{gap:6px}
-.mob-detail .timer .bts button{height:36px}
-.mob-row{min-height:52px;padding:8px 16px}
+.mseq{background:var(--card);border-radius:16px;padding:12px 12px 10px}
+.mseq-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:0 4px 6px}
+.mseq-h b{font-size:15px;font-weight:700}
+.mseq-h span{font-size:13px;color:var(--muted)}
+.mseq-g{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--c-d);padding:8px 4px 4px}
+.mseq ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.mseq li{display:flex;align-items:center;gap:10px;min-height:40px;padding:6px 8px;border-radius:12px;transition:background-color .2s ease}
+.mseq .sn{width:26px;height:26px;flex:none;border-radius:50%;background:var(--fill-2);color:var(--fg-2);display:grid;place-items:center;font-family:var(--round);font-size:13px;font-weight:700}
+.mseq .sn svg{width:14px;height:14px}
+.mseq .sl{font-size:15px;min-width:0}
+.mseq .ss{margin-left:auto;font-family:var(--round);font-size:14px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mseq li.now{background:var(--c-t)}
+.mseq li.now .sn{background:var(--c-d);color:#fff}
+.mseq li.now .sl{font-weight:700}
+.mseq li.now .ss{color:var(--c-d)}
+.mseq li.done .sn{background:var(--c-t);color:var(--c-d)}
+.mseq li.done .sl,.mseq li.done .ss{color:var(--faint)}
+@media (prefers-reduced-motion:reduce){.mseq li{transition:none}}
 .timer .bts{display:flex;gap:8px}
 .timer .bts button{flex:1;height:42px;border-radius:999px;border:0;background:var(--fill-2);font-weight:600;font-size:14px}
 .timer .bts button.go{background:var(--c-d);color:var(--card)}
@@ -653,7 +645,7 @@ kbd{font-family:var(--round);font-size:11px;font-weight:700;line-height:1;min-wi
   .ex-body .fig svg{max-height:240px}
 }
 @container (min-width:520px){
-  .mob-detail:not(.solo){display:grid;grid-template-columns:minmax(200px,.8fr) minmax(0,1.2fr);gap:14px;align-items:start;padding-top:4px}
+  .mob-detail:not(.solo){display:grid;grid-template-columns:minmax(180px,.8fr) minmax(0,1.2fr);gap:16px;align-items:start;padding-top:4px}
 }
 
 @media (min-width:960px){
