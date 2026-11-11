@@ -355,13 +355,17 @@ button.dsd:active{background:var(--fill)}
 .mob-ex.active{scroll-margin-top:max(12px,env(safe-area-inset-top,0px))}
 /* Handy: Figur und Muskelgrafik nebeneinander, damit Erklärung und Timer gleichzeitig ins Bild passen */
 .mob-detail .mob-l{flex-direction:row;align-items:stretch}
-.mob-detail .mob-l .fig{flex:1.5;min-width:0;display:flex;align-items:center}
+.mob-detail .mob-l .fig{flex:1.2;min-width:0;display:flex;align-items:center}
 .mob-detail .fig svg{max-height:140px}
-.mob-detail .mob-l .musc{flex:1;min-width:0;flex-direction:column;justify-content:center;gap:4px;padding:8px;text-align:center}
-.mob-detail .mob-l .musc svg{width:100%;max-width:110px}
+.mob-detail .mob-l .musc{flex:1;min-width:0;flex-direction:column;justify-content:center;gap:4px;padding:8px 6px;text-align:center}
+.mob-detail .mob-l .musc svg{width:100%;max-width:170px;max-height:150px}
+.mob-detail .musc-tx{display:none}
 .mob-detail .mob-l .musc-tx b{font-size:13px}
 .mob-detail .mob-l .musc-tx small{font-size:11px}
-.mob-ex.active .timer{position:sticky;bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:3;box-shadow:var(--shadow)}
+.mob-ex.active .timer{position:sticky;bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:14;box-shadow:var(--shadow)}
+/* Klebt der Timer unten, den Streifen bis zur Leiste füllen, damit kein Text durchscheint */
+.mob-ex.active .timer.stuck::after{content:"";position:absolute;left:-40px;right:-40px;top:100%;height:calc(120px + env(safe-area-inset-bottom,0px));background:var(--bg);pointer-events:none}
+.mob-ex.active .timer.stuck{border-radius:18px}
 .sheet .mob-ex.active .timer{bottom:8px}
 .mob-ex.active .timer{gap:12px}
 .mob-ex.active .timer>svg{width:72px;height:72px;flex:none}
@@ -663,7 +667,7 @@ kbd{font-family:var(--round);font-size:11px;font-weight:700;line-height:1;min-wi
   .mob-detail .mob-l .fig{flex:none;display:block}
   .mob-detail .fig svg{max-height:200px}
   .mob-detail .mob-l .musc{flex:none;padding:10px 12px}
-  .mob-detail .mob-l .musc svg{max-width:150px}
+  .mob-detail .mob-l .musc svg{max-width:230px;max-height:220px}
 }
 
 @media (min-width:960px){

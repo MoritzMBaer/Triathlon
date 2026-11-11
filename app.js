@@ -986,6 +986,7 @@
     }
     if (state.sheetId) renderSheet(); else if (!$('#sheet').hidden && !state.sheetClosing) closeSheetNow();
     tickRest();
+    if (window.TRI_STUCK) requestAnimationFrame(window.TRI_STUCK);
     if (state.scrollEx) {
       const pid = state.scrollEx, head = state.scrollHead; state.scrollEx = null; state.scrollHead = false;
       const root = state.sheetId === pid ? $('#sheet') : app;
@@ -1362,8 +1363,17 @@
     state.data = null; ls.del('tri:data'); cache = { at: -1 };
     load(true).then(() => { if (!state.err) location.hash = '#heute'; });
   });
-  const onScroll = () => document.documentElement.classList.toggle('scrolled', window.scrollY > 24);
-  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  /* Schwebender Timer: erkennen, ob er gerade unten „klebt“, damit der Bereich darunter verdeckt wird */
+  function stuckTimer() {
+    document.querySelectorAll('.mob-ex.active .timer').forEach(t => {
+      const d = t.parentElement, r = t.getBoundingClientRect(), dr = d.getBoundingClientRect();
+      t.classList.toggle('stuck', r.bottom < dr.bottom - parseFloat(getComputedStyle(d).paddingBottom) - 1);
+    });
+  }
+  window.TRI_STUCK = stuckTimer;
+  const onScroll = () => { document.documentElement.classList.toggle('scrolled', window.scrollY > 24); stuckTimer(); };
+  window.addEventListener('scroll', onScroll, { passive: true }); window.addEventListener('resize', stuckTimer); onScroll();
+  document.addEventListener('scroll', e => { if (e.target && e.target.id === 'sheet') stuckTimer(); }, { passive: true, capture: true });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && state.sheetId) { closeSheet(); return; }
     if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
