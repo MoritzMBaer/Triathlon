@@ -268,11 +268,11 @@
         let lab = esc(s.lab || (b.rep ? '' : b.h));
         const dr = drillsOf(s.lab);
         if (dr) {
-          const key = p.id + ':' + bi + ':' + si, open = !!state.drillOpen[key];
-          lab = `<span class="lab-i">Technik<button class="info${open ? ' on' : ''}" data-drill="${esc(key)}" aria-expanded="${open}" aria-label="Technikübungen erklären">${INFO_I}</button></span>`;
-          const seq = dr.map(d => d[0]).join(' → ');
-          extra = `<div class="drill-seq">${dr.length > 1 ? `Alle ${esc(s.dur)} eine andere Übung: ${esc(seq)}, dann wieder von vorn.` : `Alle ${esc(s.dur)}: ${esc(seq)}.`}</div>`;
-          if (open) extra += `<div class="drills">${dr.map(([n, t]) => `<div><b>${esc(n)}</b>${t ? `<span>${esc(t)}</span>` : ''}</div>`).join('')}</div>`;
+          lab = dr.length > 1 ? `Alle ${esc(s.dur)} die nächste Übung` : 'Technik';
+          extra = `<ol class="drill-list">${dr.map(([n, t], di) => {
+            const key = p.id + ':' + bi + ':' + si + ':' + di, open = !!state.drillOpen[key];
+            return `<li><div class="dr-h"><span class="dr-n">${di + 1}</span><b>${esc(n)}</b>${t ? `<button class="info${open ? ' on' : ''}" data-drill="${esc(key)}" aria-expanded="${open}" aria-label="${esc(n)} erklären">${INFO_I}</button>` : ''}</div>${open && t ? `<p>${esc(t)}</p>` : ''}</li>`;
+          }).join('')}</ol>${dr.length > 1 ? '<div class="drill-seq">Danach wieder von vorn.</div>' : ''}`;
         }
         return `<div class="st${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${lab}</span><span class="t">${esc(s.tgt)}</span></div>`;
       }).join('');
