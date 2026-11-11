@@ -126,7 +126,10 @@ input{font:inherit}
 .dr-h b{font-weight:600;display:flex;align-items:center;gap:10px}
 .dr-h b::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--c)}
 .dr-h:focus-visible{outline:2px solid var(--c-hl);outline-offset:2px}
-.drill-list p{margin:-4px 0 0;padding:0 14px 12px 28px;font-size:14px;line-height:1.5;color:var(--fg-2,var(--c-mu))}
+.dr-x{margin-top:-4px;padding:0 14px 12px 28px}
+.dr-x p{margin:0;font-size:14px;line-height:1.5;color:var(--fg-2,var(--c-mu))}
+.dr-x p.why{margin-top:10px;padding-top:10px;border-top:.5px solid var(--c-sep,var(--line))}
+.dr-x p.why span{display:block;margin-bottom:2px;font-size:12px;font-weight:700;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){.drill-list li,.info{transition:none}}
 .drill-seq{margin:4px 0 0 12px;padding-left:96px;font-size:13.5px;color:var(--c-mu)}
 .drills{display:flex;flex-direction:column;gap:8px;margin:6px 0 2px 12px;padding:10px 12px;background:var(--fill);border-radius:14px}

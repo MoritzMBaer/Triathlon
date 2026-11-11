@@ -248,15 +248,15 @@
   }
   /* Schwimm-Technikübungen: kurze Erklärung direkt unter dem Block */
   const DRILLS = {
-    'abschlag': ['Abschlag', 'Ein Arm bleibt vorn gestreckt, bis der andere nach dem Zug vorn ankommt und ihn „abschlägt“. Erst dann zieht der vordere Arm. Für eine lange Gleitphase und ruhiges Timing.'],
-    'fäuste': ['Fäuste', 'Kraul mit geschlossenen Fäusten. So ziehst du mit dem ganzen Unterarm und hältst den Ellbogen hoch. Danach wieder mit offener Hand schwimmen und den Unterschied spüren.'],
-    'einarmig': ['Einarmig', 'Nur ein Arm zieht, der andere bleibt vorn gestreckt liegen. Den Zug bis zur Hüfte durchziehen und mit dem Körper mitdrehen. Zur Seite des ziehenden Arms atmen, nach jeder Bahn wechseln.']
+    'abschlag': ['Abschlag', 'Ein Arm bleibt vorn gestreckt, bis der andere nach dem Zug vorn ankommt und ihn „abschlägt“. Erst dann zieht der vordere Arm.', 'Lange Gleitphase und ruhiges Timing zwischen beiden Armen.'],
+    'fäuste': ['Fäuste', 'Kraul mit geschlossenen Fäusten. Danach wieder mit offener Hand weiterschwimmen.', 'Du ziehst mit dem ganzen Unterarm und hältst den Ellbogen hoch. Mit offener Hand spürst du danach deutlich mehr Druck am Wasser.'],
+    'einarmig': ['Einarmig', 'Nur ein Arm zieht, der andere bleibt vorn gestreckt liegen. Zur Seite des ziehenden Arms atmen, nach jeder Bahn den Arm wechseln.', 'Ein vollständiger Zug bis zur Hüfte und eine Körperdrehung, die mit dem Zug mitgeht.']
   };
   function drillsOf(lab) {
     const m = (lab || '').match(/^Technik(?:übung(?:en)?)?(?:\s+im Wechsel)?:\s*(.+)$/i);
     if (!m) return null;
     const names = m[1].split(/,\s*|\s+und\s+/).map(x => x.trim().replace(/\.$/, '')).filter(Boolean);
-    return names.map(n => DRILLS[n.toLowerCase()] || [n.charAt(0).toUpperCase() + n.slice(1), '']);
+    return names.map(n => DRILLS[n.toLowerCase()] || [n.charAt(0).toUpperCase() + n.slice(1), '', '']);
   }
   const INFO_I = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg>';
   function stepsHTML(p) {
@@ -269,9 +269,9 @@
         const dr = drillsOf(s.lab);
         if (dr) {
           lab = dr.length > 1 ? `Alle ${esc(s.dur)} die nächste Übung` : 'Technik';
-          extra = `<ol class="drill-list">${dr.map(([n, t], di) => {
+          extra = `<ol class="drill-list">${dr.map(([n, t, why], di) => {
             const key = p.id + ':' + bi + ':' + si + ':' + di, open = !!state.drillOpen[key];
-            return `<li class="${open ? 'open' : ''}">${t ? `<button class="dr-h" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>` : `<div class="dr-h"><b>${esc(n)}</b></div>`}${open && t ? `<p>${esc(t)}</p>` : ''}</li>`;
+            return `<li class="${open ? 'open' : ''}">${t ? `<button class="dr-h" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>` : `<div class="dr-h"><b>${esc(n)}</b></div>`}${open && t ? `<div class="dr-x"><p>${esc(t)}</p>${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}</div>` : ''}</li>`;
           }).join('')}</ol>${dr.length > 1 ? '<div class="drill-seq">Danach wieder von vorn.</div>' : ''}`;
         }
         return `<div class="st${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${lab}</span><span class="t">${esc(s.tgt)}</span></div>`;
