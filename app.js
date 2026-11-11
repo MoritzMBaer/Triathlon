@@ -483,7 +483,7 @@
         if (it.lib) h += `<div class="mob-l"><div class="fig">${U.svg(it.lib, { id: 'live:' + encodeURIComponent(it.name), label: 'Animation: ' + it.name })}</div>${U.bodyMap(it.lib)}</div>`;
         h += '<div class="mob-r">';
         if (it.lib) h += `<p class="howto">${esc(it.lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(it.lib.cue)}</p>`;
-        h += stepsHTML(p, i, it, review);
+        h += mobStepsHTML(p, i, it, review);
         if (it.sec && !review) h += timerHTML(p, i, it);
         h += '</div></div>';
       }
@@ -494,15 +494,15 @@
     return { html: h, progress: [ticks.length, items.length] };
   }
   /* Ablauf als Schrittliste: nach Sätzen gruppiert, aktueller Teil hervorgehoben */
-  function stepsHTML(p, i, it, review) {
+  function mobStepsHTML(p, i, it, review) {
     if (!it.steps || it.steps.length < 2) return '';
     const T = state.timer && state.timer.pid === p.id && state.timer.i === i ? state.timer : null;
     const cur = review || !it.sec ? -1 : (T ? T.part : 0);
     const groups = [];
     it.steps.forEach((st, k) => { (groups[st.set] = groups[st.set] || []).push([st, k]); });
-    let h = `<div class="steps"><div class="steps-h"><b>Ablauf</b><span>${esc(it.stepsSum)}</span></div>`;
+    let h = `<div class="mseq"><div class="mseq-h"><b>Ablauf</b><span>${esc(it.stepsSum)}</span></div>`;
     groups.forEach((g, gi) => {
-      if (groups.length > 1) h += `<div class="steps-g">Satz ${gi + 1}</div>`;
+      if (groups.length > 1) h += `<div class="mseq-g">Satz ${gi + 1}</div>`;
       h += '<ol>' + g.map(([st, k]) => {
         const c = k < cur ? 'done' : k === cur ? 'now' : '';
         return `<li${c ? ` class="${c}"` : ''}${c === 'now' ? ' aria-current="step"' : ''}><span class="sn">${c === 'done' ? CHECK : k + 1}</span><span class="sl">${esc(st.label)}</span><span class="ss">${esc(st.sub)}</span></li>`;
@@ -1028,6 +1028,34 @@
     if (h1 > h0) el.animate([{ opacity: .4 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
     return a;
   }
+  /* Gleiche Kurve wie die Höhenanimation (cubic-bezier .22,1,.36,1) */
+  const bez = (x1, y1, x2, y2) => t => {
+    let u = t;
+    for (let n = 0; n < 8; n++) {
+      const x = 3 * (1 - u) * (1 - u) * u * x1 + 3 * (1 - u) * u * u * x2 + u * u * u - t;
+      const dx = 3 * (1 - u) * (1 - u) * x1 + 6 * (1 - u) * u * (x2 - x1) + 3 * u * u * (1 - x2);
+      if (Math.abs(x) < 1e-5 || Math.abs(dx) < 1e-6) break;
+      u = Math.min(1, Math.max(0, u - x / dx));
+    }
+    return 3 * (1 - u) * (1 - u) * u * y1 + 3 * (1 - u) * u * u * y2 + u * u * u;
+  };
+  const EASE = bez(.22, 1, .36, 1);
+  let scrollRun = 0;
+  function glideScroll(target, dur) {
+    const y0 = window.scrollY, d = target - y0;
+    if (Math.abs(d) < 1) return;
+    if (reduceMotion()) { window.scrollTo(0, target); return; }
+    const run = ++scrollRun, t0 = performance.now();
+    const step = now => {
+      if (run !== scrollRun) return;
+      const k = Math.min(1, (now - t0) / dur);
+      window.scrollTo(0, y0 + d * EASE(k));
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  /* Antippen oder Wischen während der Fahrt hält sie an, wie bei iOS */
+  ['touchstart', 'wheel'].forEach(ev => window.addEventListener(ev, () => { scrollRun++; }, { passive: true }));
   function toggleUnit(id, open) {
     const v = current();
     /* Laptop-Woche: Einheit groß im Fenster statt in der schmalen Tagesspalte */
@@ -1039,6 +1067,7 @@
     /* Ziel-Layout messen, bevor die Höhenanimation startet */
     const el = open && document.querySelector(`[data-uid="${CSS.escape(id)}"]`);
     const r = el && el.getBoundingClientRect();
+    const maxEnd = document.documentElement.scrollHeight - window.innerHeight;
     const anim = glide(id, h0);
     if (el) {
       /* Karte bleibt stehen, solange sie ganz sichtbar ist. Ragt sie unten raus,
@@ -1052,11 +1081,17 @@
       if (r.top < top) dy = r.top - top;
       else if (r.bottom > bottom) dy = r.height <= room ? (r.top + r.height / 2) - (top + room / 2) : r.top - top;
       if (dy) {
-        const target = window.scrollY + dy;
-        const go = () => window.scrollTo({ top: target, behavior: reduceMotion() ? 'auto' : 'smooth' });
-        const max = document.documentElement.scrollHeight - window.innerHeight;
-        /* Kurz vor Seitenende erst scrollen, wenn die Karte ihre volle Höhe hat */
-        if (target > max + 1 && anim && anim.finished) anim.finished.then(go, go); else go();
+        const target = Math.max(0, Math.min(window.scrollY + dy, maxEnd));
+        /* Scrollen läuft gleichzeitig mit dem Aufklappen und mit derselben Kurve.
+           Ein Platzhalter am Seitenende hält das Ziel erreichbar, solange die Karte noch wächst. */
+        if (anim && r.height > h0) {
+          const sp = document.createElement('div');
+          sp.style.cssText = `height:${Math.ceil(r.height - h0)}px;pointer-events:none`;
+          document.body.appendChild(sp);
+          const done = () => sp.remove();
+          anim.finished ? anim.finished.then(done, done) : setTimeout(done, 400);
+        }
+        glideScroll(target, 340);
       }
     }
   }
