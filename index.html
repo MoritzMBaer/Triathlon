@@ -747,6 +747,19 @@ kbd{font-family:var(--round);font-size:11px;font-weight:700;line-height:1;min-wi
 .day.flash{animation:dayflash 1.2s var(--ease-out)}
 @keyframes dayflash{0%,30%{box-shadow:0 0 0 2px var(--ink)}100%{box-shadow:0 0 0 2px transparent}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Zugeklappte Einheiten tragen schon die Farbe der Sportart, wie die aufgeklappte Karte */
+.tile,.tile:active{background:var(--c-t)}
+.tile .ic,.row .ic{background:var(--card)}
+.tile .tx small{color:var(--c-mu,var(--muted))}
+.tile .done-pill,.tile .miss-pill{background:var(--card)}
+.tile:active{background:color-mix(in srgb,var(--c-t) 88%,var(--fg))}
+@media (hover:hover){.tile:hover{background-color:color-mix(in srgb,var(--c-t) 94%,var(--fg))}}
+@media (max-width:959px){
+  .day .row,.day.we .row{background:var(--c-t)}
+  .day .row .tx small,.day .row .r{color:var(--c-mu,var(--muted))}
+  .day .row:active{background-color:color-mix(in srgb,var(--c-t) 88%,var(--fg))}
+}
 </style>
 </head>
 <body>
