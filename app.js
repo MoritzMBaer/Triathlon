@@ -194,10 +194,10 @@
     cue = (cue || '').trim();
     /* Lauf nach Puls: intervals.icu bekommt % LTHR, auf der Uhr steht der bpm-Bereich als Hinweis davor */
     const bpm = cue.match(/^(\d+)\s*[-–]\s*(\d+)\s*bpm$/);
-    if ((m = s.match(/^(\d+)-(\d+)%\s*LTHR\s*(.*)$/))) return bpm ? { t: bpm[1] + '–' + bpm[2] + ' bpm', l: m[3], v: +bpm[1] / LTHR } : { t: m[1] + '–' + m[2] + ' % LTHR', l: m[3], v: m[1] / 100 };
+    if ((m = s.match(/^(\d+)-(\d+)%\s*LTHR\s*(.*)$/))) return bpm ? { t: 'HF ' + bpm[1] + '–' + bpm[2], l: m[3], v: +bpm[1] / LTHR } : { t: m[1] + '–' + m[2] + ' % LTHR', l: m[3], v: m[1] / 100 };
     if ((m = s.match(/^(\d+)-(\d+)w\b\s*(.*)$/))) return { t: m[1] + '–' + m[2] + ' W', l: m[3] || cue, v: +m[1] / FTP };
     if ((m = s.match(/^(\d+)w\b\s*(.*)$/))) return { t: m[1] + ' W', l: m[2] || cue, v: +m[1] / FTP };
-    if ((m = s.match(/^(\d+)-(\d+)bpm HR\s*(.*)$/))) return { t: m[1] + '–' + m[2] + ' bpm', l: m[3] || cue, v: +m[1] / LTHR };
+    if ((m = s.match(/^(\d+)-(\d+)bpm HR\s*(.*)$/))) return { t: 'HF ' + m[1] + '–' + m[2], l: m[3] || cue, v: +m[1] / LTHR };
     if ((m = s.match(/^([\d:]+)-([\d:]+)\/km Pace\s*(.*)$/))) { const [mm, ss] = m[1].split(':').map(Number); return { t: m[1] + '–' + m[2] + ' /km', l: m[3] || cue, v: TPACE / ((mm || 7) * 60 + (ss || 0)) }; }
     const pm = s.match(/^(.*?)\.?\s*(\d+ s Pause)\s*$/);
     if (pm) return { t: pm[2], l: pm[1], pause: true, v: 0 };
