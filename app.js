@@ -298,12 +298,12 @@
         let sub = `${t2.sets} × ${t2.reps}${k2 === 'time' ? ' s' : ''}${t2.side ? ' je Seite' : ''}`;
         if (p.done && okS.length) { const kgs = okS.map(x => x.kg).filter(x => x != null); sub = `${okS.length} Sätze${k2 === 'w' && kgs.length ? ' · ' + fmtKg(Math.max(...kgs)) : ''}`; }
         else if (!p.done) { const sg = suggest(lb, e, t2, lastFor(M, e.name, p.id)); if (k2 === 'w' && sg.kg != null) sub += ' · ' + fmtKg(sg.kg); }
-        return { name: e.name, sub, on: !!allOk || !!p.done, part: !allOk && okS.length > 0 };
+        return { name: e.name, sub, on: !!allOk || !!p.done, part: !allOk && okS.length > 0, lib: lb };
       });
       label = 'Training starten';
     } else {
       const items = mobItems(p), ticks = p.done ? items.map((_, i) => i) : ls.get('tri:mob:' + p.id, []);
-      rows = items.map((it, i) => { const on = ticks.includes(i); if (on) doneN++; return { name: it.name, sub: it.dose, on, mob: true }; });
+      rows = items.map((it, i) => { const on = ticks.includes(i); if (on) doneN++; return { name: it.name, sub: it.dose, on, mob: true, lib: it.lib }; });
       label = 'Mobility starten';
     }
     const begun = doneN > 0 || rows.some(r => r.part);
@@ -311,7 +311,15 @@
     if (p.done) h += isKraft ? `<button class="btn ghost" data-act="undo" data-id="${esc(p.id)}">Training bearbeiten</button>` : '';
     else h += `<button class="btn" style="background:var(--c-d);color:var(--card)" data-start="${esc(p.id)}|-1">${begun ? 'Weitermachen' : label}</button>`;
     if (state.msgs[p.id]) h += `<div class="msg">${esc(state.msgs[p.id])}</div>`;
-    return { html: h, progress: isKraft ? [setsOk, setsAll] : [doneN, rows.length], names: rows.map(r => r.name) };
+    return { html: h, progress: isKraft ? [setsOk, setsAll] : [doneN, rows.length], names: rows.map(r => r.name), rows };
+  }
+  /* Übungsliste auf der Karte vor dem Start: Figur, Name, Dosis; lange Listen ab der 6. Übung aufklappbar */
+  function exList(rows) {
+    const li = (r, i) => `<li${r.on ? ' class="on"' : ''}><span class="el-fig">${r.lib ? U.svg(r.lib, { t: 0.6 }) : `<b>${i + 1}</b>`}</span><span class="el-tx"><b>${esc(r.name)}</b><small>${esc(r.sub || '')}</small></span>${r.on ? `<span class="el-ok" aria-label="erledigt">${CHECK}</span>` : ''}</li>`;
+    const MAX = 6, head = rows.slice(0, MAX), rest = rows.slice(MAX);
+    let h = `<ol class="exlist-c" aria-label="${rows.length} Übungen">${head.map(li).join('')}</ol>`;
+    if (rest.length) h += `<details class="el-more"><summary>${rest.length} weitere Übung${rest.length > 1 ? 'en' : ''}</summary><ol class="exlist-c" start="${MAX + 1}">${rest.map((r, k) => li(r, MAX + k)).join('')}</ol></details>`;
+    return h;
   }
   const backBar = (p, txt) => `<div class="run-top"><button class="link" data-stop="${esc(p.id)}">${CHEV_L}Übersicht</button><small>${txt}</small></div>`;
 
@@ -581,7 +589,7 @@
     } else if (compact) {
       const [a, b] = compact.progress;
       if (a > 0 && !p.done) h += `<div style="height:8px;background:var(--c-l);border-radius:99px;overflow:hidden"><div class="pfill" style="width:${b ? Math.round(a / b * 100) : 0}%;height:100%;background:var(--c);border-radius:99px"></div></div>`;
-      h += `<p class="u-sum">${esc(compact.names.join(' · '))}</p>`;
+      h += exList(compact.rows);
       if (p.note) h += `<span class="note">${esc(p.note)}</span>`;
       h += compact.html + '</section>';
     } else if (prog) {
