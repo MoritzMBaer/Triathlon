@@ -278,6 +278,13 @@ button.dsd:active{background:var(--fill)}
 .fig{background:var(--c-t);border-radius:18px;padding:8px 14px 4px}
 .fig svg{width:100%;height:auto;display:block;max-height:200px;margin:0 auto}
 .howto{font-size:15px;line-height:1.45;margin:0}
+.mob-l{display:flex;flex-direction:column;gap:10px;min-width:0}
+.musc{display:flex;align-items:center;gap:14px;background:var(--c-t);border-radius:18px;padding:10px 16px 8px 10px}
+.musc svg{width:118px;height:auto;flex:none;display:block}
+.musc svg text{font-size:6.5px;fill:var(--muted);font-family:var(--font)}
+.musc-tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.musc-tx small{font-size:12px;font-weight:600;color:var(--c-d);text-transform:uppercase;letter-spacing:.04em}
+.musc-tx b{font-size:15px;font-weight:600;line-height:1.35;color:var(--fg)}
 .cue{font-size:14px;color:var(--c-d);margin:0}
 .sugg{background:var(--c-t);border-radius:12px;padding:9px 12px;font-size:14px}
 .sets{display:flex;flex-direction:column;gap:6px}
@@ -329,6 +336,24 @@ button.dsd:active{background:var(--fill)}
 .timer small .now{font-size:16px;color:var(--fg)}
 .seq{font-size:14px;line-height:1.4;margin:0;color:var(--muted)}
 .seq b{color:var(--fg)}
+.steps{background:var(--card);border-radius:16px;padding:12px 12px 10px}
+.steps-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:0 4px 6px}
+.steps-h b{font-size:15px;font-weight:700}
+.steps-h span{font-size:13px;color:var(--muted)}
+.steps-g{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--c-d);padding:8px 4px 4px}
+.steps ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.steps li{display:flex;align-items:center;gap:10px;min-height:40px;padding:6px 8px;border-radius:12px;transition:background-color .2s ease}
+.steps .sn{width:26px;height:26px;flex:none;border-radius:50%;background:var(--fill-2);color:var(--fg-2);display:grid;place-items:center;font-family:var(--round);font-size:13px;font-weight:700}
+.steps .sn svg{width:14px;height:14px}
+.steps .sl{font-size:15px;min-width:0}
+.steps .ss{margin-left:auto;font-family:var(--round);font-size:14px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.steps li.now{background:var(--c-t)}
+.steps li.now .sn{background:var(--c-d);color:#fff}
+.steps li.now .sl{font-weight:700}
+.steps li.now .ss{color:var(--c-d)}
+.steps li.done .sn{background:var(--c-t);color:var(--c-d)}
+.steps li.done .sl,.steps li.done .ss{color:var(--faint)}
+@media (prefers-reduced-motion:reduce){.steps li{transition:none}}
 .timer .bts{display:flex;gap:8px}
 .timer .bts button{flex:1;height:42px;border-radius:999px;border:0;background:var(--fill-2);font-weight:600;font-size:14px}
 .timer .bts button.go{background:var(--c-d);color:var(--card)}

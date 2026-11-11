@@ -410,7 +410,7 @@
     const done = !!p.done;
     let h = backBar(p, `Übung ${act + 1} von ${exs.length}`) + `<div class="ex-card"><div class="ex-head"><b>${esc(ex.name)}</b><span>Ziel ${goal}${hist ? ' · ' + esc(histText(hist, lib, ex)) : ''}</span></div>`;
     h += `<div class="ex-body${lib ? '' : ' solo'}"><div class="ex-l">`;
-    if (lib) h += `<div class="fig">${U.svg(lib, { id: 'live:' + encodeURIComponent(ex.name), label: 'Animation: ' + ex.name })}</div><p class="howto">${esc(lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(lib.cue)}</p>`;
+    if (lib) h += `<div class="fig">${U.svg(lib, { id: 'live:' + encodeURIComponent(ex.name), label: 'Animation: ' + ex.name })}</div>${U.bodyMap(lib)}<p class="howto">${esc(lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(lib.cue)}</p>`;
     h += '</div><div class="ex-r">';
     if (!done && sg.why) h += `<div class="sugg">${k === 'w' && sg.kg != null ? `<b>Heute ${fmtKg(sg.kg)}.</b> ` : ''}${esc(sg.why)}</div>`;
     h += `<div class="sets" role="group" aria-label="Sätze ${esc(ex.name)}"><div class="set head"><span>SATZ</span><span>${k === 'time' ? 'SEKUNDEN' : 'WDH'}</span><span>${k === 'w' ? 'KG' : ''}</span><span></span></div>`;
@@ -452,12 +452,19 @@
       const vars = /gestreckt und gebeugt/.test(s) ? ['Knie gestreckt', 'Knie gebeugt'] : [''];
       const name = s.replace(/\s+(\d+×)?\d+\s*s.*$/, '').replace(/\s+\d+×.*$/, '').replace(/,.*$/, '').replace(/\s+je(\s.*)?$/, '');
       const dose = s.slice(name.length).replace(/^[,\s]+/, '');
-      const parts = [];
+      const parts = [], steps = [];
+      const reps = +((s.match(/(\d+)×(?!\d)/) || [])[1] || 0);
       /* Sätze abwechselnd pro Seite: Satz 1 links, Satz 1 rechts, Satz 2 links … */
-      if (sec) for (let st = 0; st < sets; st++) for (let sd = 0; sd < sides; sd++) vars.forEach(v => { parts.push([sides === 2 ? (sd ? 'Rechts' : 'Links') : '', v, sets > 1 ? `Satz ${st + 1}` : ''].filter(Boolean).join(' · ')); });
+      if (sec) for (let st = 0; st < sets; st++) for (let sd = 0; sd < sides; sd++) vars.forEach(v => {
+        const side = sides === 2 ? (sd ? 'Rechts' : 'Links') : '';
+        parts.push([side, v, sets > 1 ? `Satz ${st + 1}` : ''].filter(Boolean).join(' · '));
+        steps.push({ set: st, label: [side, v].filter(Boolean).join(' – ') || 'Halten', sub: sec + ' s' });
+      });
+      else if (reps && sides === 2) ['Links', 'Rechts'].forEach(side => steps.push({ set: 0, label: side, sub: reps + '×' }));
+      const stepsSum = sec ? `${steps.length} Teile à ${sec} s` : reps ? `${reps} Wiederholungen je Seite` : '';
       /* Ablauf in Klartext: jeder Teil bekommt seine eigene Zeit */
       const seq = parts.length > 1 ? `${parts.length} × ${sec} s, jeder Teil einzeln: ${parts.join(' → ')}` : (sec ? `${sec} s halten` : '');
-      return { raw: s, name, dose, lib, sec: sec ? +sec : 0, parts, seq };
+      return { raw: s, name, dose, lib, sec: sec ? +sec : 0, parts, seq, steps, stepsSum };
     });
   }
   function mobBody(M, p) {
@@ -473,10 +480,10 @@
         ${review ? '' : `<button class="mcheck" data-mob="${p.id}|${i}" aria-pressed="${on}" aria-label="${esc(it.name)} erledigt">${on ? CHECK : ''}</button>`}</div>`;
       if (open) {
         h += `<div class="mob-detail${it.lib ? '' : ' solo'}">`;
-        if (it.lib) h += `<div class="fig">${U.svg(it.lib, { id: 'live:' + encodeURIComponent(it.name), label: 'Animation: ' + it.name })}</div>`;
+        if (it.lib) h += `<div class="mob-l"><div class="fig">${U.svg(it.lib, { id: 'live:' + encodeURIComponent(it.name), label: 'Animation: ' + it.name })}</div>${U.bodyMap(it.lib)}</div>`;
         h += '<div class="mob-r">';
         if (it.lib) h += `<p class="howto">${esc(it.lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(it.lib.cue)}</p>`;
-        if (it.seq && it.parts.length > 1) h += `<p class="seq"><b>Ablauf:</b> ${esc(it.seq)}</p>`;
+        h += stepsHTML(p, i, it, review);
         if (it.sec && !review) h += timerHTML(p, i, it);
         h += '</div></div>';
       }
@@ -485,6 +492,23 @@
     h += '</div>';
     if (state.msgs[p.id]) h += `<div class="msg">${esc(state.msgs[p.id])}</div>`;
     return { html: h, progress: [ticks.length, items.length] };
+  }
+  /* Ablauf als Schrittliste: nach Sätzen gruppiert, aktueller Teil hervorgehoben */
+  function stepsHTML(p, i, it, review) {
+    if (!it.steps || it.steps.length < 2) return '';
+    const T = state.timer && state.timer.pid === p.id && state.timer.i === i ? state.timer : null;
+    const cur = review || !it.sec ? -1 : (T ? T.part : 0);
+    const groups = [];
+    it.steps.forEach((st, k) => { (groups[st.set] = groups[st.set] || []).push([st, k]); });
+    let h = `<div class="steps"><div class="steps-h"><b>Ablauf</b><span>${esc(it.stepsSum)}</span></div>`;
+    groups.forEach((g, gi) => {
+      if (groups.length > 1) h += `<div class="steps-g">Satz ${gi + 1}</div>`;
+      h += '<ol>' + g.map(([st, k]) => {
+        const c = k < cur ? 'done' : k === cur ? 'now' : '';
+        return `<li${c ? ` class="${c}"` : ''}${c === 'now' ? ' aria-current="step"' : ''}><span class="sn">${c === 'done' ? CHECK : k + 1}</span><span class="sl">${esc(st.label)}</span><span class="ss">${esc(st.sub)}</span></li>`;
+      }).join('') + '</ol>';
+    });
+    return h + '</div>';
   }
   function timerHTML(p, i, it) {
     const T = state.timer && state.timer.pid === p.id && state.timer.i === i ? state.timer : null;
