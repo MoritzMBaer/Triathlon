@@ -20,7 +20,7 @@ if(m){var f=function(){var t=document.getElementById('themecolor');if(t)t.setAtt
 <style>
 /* Layout: iPhone-App mit Tab-Pille unten; ab 960 px Seitenleiste links und zweispaltige Heute-Ansicht */
 :root{
-  --bg:#F2F2F7; --card:#FFFFFF; --fill:#E5E5EA; --fill-2:#F2F2F7; --fg:#1C1C1E; --fg-2:#3A3A3C; --muted:#6E6E73; --faint:#8E8E93; --line:#E5E5EA; --chev:#C7C7CC;
+  --bg:#F2F2F7; --card:#FFFFFF; --fill:#E5E5EA; --mm-body:#E4E4E9; --mm-in:#D3D3D9; --fill-2:#F2F2F7; --fg:#1C1C1E; --fg-2:#3A3A3C; --muted:#6E6E73; --faint:#8E8E93; --line:#E5E5EA; --chev:#C7C7CC;
   --ink:#1C1C1E; --on-ink:#FFFFFF;
   --bike:#D9824F; --bike-t:#F7E9DF; --bike-d:#8A4A23; --bike-l:#EBC6AC; --bike-tr:#F1E2D6; --bike-hl:#A85A2C; --bike-sep:#E2C7B4; --bike-mu:#6B4A36;
   --run:#5FA27E; --run-t:#E3F0E8; --run-d:#3F7A5A; --run-l:#B9D9C6; --run-tr:#DCEDE3; --run-hl:#2E6B4B; --run-sep:#BFD8C8; --run-mu:#4A6655;
@@ -34,7 +34,7 @@ if(m){var f=function(){var t=document.getElementById('themecolor');if(t)t.setAtt
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root{
-  --bg:#000000; --card:#1C1C1E; --fill:#3A3A3C; --fill-2:#2C2C2E; --fg:#F2F2F7; --fg-2:#D1D1D6; --muted:#98989F; --faint:#8E8E93; --line:#38383A; --chev:#48484A;
+  --bg:#000000; --card:#1C1C1E; --fill:#3A3A3C; --mm-body:#3A3A3C; --mm-in:#4C4C50; --fill-2:#2C2C2E; --fg:#F2F2F7; --fg-2:#D1D1D6; --muted:#98989F; --faint:#8E8E93; --line:#38383A; --chev:#48484A;
   --ink:#F2F2F7; --on-ink:#1C1C1E;
   --bike:#E0915F; --bike-t:#33241A; --bike-d:#F0B48C; --bike-l:#6E4630; --bike-tr:#3E2B1F; --bike-hl:#F2A877; --bike-sep:#5A4030; --bike-mu:#D9B9A3;
   --run:#6DB58D; --run-t:#1C3126; --run-d:#8FD1AC; --run-l:#2F5A43; --run-tr:#1F3528; --run-hl:#A6E0BF; --run-sep:#355745; --run-mu:#B5D3C2;
@@ -299,7 +299,7 @@ button.dsd:active{background:var(--fill)}
 .musc{display:flex;align-items:center;gap:14px;background:var(--c-t);border-radius:18px;padding:10px 16px 8px 10px}
 .musc svg{width:118px;height:auto;flex:none;display:block}
 .musc svg text{font-size:6.5px;fill:var(--muted);font-family:var(--font)}
-.musc.big{justify-content:center;padding:12px 8px 6px}
+.musc.big{justify-content:center;padding:8px 0 2px;background:none}
 .musc.big svg{width:100%;max-width:340px;max-height:300px}
 .musc-tx{display:flex;flex-direction:column;gap:2px;min-width:0}
 .musc-tx small{font-size:12px;font-weight:600;color:var(--c-d);text-transform:uppercase;letter-spacing:.04em}
