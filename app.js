@@ -271,6 +271,18 @@
     return p.sport;
   }
 
+  /* ---------- Bildschirm wachhalten, solange Kraft oder Mobility läuft ---------- */
+  let wake = null, wakeBusy = false;
+  async function syncWake(M) {
+    if (!('wakeLock' in navigator)) return;
+    const want = document.visibilityState === 'visible' && !!(M && M.plan.some(p => p.date === today() && ['Kraft', 'Mobility'].includes(sp(p.sport).fam) && isStarted(p)));
+    if (want && !wake && !wakeBusy) {
+      wakeBusy = true;
+      try { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } catch (e) { wake = null; }
+      wakeBusy = false;
+    } else if (!want && wake) { const w = wake; wake = null; try { await w.release(); } catch (e) {} }
+  }
+
   /* ---------- Übersicht vor dem Start (Kraft & Mobility) ---------- */
   const isStarted = p => !p.done && (state.started[p.id] != null ? state.started[p.id] : !!ls.get('tri:start:' + p.id, false));
   function setStarted(pid, on) { state.started[pid] = on; if (on) ls.set('tri:start:' + pid, true); else ls.del('tri:start:' + pid); }
@@ -441,7 +453,8 @@
       const name = s.replace(/\s+(\d+×)?\d+\s*s.*$/, '').replace(/\s+\d+×.*$/, '').replace(/,.*$/, '').replace(/\s+je(\s.*)?$/, '');
       const dose = s.slice(name.length).replace(/^[,\s]+/, '');
       const parts = [];
-      if (sec) for (let sd = 0; sd < sides; sd++) vars.forEach(v => { for (let st = 0; st < sets; st++) parts.push([sides === 2 ? (sd ? 'Rechts' : 'Links') : '', v, sets > 1 ? `Satz ${st + 1}` : ''].filter(Boolean).join(' · ')); });
+      /* Sätze abwechselnd pro Seite: Satz 1 links, Satz 1 rechts, Satz 2 links … */
+      if (sec) for (let st = 0; st < sets; st++) for (let sd = 0; sd < sides; sd++) vars.forEach(v => { parts.push([sides === 2 ? (sd ? 'Rechts' : 'Links') : '', v, sets > 1 ? `Satz ${st + 1}` : ''].filter(Boolean).join(' · ')); });
       /* Ablauf in Klartext: jeder Teil bekommt seine eigene Zeit */
       const seq = parts.length > 1 ? `${parts.length} × ${sec} s, jeder Teil einzeln: ${parts.join(' → ')}` : (sec ? `${sec} s halten` : '');
       return { raw: s, name, dose, lib, sec: sec ? +sec : 0, parts, seq };
@@ -907,6 +920,7 @@
     app.dataset.view = v;
     let html;
     const M = model();
+    syncWake(M);
     if (v === 'einrichtung') html = viewSetup();
     else if (!M) html = header('Heute', 'Lade deine Daten …') + banner() + '<div class="skel"></div>';
     else html = v === 'woche' ? viewWoche(M) : v === 'fortschritt' ? viewFortschritt(M) : viewHeute(M);
