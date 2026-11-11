@@ -269,10 +269,10 @@
         const dr = drillsOf(s.lab);
         if (dr) {
           lab = dr.length > 1 ? `Alle ${esc(s.dur)} die nächste Übung` : 'Technik';
-          extra = `<ol class="drill-list">${dr.map(([n, t, why], di) => {
+          extra = `<ol class="drill-list${dr.length > 1 ? ' loop' : ''}" aria-label="Übungen der Reihe nach, danach wieder von vorn">${dr.map(([n, t, why], di) => {
             const key = p.id + ':' + bi + ':' + si + ':' + di, open = !!state.drillOpen[key];
             return `<li class="${open ? 'open' : ''}">${t ? `<button class="dr-h" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>` : `<div class="dr-h"><b>${esc(n)}</b></div>`}${open && t ? `<div class="dr-x"><p>${esc(t)}</p>${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}</div>` : ''}</li>`;
-          }).join('')}</ol>${dr.length > 1 ? '<div class="drill-seq">Danach wieder von vorn.</div>' : ''}`;
+          }).join('')}</ol>`;
         }
         return `<div class="st${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${lab}</span><span class="t">${esc(s.tgt)}</span></div>`;
       }).join('');
@@ -1103,6 +1103,22 @@
   }
   /* Antippen oder Wischen während der Fahrt hält sie an, wie bei iOS */
   ['touchstart', 'wheel'].forEach(ev => window.addEventListener(ev, () => { scrollRun++; }, { passive: true }));
+  /* Aufgeklapptes Feld ganz zeigen: steht es schon ganz im Bild, bleibt alles stehen;
+     ragt es unten raus, rückt es in die Mitte des freien Bereichs (wie beim Aufklappen einer Einheit) */
+  function bringIntoView(el) {
+    let box = el.parentElement;
+    while (box && box !== document.body && !(/(auto|scroll)/.test(getComputedStyle(box).overflowY) && box.scrollHeight > box.clientHeight)) box = box.parentElement;
+    if (box && box !== document.body) { el.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); return; }
+    const r = el.getBoundingClientRect();
+    const sb = $('.statusbg'), top = (sb ? sb.offsetHeight : 0) + 16;
+    const nav = $('nav.tabs'), nr = nav && nav.getBoundingClientRect();
+    const bottom = nr && nr.height ? nr.top - 16 : window.innerHeight - 16;
+    const room = bottom - top;
+    let dy = 0;
+    if (r.top < top) dy = r.top - top;
+    else if (r.bottom > bottom) dy = r.height <= room ? (r.top + r.height / 2) - (top + room / 2) : r.top - top;
+    if (dy) glideScroll(Math.max(0, Math.min(window.scrollY + dy, document.documentElement.scrollHeight - window.innerHeight)), 300);
+  }
   function toggleUnit(id, open) {
     const v = current();
     /* Laptop-Woche: Einheit groß im Fenster statt in der schmalen Tagesspalte */
@@ -1276,7 +1292,11 @@
     }
     if (q('a.skip')) { e.preventDefault(); const m = $('#app'); m.focus({ preventScroll: true }); const f = m.querySelector('button,[href],input,[tabindex="0"]'); if (f) f.focus(); return; }
     if (q('[data-reload]')) { load(true); return; }
-    if ((el = q('[data-drill]'))) { e.stopPropagation(); const k = el.dataset.drill; state.drillOpen[k] = !state.drillOpen[k]; render(); return; }
+    if ((el = q('[data-drill]'))) {
+      e.stopPropagation(); const k = el.dataset.drill; state.drillOpen[k] = !state.drillOpen[k]; render();
+      if (state.drillOpen[k]) { const b = document.querySelector(`[data-drill="${CSS.escape(k)}"]`); if (b) bringIntoView(b.closest('li') || b); }
+      return;
+    }
     if ((el = q('[data-jump]'))) {
       if (!jumpTo(el.dataset.jump)) { state.weekOff = Math.round((monday(parseISO(el.dataset.jump)) - monday(new Date())) / (7 * 864e5)); state.pendingJump = el.dataset.jump; if (location.hash === '#woche') { render(); requestAnimationFrame(() => jumpTo(state.pendingJump)); state.pendingJump = null; } else location.hash = '#woche'; }
       return;
