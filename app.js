@@ -269,7 +269,7 @@
         const dr = drillsOf(s.lab);
         if (dr) {
           lab = dr.length > 1 ? `Alle ${esc(s.dur)} die nächste Übung` : 'Technik';
-          extra = `<ol class="drill-list${dr.length > 1 ? ' loop' : ''}" aria-label="Übungen der Reihe nach, danach wieder von vorn">${dr.map(([n, t, why], di) => {
+          extra = `<ol class="drill-list" aria-label="Übungen der Reihe nach">${dr.map(([n, t, why], di) => {
             const key = p.id + ':' + bi + ':' + si + ':' + di, open = !!state.drillOpen[key];
             return `<li class="${open ? 'open' : ''}">${t ? `<button class="dr-h" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>` : `<div class="dr-h"><b>${esc(n)}</b></div>`}${open && t ? `<div class="dr-x"><p>${esc(t)}</p>${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}</div>` : ''}</li>`;
           }).join('')}</ol>`;
