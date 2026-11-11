@@ -63,7 +63,7 @@
     data: ls.get('tri:data', null),
     loading: false, err: null, busy: {}, msgs: {},
     weekOff: 0, sheetId: null, active: {}, drafts: {}, open: {}, slide: 0, started: {},
-    rest: null, timer: null, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
+    rest: null, timer: null, timerSeen: {}, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
   };
 
   /* ---------- Schnittstelle ---------- */
@@ -531,7 +531,8 @@
     const T = state.timer && state.timer.pid === p.id && state.timer.i === i ? state.timer : null;
     const part = T ? T.part : 0, left = T ? Math.max(0, Math.ceil(T.left)) : it.sec;
     const C = 2 * Math.PI * 36, frac = left / it.sec;
-    return `<div class="timer" id="timer"><svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label="Timer: noch ${left} Sekunden">
+    const k = p.id + '|' + i;
+    return `<div class="timer${state.timerSeen[k] ? ' t-free' : ''}" id="timer" data-k="${k}"><svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label="Timer: noch ${left} Sekunden">
       <circle cx="42" cy="42" r="36" fill="none" stroke="var(--c-t)" stroke-width="7"/>
       <circle id="timer-arc" cx="42" cy="42" r="36" fill="none" stroke="var(--c)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(C * frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 42 42)"/>
       <text id="timer-txt" x="42" y="48" text-anchor="middle" font-family="ui-rounded,-apple-system,system-ui,sans-serif" font-size="20" font-weight="700" fill="var(--fg)">${Math.floor(left / 60)}:${pad(left % 60)}</text></svg>
@@ -1367,7 +1368,12 @@
   function stuckTimer() {
     document.querySelectorAll('.mob-ex.active .timer').forEach(t => {
       const d = t.parentElement, r = t.getBoundingClientRect(), dr = d.getBoundingClientRect();
-      t.classList.toggle('stuck', r.bottom < dr.bottom - parseFloat(getComputedStyle(d).paddingBottom) - 1);
+      /* Erst schweben lassen, wenn man einmal bis zum Timer gescrollt hat – vorher in Ruhe lesen */
+      if (!t.classList.contains('t-free')) {
+        const sh = t.closest('.sheet'), lim = (sh ? sh.getBoundingClientRect().bottom : window.innerHeight) - (parseFloat(getComputedStyle(t).bottom) || 0);
+        if (r.bottom <= lim + 1 && r.bottom > 0) { state.timerSeen[t.dataset.k] = true; t.classList.add('t-free'); }
+      }
+      t.classList.toggle('stuck', t.classList.contains('t-free') && r.bottom < dr.bottom - parseFloat(getComputedStyle(d).paddingBottom) - 1);
     });
   }
   window.TRI_STUCK = stuckTimer;

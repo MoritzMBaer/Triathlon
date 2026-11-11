@@ -362,9 +362,10 @@ button.dsd:active{background:var(--fill)}
 .mob-detail .musc-tx{display:none}
 .mob-detail .mob-l .musc-tx b{font-size:13px}
 .mob-detail .mob-l .musc-tx small{font-size:11px}
-.mob-ex.active .timer{position:sticky;bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:14;box-shadow:var(--shadow)}
-/* Klebt der Timer unten, den Streifen bis zur Leiste füllen, damit kein Text durchscheint */
-.mob-ex.active .timer.stuck::after{content:"";position:absolute;left:-40px;right:-40px;top:100%;height:calc(120px + env(safe-area-inset-bottom,0px));background:var(--bg);pointer-events:none}
+.mob-ex.active .timer{bottom:calc(86px + env(safe-area-inset-bottom,0px))}
+.mob-ex.active .timer.t-free{position:sticky;z-index:14;box-shadow:var(--shadow)}
+/* Klebt der Timer unten: Text darunter weich ausblenden und verwischen statt hart abdecken */
+.mob-ex.active .timer.stuck::after{content:"";position:absolute;left:-40px;right:-40px;top:100%;height:calc(120px + env(safe-area-inset-bottom,0px));pointer-events:none;background:linear-gradient(to bottom,color-mix(in srgb,var(--bg) 30%,transparent),color-mix(in srgb,var(--bg) 75%,transparent) 45%,var(--bg));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .mob-ex.active .timer.stuck{border-radius:18px}
 .sheet .mob-ex.active .timer{bottom:8px}
 .mob-ex.active .timer{gap:12px}
