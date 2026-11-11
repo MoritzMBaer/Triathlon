@@ -189,26 +189,35 @@
     if ((m = t.match(/^(\d+)s$/))) return m[1] + ' s';
     return t;
   }
-  function splitTarget(s) {
+  function splitTarget(s, cue) {
     let m;
-    if ((m = s.match(/^(\d+)-(\d+)w\b\s*(.*)$/))) return { t: m[1] + '–' + m[2] + ' W', l: m[3] };
-    if ((m = s.match(/^(\d+)w\b\s*(.*)$/))) return { t: m[1] + ' W', l: m[2] };
-    if ((m = s.match(/^(\d+)-(\d+)bpm HR\s*(.*)$/))) return { t: m[1] + '–' + m[2] + ' bpm', l: m[3] };
-    if ((m = s.match(/^([\d:]+)-([\d:]+)\/km Pace\s*(.*)$/))) return { t: m[1] + '–' + m[2] + ' /km', l: m[3] };
+    cue = (cue || '').trim();
+    /* Lauf nach Puls: intervals.icu bekommt % LTHR, auf der Uhr steht der bpm-Bereich als Hinweis davor */
+    const bpm = cue.match(/^(\d+)\s*[-–]\s*(\d+)\s*bpm$/);
+    if ((m = s.match(/^(\d+)-(\d+)%\s*LTHR\s*(.*)$/))) return bpm ? { t: bpm[1] + '–' + bpm[2] + ' bpm', l: m[3], v: +bpm[1] / LTHR } : { t: m[1] + '–' + m[2] + ' % LTHR', l: m[3], v: m[1] / 100 };
+    if ((m = s.match(/^(\d+)-(\d+)w\b\s*(.*)$/))) return { t: m[1] + '–' + m[2] + ' W', l: m[3] || cue, v: +m[1] / FTP };
+    if ((m = s.match(/^(\d+)w\b\s*(.*)$/))) return { t: m[1] + ' W', l: m[2] || cue, v: +m[1] / FTP };
+    if ((m = s.match(/^(\d+)-(\d+)bpm HR\s*(.*)$/))) return { t: m[1] + '–' + m[2] + ' bpm', l: m[3] || cue, v: +m[1] / LTHR };
+    if ((m = s.match(/^([\d:]+)-([\d:]+)\/km Pace\s*(.*)$/))) { const [mm, ss] = m[1].split(':').map(Number); return { t: m[1] + '–' + m[2] + ' /km', l: m[3] || cue, v: TPACE / ((mm || 7) * 60 + (ss || 0)) }; }
     const pm = s.match(/^(.*?)\.?\s*(\d+ s Pause)\s*$/);
-    if (pm) return { t: pm[2], l: pm[1], pause: true };
-    return { t: '', l: s };
+    if (pm) return { t: pm[2], l: pm[1], pause: true, v: 0 };
+    return { t: '', l: [cue, s].filter(Boolean).join(' '), v: 0 };
   }
+  /* Bezugswerte, damit Puls-, Pace- und Wattangaben in einer Einheit vergleichbar hoch dargestellt werden */
+  const LTHR = 182, FTP = 210, TPACE = 325;
+  const DUR_RE = /(^|\s)(\d+m\d+s|\d+mtr|\d+m|\d+s)(?=\s|$)/;
   function blocks(p) {
     const out = []; let cur = null;
     p.workout.split('\n').forEach(raw => {
       const l = raw.trim();
       if (!l) { cur = null; return; }
-      const st = l.match(/^-\s*(\S+)\s*(.*)$/);
+      /* Schritt: „- [Hinweis] Dauer Ziel“ – die Dauer muss nicht vorn stehen */
+      const st = /^-\s*/.test(l) && l.replace(/^-\s*/, '').match(DUR_RE);
       if (st) {
         if (!cur) { cur = { h: '', rep: 0, steps: [] }; out.push(cur); }
-        const tg = splitTarget(st[2]);
-        cur.steps.push({ dur: fmtDur(st[1]), raw: st[1], tgt: tg.t, lab: tg.l, pause: tg.pause });
+        const body = l.replace(/^-\s*/, ''), cue = body.slice(0, st.index + st[1].length), rest = body.slice(st.index + st[0].length).trim();
+        const tg = splitTarget(rest, cue);
+        cur.steps.push({ dur: fmtDur(st[2]), raw: st[2], tgt: tg.t, lab: tg.l, pause: tg.pause, v: tg.v });
       } else {
         const rep = l.match(/^(.*?)\s+(\d+)x$/);
         cur = { h: rep ? rep[1] : l, rep: rep ? +rep[2] : 0, steps: [] };
@@ -218,11 +227,7 @@
     return out;
   }
   function amount(raw) { let m; if ((m = raw.match(/^(\d+)mtr$/))) return +m[1]; if ((m = raw.match(/^(\d+)m(\d+)s$/))) return +m[1] + m[2] / 60; if ((m = raw.match(/^(\d+)m$/))) return +m[1]; if ((m = raw.match(/^(\d+)s$/))) return m[1] / 60; return 1; }
-  function intensityOf(st, all) {
-    const n = parseFloat((st.tgt.match(/\d+/) || [0])[0]);
-    if (/\/km/.test(st.tgt)) { const [mm, ss] = st.tgt.split('–')[0].split(':').map(Number); return 1 / ((mm || 7) * 60 + (ss || 0)); }
-    return n || 0;
-  }
+  function intensityOf(st) { return st.v || 0; }
   function flowBar(bl, k) {
     const flat = [];
     bl.forEach(b => { const n = b.rep || 1; for (let i = 0; i < n; i++) b.steps.forEach(s => flat.push(s)); });
@@ -231,7 +236,7 @@
     const max = Math.max(...ints), min = Math.min(...ints.filter(x => x > 0), max);
     const mainIdx = mainStep(bl);
     return `<div class="flow" role="img" aria-label="Ablauf der Einheit">${flat.map((s, i) => {
-      const v = ints[i], h = max === min ? (s.pause ? 45 : 70) : 35 + 65 * (v - min) / (max - min || 1);
+      const v = ints[i], h = !v || max === min ? (s.pause || !v ? 45 : 70) : 35 + 65 * (v - min) / (max - min || 1);
       const hard = h > 80;
       return `<i style="flex:${Math.max(amount(s.raw), 0.35).toFixed(2)};height:${Math.round(h)}%;background:var(--c${hard ? '-hl' : h > 55 ? '' : '-l'})"></i>`;
     }).join('')}</div>`;
