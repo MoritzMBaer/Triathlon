@@ -271,7 +271,7 @@
           lab = dr.length > 1 ? `Alle ${esc(s.dur)} die nächste Übung` : 'Technik';
           extra = `<ol class="drill-list">${dr.map(([n, t], di) => {
             const key = p.id + ':' + bi + ':' + si + ':' + di, open = !!state.drillOpen[key];
-            return `<li><div class="dr-h"><span class="dr-n">${di + 1}</span><b>${esc(n)}</b>${t ? `<button class="info${open ? ' on' : ''}" data-drill="${esc(key)}" aria-expanded="${open}" aria-label="${esc(n)} erklären">${INFO_I}</button>` : ''}</div>${open && t ? `<p>${esc(t)}</p>` : ''}</li>`;
+            return `<li class="${open ? 'open' : ''}">${t ? `<button class="dr-h" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>` : `<div class="dr-h"><b>${esc(n)}</b></div>`}${open && t ? `<p>${esc(t)}</p>` : ''}</li>`;
           }).join('')}</ol>${dr.length > 1 ? '<div class="drill-seq">Danach wieder von vorn.</div>' : ''}`;
         }
         return `<div class="st${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${lab}</span><span class="t">${esc(s.tgt)}</span></div>`;
