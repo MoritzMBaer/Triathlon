@@ -63,7 +63,7 @@
     data: ls.get('tri:data', null),
     loading: false, err: null, busy: {}, msgs: {},
     weekOff: 0, sheetId: null, active: {}, drafts: {}, open: {}, slide: 0, started: {},
-    rest: null, timer: null, timerSeen: {}, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
+    drillOpen: {}, rest: null, timer: null, timerSeen: {}, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
   };
 
   /* ---------- Schnittstelle ---------- */
@@ -258,20 +258,26 @@
     const names = m[1].split(/,\s*|\s+und\s+/).map(x => x.trim().replace(/\.$/, '')).filter(Boolean);
     return names.map(n => DRILLS[n.toLowerCase()] || [n.charAt(0).toUpperCase() + n.slice(1), '']);
   }
+  const INFO_I = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg>';
   function stepsHTML(p) {
     const bl = blocks(p), main = mainStep(bl);
     return bl.map((b, bi) => {
-      let drills = null;
+      let extra = '';
       const rows = b.steps.map((s, si) => {
         const isMain = (bi + ':' + si) === main;
-        let lab = s.lab || (b.rep ? '' : b.h);
+        let lab = esc(s.lab || (b.rep ? '' : b.h));
         const dr = drillsOf(s.lab);
-        if (dr) { drills = dr; lab = dr.length > 1 ? 'Technik, im Wechsel' : 'Technik'; }
-        return `<div class="st${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${esc(lab)}</span><span class="t">${esc(s.tgt)}</span></div>`;
+        if (dr) {
+          const key = p.id + ':' + bi + ':' + si, open = !!state.drillOpen[key];
+          lab = `<span class="lab-i">Technik<button class="info${open ? ' on' : ''}" data-drill="${esc(key)}" aria-expanded="${open}" aria-label="Technikübungen erklären">${INFO_I}</button></span>`;
+          const seq = dr.map(d => d[0]).join(' → ');
+          extra = `<div class="drill-seq">${dr.length > 1 ? `Alle ${esc(s.dur)} eine andere Übung: ${esc(seq)}, dann wieder von vorn.` : `Alle ${esc(s.dur)}: ${esc(seq)}.`}</div>`;
+          if (open) extra += `<div class="drills">${dr.map(([n, t]) => `<div><b>${esc(n)}</b>${t ? `<span>${esc(t)}</span>` : ''}</div>`).join('')}</div>`;
+        }
+        return `<div class="st${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${lab}</span><span class="t">${esc(s.tgt)}</span></div>`;
       }).join('');
-      const dHTML = drills ? `<div class="drills">${drills.map(([n, t]) => `<div><b>${esc(n)}</b>${t ? `<span>${esc(t)}</span>` : ''}</div>`).join('')}</div>` : '';
-      if (b.rep) return `<div class="rep"><div class="rep-h">${esc(b.h)} <b>${b.rep}×</b></div>${rows}${dHTML}</div>`;
-      return rows + dHTML;
+      if (b.rep) return `<div class="rep"><div class="rep-h">${esc(b.h)} <b>${b.rep}×</b></div>${rows}${extra}</div>`;
+      return rows + extra;
     }).join('');
   }
   function unitMeta(p) {
@@ -1270,6 +1276,7 @@
     }
     if (q('a.skip')) { e.preventDefault(); const m = $('#app'); m.focus({ preventScroll: true }); const f = m.querySelector('button,[href],input,[tabindex="0"]'); if (f) f.focus(); return; }
     if (q('[data-reload]')) { load(true); return; }
+    if ((el = q('[data-drill]'))) { e.stopPropagation(); const k = el.dataset.drill; state.drillOpen[k] = !state.drillOpen[k]; render(); return; }
     if ((el = q('[data-jump]'))) {
       if (!jumpTo(el.dataset.jump)) { state.weekOff = Math.round((monday(parseISO(el.dataset.jump)) - monday(new Date())) / (7 * 864e5)); state.pendingJump = el.dataset.jump; if (location.hash === '#woche') { render(); requestAnimationFrame(() => jumpTo(state.pendingJump)); state.pendingJump = null; } else location.hash = '#woche'; }
       return;

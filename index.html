@@ -114,6 +114,13 @@ input{font:inherit}
 .rep .st{padding:3px 0 3px 12px;border-bottom:0;border-left:2px solid var(--c-l)}
 .rep .st.main{border-left-color:var(--c)}
 .st.ps .t{font-weight:500;color:var(--c-mu)}
+.lab-i{display:inline-flex;align-items:center;gap:2px}
+.info{position:relative;display:inline-grid;place-items:center;width:28px;height:28px;margin:-6px 0;padding:0;border:0;border-radius:50%;background:transparent;color:var(--c-mu);cursor:pointer}
+.info::before{content:'';position:absolute;inset:-8px}
+.info svg{width:19px;height:19px}
+.info.on{color:var(--c-hl)}
+.info:focus-visible{outline:2px solid var(--c-hl);outline-offset:1px}
+.drill-seq{margin:0 0 2px 12px;padding-left:84px;font-size:13.5px;line-height:1.4;color:var(--c-mu)}
 .drills{display:flex;flex-direction:column;gap:8px;margin:6px 0 2px 12px;padding:10px 12px;background:var(--fill);border-radius:14px}
 .drills div{display:flex;flex-direction:column;gap:2px}
 .drills b{font-size:15px;font-weight:700}
