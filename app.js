@@ -199,8 +199,8 @@
     if ((m = s.match(/^(\d+)w\b\s*(.*)$/))) return { t: m[1] + ' W', l: m[2] || cue, v: +m[1] / FTP };
     if ((m = s.match(/^(\d+)-(\d+)bpm HR\s*(.*)$/))) return { t: 'HF ' + m[1] + '–' + m[2], l: m[3] || cue, v: +m[1] / LTHR };
     if ((m = s.match(/^([\d:]+)-([\d:]+)\/km Pace\s*(.*)$/))) { const [mm, ss] = m[1].split(':').map(Number); return { t: m[1] + '–' + m[2] + ' /km', l: m[3] || cue, v: TPACE / ((mm || 7) * 60 + (ss || 0)) }; }
-    const pm = s.match(/^(.*?)\.?\s*(\d+ s Pause)\s*$/);
-    if (pm) return { t: pm[2], l: pm[1], pause: true, v: 0 };
+    const pm = s.match(/^(.*?)\.?\s*(\d+) s Pause\s*$/);
+    if (pm) return { t: 'Pause ' + pm[2] + ' s', l: pm[1], pause: true, v: 0 };
     return { t: '', l: [cue, s].filter(Boolean).join(' '), v: 0 };
   }
   /* Bezugswerte, damit Puls-, Pace- und Wattangaben in einer Einheit vergleichbar hoch dargestellt werden */
@@ -246,16 +246,32 @@
     bl.forEach((b, bi) => b.steps.forEach((s, si) => { const v = intensityOf(s) * (b.rep ? 1.2 : 1) + amount(s.raw) / 1000; if (v > bv && !s.pause) { bv = v; best = bi + ':' + si; } }));
     return best;
   }
+  /* Schwimm-Technikübungen: kurze Erklärung direkt unter dem Block */
+  const DRILLS = {
+    'abschlag': ['Abschlag', 'Ein Arm bleibt vorn gestreckt, bis der andere nach dem Zug vorn ankommt und ihn „abschlägt“. Erst dann zieht der vordere Arm. Für eine lange Gleitphase und ruhiges Timing.'],
+    'fäuste': ['Fäuste', 'Kraul mit geschlossenen Fäusten. So ziehst du mit dem ganzen Unterarm und hältst den Ellbogen hoch. Danach wieder mit offener Hand schwimmen und den Unterschied spüren.'],
+    'einarmig': ['Einarmig', 'Nur ein Arm zieht, der andere bleibt vorn gestreckt liegen. Den Zug bis zur Hüfte durchziehen und mit dem Körper mitdrehen. Zur Seite des ziehenden Arms atmen, nach jeder Bahn wechseln.']
+  };
+  function drillsOf(lab) {
+    const m = (lab || '').match(/^Technik(?:übung(?:en)?)?(?:\s+im Wechsel)?:\s*(.+)$/i);
+    if (!m) return null;
+    const names = m[1].split(/,\s*|\s+und\s+/).map(x => x.trim().replace(/\.$/, '')).filter(Boolean);
+    return names.map(n => DRILLS[n.toLowerCase()] || [n.charAt(0).toUpperCase() + n.slice(1), '']);
+  }
   function stepsHTML(p) {
     const bl = blocks(p), main = mainStep(bl);
     return bl.map((b, bi) => {
+      let drills = null;
       const rows = b.steps.map((s, si) => {
         const isMain = (bi + ':' + si) === main;
-        const lab = s.lab || (b.rep ? '' : b.h);
-        return `<div class="st${isMain ? ' main' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${esc(lab)}</span><span class="t">${esc(s.tgt)}</span></div>`;
+        let lab = s.lab || (b.rep ? '' : b.h);
+        const dr = drillsOf(s.lab);
+        if (dr) { drills = dr; lab = dr.length > 1 ? 'Technik, im Wechsel' : 'Technik'; }
+        return `<div class="st${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${esc(lab)}</span><span class="t">${esc(s.tgt)}</span></div>`;
       }).join('');
-      if (b.rep) return `<div class="rep"><div class="rep-h">${esc(b.h)} <b>${b.rep}×</b></div>${rows}</div>`;
-      return rows;
+      const dHTML = drills ? `<div class="drills">${drills.map(([n, t]) => `<div><b>${esc(n)}</b>${t ? `<span>${esc(t)}</span>` : ''}</div>`).join('')}</div>` : '';
+      if (b.rep) return `<div class="rep"><div class="rep-h">${esc(b.h)} <b>${b.rep}×</b></div>${rows}${dHTML}</div>`;
+      return rows + dHTML;
     }).join('');
   }
   function unitMeta(p) {
