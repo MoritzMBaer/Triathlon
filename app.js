@@ -320,7 +320,7 @@
       /* Mobility: nur eine Figur mit allen Muskeln, die heute gedehnt werden – die Übungen kommen nach dem Start */
       const m = [...new Set(rows.flatMap(r => (r.lib && r.lib.m) || []))];
       const map = m.length ? U.bodyMap({ m, mh: rows.length + ' Übungen · gedehnt' }) : '';
-      return map || `<p class="u-sum">${rows.length} Übungen</p>`;
+      return map ? map.replace('class="musc"', 'class="musc big"').replace(/<div class="musc-tx">[\s\S]*?<\/div>/, '') : `<p class="u-sum">${rows.length} Übungen</p>`;
     }
     const li = (r, i) => `<li${r.on ? ' class="on"' : ''}><span class="el-fig">${r.lib ? U.svg(r.lib, { t: 0.6 }) : `<b>${i + 1}</b>`}</span><span class="el-tx"><b>${esc(r.name)}</b><small>${esc(r.sub || '')}</small></span>${r.on ? `<span class="el-ok" aria-label="erledigt">${CHECK}</span>` : ''}</li>`;
     const MAX = 6, head = rows.slice(0, MAX), rest = rows.slice(MAX);
