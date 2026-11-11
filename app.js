@@ -987,9 +987,9 @@
     if (state.sheetId) renderSheet(); else if (!$('#sheet').hidden && !state.sheetClosing) closeSheetNow();
     tickRest();
     if (state.scrollEx) {
-      const pid = state.scrollEx; state.scrollEx = null;
+      const pid = state.scrollEx, head = state.scrollHead; state.scrollEx = null; state.scrollHead = false;
       const root = state.sheetId === pid ? $('#sheet') : app;
-      const el = root.querySelector('.ex-card, .mob-ex.active, .run-top');
+      const el = (head && root.querySelector('.run-top')) || root.querySelector('.mob-ex.active') || root.querySelector('.ex-card') || root.querySelector('.run-top'); /* genau zur aktiven Übung, nicht zur Kopfzeile */
       if (el) el.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
     }
   }
@@ -1289,7 +1289,7 @@
       const [pid, i] = el.dataset.start.split('|'); const p = plan(pid); if (!p) return;
       setStarted(pid, true);
       if (+i >= 0) state.active[pid] = +i; else delete state.active[pid];
-      if (sp(p.sport).fam !== 'Mobility') state.scrollEx = pid; /* Mobility bleibt beim Start an Ort und Stelle */
+      if (sp(p.sport).fam !== 'Mobility') { state.scrollEx = pid; state.scrollHead = true; } /* Mobility bleibt beim Start an Ort und Stelle */
       render(); return;
     }
     if ((el = q('[data-stop]'))) { setStarted(el.dataset.stop, false); state.timer = null; render(); return; }
