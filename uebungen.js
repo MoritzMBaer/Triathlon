@@ -310,7 +310,7 @@
   function bodyMap(ex) {
     if (!ex || !ex.m || !ex.m.length) return '';
     const on = new Set(ex.m), cx = { v: 30, h: 90 };
-    const st = act => `fill="${act ? 'var(--c-d)' : 'var(--mm-in)'}" stroke="var(--mm-body)" stroke-width=".9" stroke-linejoin="round"`;
+    const st = act => `fill="${act ? 'var(--mm-act)' : 'var(--mm-in)'}" stroke="var(--mm-body)" stroke-width=".9" stroke-linejoin="round"`;
     const put = (sd, path, single, act) => { g[sd] += `<path d="${path}" ${st(act)}/>` + (single ? '' : `<path d="${path}" transform="scale(-1 1)" ${st(act)}/>`); };
     let g = { v: '', h: '' };
     ['v', 'h'].forEach(sd => DECO[sd].forEach(d => put(sd, d, 0, false)));
