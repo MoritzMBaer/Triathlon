@@ -322,7 +322,7 @@ button.dsd:active{background:var(--fill)}
 .tick svg{width:20px;height:20px}
 .set.ok .tick{background:var(--c);border-color:var(--c);color:#fff}
 .set-acts{display:flex;gap:18px;flex-wrap:wrap}
-.exlist{background:var(--card);border-radius:24px;overflow:hidden}
+.exlist{background:var(--card);border-radius:24px;overflow:hidden;overflow:clip}
 .exrow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:none;border:0;border-bottom:.5px solid var(--line);padding:10px 16px;min-height:64px}
 .exrow:last-child{border-bottom:0}
 .thumb{width:58px;flex:none;background:var(--fill-2);border-radius:10px;padding:3px}
@@ -349,6 +349,19 @@ button.dsd:active{background:var(--fill)}
 .mcheck[aria-pressed="true"]{background:var(--c);border-color:var(--c)}
 .mob-detail{padding:0 16px 14px;display:flex;flex-direction:column;gap:10px;background:var(--fill-2)}
 .mob-ex.active .mob-row{background:var(--fill-2)}
+.mob-ex.active{scroll-margin-top:max(12px,env(safe-area-inset-top,0px))}
+/* Handy: Figur und Muskelgrafik nebeneinander, damit Erklärung und Timer gleichzeitig ins Bild passen */
+.mob-detail .mob-l{flex-direction:row;align-items:stretch}
+.mob-detail .mob-l .fig{flex:1.5;min-width:0;display:flex;align-items:center}
+.mob-detail .fig svg{max-height:140px}
+.mob-detail .mob-l .musc{flex:1;min-width:0;flex-direction:column;justify-content:center;gap:4px;padding:8px;text-align:center}
+.mob-detail .mob-l .musc svg{width:100%;max-width:110px}
+.mob-detail .mob-l .musc-tx b{font-size:13px}
+.mob-detail .mob-l .musc-tx small{font-size:11px}
+.mob-ex.active .timer{position:sticky;bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:3;box-shadow:var(--shadow)}
+.sheet .mob-ex.active .timer{bottom:8px}
+.mob-ex.active .timer{gap:12px}
+.mob-ex.active .timer>svg{width:72px;height:72px;flex:none}
 .timer{display:flex;align-items:center;gap:16px;background:var(--card);border-radius:18px;padding:12px 14px}
 .timer .tx{display:flex;flex-direction:column;gap:8px;flex-grow:1;min-width:0}
 .timer small{font-size:13px;color:var(--muted);line-height:1.35}
@@ -374,8 +387,8 @@ button.dsd:active{background:var(--fill)}
 .mseq li.done .sl,.mseq li.done .ss{color:var(--faint)}
 @media (prefers-reduced-motion:reduce){.mseq li{transition:none}}
 .timer .bts{display:flex;gap:8px}
-.timer .bts button{flex:1;height:42px;border-radius:999px;border:0;background:var(--fill-2);font-weight:600;font-size:14px}
-.timer .bts button.go{background:var(--c-d);color:var(--card)}
+.timer .bts button{flex:1;min-width:0;padding:0 6px;white-space:nowrap;height:42px;border-radius:999px;border:0;background:var(--fill-2);font-weight:600;font-size:14px}
+.timer .bts button.go{flex:1.35;background:var(--c-d);color:var(--card)}
 
 .restbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:20;display:flex;align-items:center;gap:12px;background:var(--ink);color:var(--on-ink);border-radius:999px;padding:6px 6px 6px 16px;box-shadow:var(--shadow)}
 .restbar b{font-family:var(--round);font-size:17px}
@@ -640,7 +653,16 @@ kbd{font-family:var(--round);font-size:11px;font-weight:700;line-height:1;min-wi
   .ex-body .fig svg{max-height:240px}
 }
 @container (min-width:520px){
-  .mob-detail:not(.solo){display:grid;grid-template-columns:minmax(180px,.8fr) minmax(0,1.2fr);gap:16px;align-items:start;padding-top:4px}
+  .mob-detail:not(.solo){display:grid;grid-template-columns:minmax(180px,.7fr) minmax(0,1.3fr);gap:16px;align-items:start;padding-top:4px}
+  .mob-detail:not(.solo) .mob-l{grid-row:span 2}
+  .mob-detail:not(.solo) .timer{grid-column:2}
+  .mob-detail .mob-l{flex-direction:column}
+  .mob-detail .mob-l .fig{flex:none;display:block}
+  .mob-detail .fig svg{max-height:200px}
+  .mob-detail .mob-l .musc{flex:none;flex-direction:row;justify-content:flex-start;gap:14px;padding:10px 16px 8px 10px;text-align:left}
+  .mob-detail .mob-l .musc svg{width:118px;max-width:none}
+  .mob-detail .mob-l .musc-tx b{font-size:15px}
+  .mob-detail .mob-l .musc-tx small{font-size:12px}
 }
 
 @media (min-width:960px){
@@ -661,6 +683,7 @@ kbd{font-family:var(--round);font-size:11px;font-weight:700;line-height:1;min-wi
   .mob-detail{padding:4px 20px 18px}
   .exrow,.ov-row{padding-left:20px;padding-right:20px}
   .restbar{bottom:28px;left:calc(50% + 120px)}
+  .mob-ex.active .timer{bottom:20px}
   .toast{left:calc(50% + 120px);top:20px}
 }
 

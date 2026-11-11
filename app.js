@@ -499,8 +499,10 @@
         h += '<div class="mob-r">';
         if (it.lib) h += `<p class="howto">${esc(it.lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(it.lib.cue)}</p>`;
         h += mobStepsHTML(p, i, it, review);
+        h += '</div>';
+        /* Timer als eigener Block: bleibt beim Scrollen unten sichtbar, während man die Übung liest */
         if (it.sec && !review) h += timerHTML(p, i, it);
-        h += '</div></div>';
+        h += '</div>';
       }
       h += '</div>';
     });
@@ -557,6 +559,7 @@
     const nt = t.includes(T.i) ? t : t.concat(T.i);
     ls.set('tri:mob:' + T.pid, nt);
     state.active[T.pid] = items.findIndex((_, k) => !nt.includes(k));
+    state.scrollEx = T.pid; /* nächste Übung nach oben holen, damit Bild, Text und Timer zusammen im Blick sind */
     if (nt.length === items.length && !p.done) { setDone(p, today()); return true; }
     return false;
   }
@@ -1291,7 +1294,7 @@
     }
     if ((el = q('[data-stop]'))) { setStarted(el.dataset.stop, false); state.timer = null; render(); return; }
     if ((el = q('[data-ex]'))) { const [pid, i] = el.dataset.ex.split('|'); state.active[pid] = +i; state.scrollEx = pid; render(); return; }
-    if ((el = q('[data-mob-open]'))) { const [pid, i] = el.dataset.mobOpen.split('|'); state.active[pid] = state.active[pid] === +i ? -1 : +i; render(); return; }
+    if ((el = q('[data-mob-open]'))) { const [pid, i] = el.dataset.mobOpen.split('|'); state.active[pid] = state.active[pid] === +i ? -1 : +i; if (state.active[pid] >= 0) state.scrollEx = pid; render(); return; }
     if ((el = q('[data-mob]'))) {
       const [pid, i] = el.dataset.mob.split('|'); const p = plan(pid); if (!p) return;
       const items = mobItems(p);
