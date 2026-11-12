@@ -135,12 +135,14 @@ input{font:inherit}
 .dr-x p{margin:0;font-size:14px;line-height:1.5;color:var(--fg-2,var(--c-mu))}
 .dr-x p.why{margin-top:10px;padding-top:10px;border-top:.5px solid var(--c-sep,var(--line))}
 .dr-x p.why span{display:block;margin-bottom:2px;font-size:12px;font-weight:700;color:var(--muted)}
-.st-dr{align-items:center;grid-template-columns:44px minmax(0,1fr) auto;gap:8px}
+.st-dr{align-items:center}
+/* Schwimmen: Meterangaben sind kurz, schmalere erste Spalte lässt Übungsnamen in einer Zeile */
+.steps.swim .st{grid-template-columns:58px minmax(0,1fr) auto}
 .dr-in{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-width:0;min-height:44px;margin:-6px 0;padding:0;border:0;background:transparent;font:inherit;font-size:15px;text-align:left;cursor:pointer;color:var(--fg)}
 .dr-in b{font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .st-dr .t{white-space:nowrap}
-.st-dr .tp{display:flex;flex-direction:column;align-items:flex-end;line-height:1.15}
-.st-dr .tp small{font-family:var(--font,inherit);font-size:11px;font-weight:500;color:var(--c-mu)}
+.st .tp{align-self:center;display:flex;flex-direction:column;align-items:flex-end;min-width:44px;line-height:1.15;white-space:nowrap}
+.st .tp small{font-family:var(--font,inherit);font-size:11px;font-weight:500;color:var(--c-mu)}
 .dr-h b{min-width:0;white-space:nowrap}
 .dr-in:focus-visible{outline:2px solid var(--c-hl);outline-offset:2px;border-radius:8px}
 .dr-st{margin:2px 0 6px 96px;padding:12px 14px;background:var(--fill-2);border-radius:14px}

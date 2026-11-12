@@ -259,7 +259,7 @@
     'reißverschluss': ['Reißverschluss', 'Normales Kraul, aber in der Rückholphase streifen die Daumen seitlich am Körper entlang von der Hüfte bis zur Achsel, wie beim Hochziehen eines Reißverschlusses. Dann vor der Schulter eintauchen.', 'Hoher Ellbogen in der Rückholphase und ein Eintauchen vor der Schulter statt über die Körpermitte.'],
     'rechts-links': ['Rechts-Links', '3 Züge nur mit dem rechten Arm, der linke bleibt vorn gestreckt. Dann 3 Züge nur links, dann 3 Züge normales Kraul. So im Wechsel weiter.', 'Jeder Arm wird einzeln sauber, danach setzt du beide wieder zusammen. Gleicht Unterschiede zwischen den Seiten aus.'],
     'rückenbeine': ['Rückenbeine', 'In Rückenlage, das Brett flach auf der Brust umarmen. Beinschlag aus der Hüfte, die Knie bleiben unter der Wasseroberfläche, Fußspitzen gestreckt.', 'Lockerer Beinschlag aus der Hüfte statt aus dem Knie. Das hält die Beine oben und stabilisiert die Wasserlage.'],
-    'pullbuoy-rotation': ['Pullbuoy-Rotation', 'Kraul mit Pullbuoy, ohne Beinschlag. Bei jedem Zug drehen Hüfte und Schulter gemeinsam zur Seite, bis die Schulter des ziehenden Arms aus dem Wasser kommt.', 'Rotation aus dem Rumpf. Der Zug wird länger und das Atmen fällt leichter.'],
+    'rotation': ['Rotation', 'Kraul mit Pullbuoy, ohne Beinschlag. Bei jedem Zug drehen Hüfte und Schulter gemeinsam zur Seite, bis die Schulter des ziehenden Arms aus dem Wasser kommt.', 'Rotation aus dem Rumpf. Der Zug wird länger und das Atmen fällt leichter.'],
     'wechselatmung': ['Wechselatmung', 'Die ersten 25 m alle 3 Züge atmen, die zweiten 25 m alle 5 Züge. Unter Wasser gleichmäßig durch Nase und Mund ausatmen.', 'Beidseitiges Atmen und ruhiges Ausatmen. Im Freiwasser kannst du so zur Seite ohne Wellen und Sonne atmen.'],
     'kopf hoch': ['Kopf hoch', 'Normales Kraul. Alle 6 Züge für einen Zug den Blick nach vorn heben, nur die Augen knapp über Wasser, und kurz ein Ziel anpeilen. Danach Kopf wieder runter und wie gewohnt zur Seite atmen.', 'Orientierung im Freiwasser, ohne dass die Beine absinken.']
   };
@@ -270,6 +270,10 @@
     return names.map(n => DRILLS[n.toLowerCase()] || [n.charAt(0).toUpperCase() + n.slice(1), '', '']);
   }
   const INFO_I = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg>';
+  /* Pausen einheitlich zweizeilig („Pause“ klein über der Dauer), damit Info-Buttons und Zielspalte bündig bleiben */
+  function tgtHTML(s) {
+    return s.pause && /^Pause /.test(s.tgt) ? `<span class="t tp"><small>Pause</small>${esc(s.tgt.slice(6))}</span>` : `<span class="t">${esc(s.tgt)}</span>`;
+  }
   function stepsHTML(p) {
     const bl = blocks(p), main = mainStep(bl);
     return bl.map((b, bi) => {
@@ -289,9 +293,9 @@
         const one = !dr && DRILLS[(s.lab || '').trim().replace(/\.$/, '').toLowerCase()];
         if (one) {
           const [n, t, why] = one, key = p.id + ':' + bi + ':' + si, open = !!state.drillOpen[key];
-          return `<div class="st st-dr${s.pause ? ' ps' : ''}${open ? ' open' : ''}"><span class="d">${esc(s.dur)}</span><button class="l dr-in" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>${s.pause && /^Pause /.test(s.tgt) ? `<span class="t tp"><small>Pause</small>${esc(s.tgt.slice(6))}</span>` : `<span class="t">${esc(s.tgt)}</span>`}</div>${open ? `<div class="dr-x dr-st"><p>${esc(t)}</p>${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}</div>` : ''}`;
+          return `<div class="st st-dr${s.pause ? ' ps' : ''}${open ? ' open' : ''}"><span class="d">${esc(s.dur)}</span><button class="l dr-in" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>${tgtHTML(s)}</div>${open ? `<div class="dr-x dr-st"><p>${esc(t)}</p>${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}</div>` : ''}`;
         }
-        return `<div class="st${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${lab}</span><span class="t">${esc(s.tgt)}</span></div>`;
+        return `<div class="st${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${lab}</span>${tgtHTML(s)}</div>`;
       }).join('');
       if (b.rep) return `<div class="rep"><div class="rep-h">${esc(b.h)} <b>${b.rep}×</b></div>${rows}${extra}</div>`;
       return rows + extra;
@@ -655,7 +659,7 @@
       h += `</section><div class="ubody" style="${cv(S.k)}">${body}</div>`;
     } else {
       const bl = blocks(p);
-      h += flowBar(bl, S.k) + `<div class="steps">${stepsHTML(p)}</div>`;
+      h += flowBar(bl, S.k) + `<div class="steps${S.k === 'swim' ? ' swim' : ''}">${stepsHTML(p)}</div>`;
       if (p.note) h += `<span class="note">${esc(p.note)}</span>`;
       if (t && opts.showActual) h += actualHTML(p, t);
       h += '</section>';
