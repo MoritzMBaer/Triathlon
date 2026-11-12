@@ -274,6 +274,12 @@
             return `<li class="${open ? 'open' : ''}">${t ? `<button class="dr-h" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>` : `<div class="dr-h"><b>${esc(n)}</b></div>`}${open && t ? `<div class="dr-x"><p>${esc(t)}</p>${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}</div>` : ''}</li>`;
           }).join('')}</ol>`;
         }
+        /* Einzelne Übung als eigener Schritt (z. B. „50mtr Abschlag. 20 s Pause“): Info-Button direkt hinter der Übung */
+        const one = !dr && DRILLS[(s.lab || '').trim().replace(/\.$/, '').toLowerCase()];
+        if (one) {
+          const [n, t, why] = one, key = p.id + ':' + bi + ':' + si, open = !!state.drillOpen[key];
+          return `<div class="st st-dr${s.pause ? ' ps' : ''}${open ? ' open' : ''}"><span class="d">${esc(s.dur)}</span><button class="l dr-in" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button><span class="t">${esc(s.tgt)}</span></div>${open ? `<div class="dr-x dr-st"><p>${esc(t)}</p>${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}</div>` : ''}`;
+        }
         return `<div class="st${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${lab}</span><span class="t">${esc(s.tgt)}</span></div>`;
       }).join('');
       if (b.rep) return `<div class="rep"><div class="rep-h">${esc(b.h)} <b>${b.rep}×</b></div>${rows}${extra}</div>`;
