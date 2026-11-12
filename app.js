@@ -714,19 +714,23 @@
     });
     return { c, doneMin, planMin, doneN, n, P };
   }
-  function ringsSVG(c) {
+  /* id je Woche: beim Wochenwechsel wird das Diagramm ersetzt statt animiert (kein kurzes Auffüllen);
+     innerhalb derselben Woche bleibt die Animation beim Abhaken erhalten */
+  function ringsSVG(c, key) {
     const R = [33, 25, 17, 9];
-    let s = '<svg class="rings" width="76" height="76" viewBox="0 0 76 76" role="img" aria-label="Woche: ' + RINGS.map(([f]) => `${f} ${c[f][0]} von ${c[f][1]}`).join(', ') + '">';
+    let s = '<svg class="rings"' + (key ? ` id="rings-${key}"` : '') + ' width="76" height="76" viewBox="0 0 76 76" role="img" aria-label="Woche: ' + RINGS.map(([f]) => `${f} ${c[f][0]} von ${c[f][1]}`).join(', ') + '">';
     RINGS.forEach(([f, k], i) => {
       const r = R[i], C = 2 * Math.PI * r, [d, t] = c[f];
       s += `<circle cx="38" cy="38" r="${r}" fill="none" stroke="var(--${k}-tr)" stroke-width="6.5"/>`;
-      if (t && d) s += `<circle cx="38" cy="38" r="${r}" fill="none" stroke="var(--${k})" stroke-width="6.5" stroke-linecap="round" stroke-dasharray="${(C * Math.min(1, d / t)).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 38 38)"/>`;
+      /* Fortschrittskreis immer zeichnen, damit die Reihenfolge der Kreise gleich bleibt */
+      const on = t && d;
+      s += `<circle cx="38" cy="38" r="${r}" fill="none" stroke="var(--${k})" stroke-width="6.5" stroke-linecap="round" stroke-dasharray="${on ? (C * Math.min(1, d / t)).toFixed(1) : 0} ${C.toFixed(1)}"${on ? '' : ' opacity="0"'} transform="rotate(-90 38 38)"/>`;
     });
     return s + '</svg>';
   }
   function weekCard(M, mon, strip, noRing, jump) {
     const w = weekCounts(M, mon);
-    let h = `<section class="card"><div class="week">${noRing ? '' : ringsSVG(w.c)}<div class="tx"><small>${iso(mon) === iso(monday(new Date())) ? 'Diese Woche' : 'KW ' + isoWeek(mon)}</small><b>${w.doneN} von ${w.n} Einheiten</b><span style="font-size:13px;color:var(--fg-2)">${fmtH(w.doneMin)} von ${fmtH(w.planMin)}</span>
+    let h = `<section class="card"><div class="week">${noRing ? '' : ringsSVG(w.c, iso(mon))}<div class="tx"><small>${iso(mon) === iso(monday(new Date())) ? 'Diese Woche' : 'KW ' + isoWeek(mon)}</small><b>${w.doneN} von ${w.n} Einheiten</b><span style="font-size:13px;color:var(--fg-2)">${fmtH(w.doneMin)} von ${fmtH(w.planMin)}</span>
       <div class="legend">${RINGS.map(([f, k]) => `<span><i style="background:var(--${k})"></i>${f} ${w.c[f][1] ? w.c[f][0] + '/' + w.c[f][1] : '–'}</span>`).join('')}</div></div></div>`;
     if (strip) {
       h += '<div class="daystrip">' + [0, 1, 2, 3, 4, 5, 6].map(i => {
