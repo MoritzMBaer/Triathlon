@@ -54,7 +54,7 @@
     'Mobility': { k: 'mob', fam: 'Mobility', ring: false, o: 9 }
   };
   const sp = s => SPORT[s] || { k: 'mob', fam: s, ring: false, o: 8 };
-  const cv = k => `--c:var(--${k});--c-t:var(--${k}-t);--c-d:var(--${k}-d);--c-l:var(--${k}-l);--c-hl:var(--${k}-hl);--c-sep:var(--${k}-sep);--c-mu:var(--${k}-mu)`;
+  const cv = k => `--c:var(--${k});--c-t:var(--${k}-t);--c-d:var(--${k}-d);--c-l:var(--${k}-l);--c-hl:var(--${k}-hl);--c-sep:var(--${k}-sep);--c-mu:var(--${k}-mu);--c-s:var(--${k}-s)`;
   const RINGS = [['Rad', 'bike'], ['Laufen', 'run'], ['Schwimmen', 'swim'], ['Kraft', 'kraft']];
 
   /* ---------- Zustand ---------- */

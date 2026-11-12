@@ -27,6 +27,7 @@ if(m){var f=function(){var t=document.getElementById('themecolor');if(t)t.setAtt
   --swim:#4F86B8; --swim-t:#E1ECF6; --swim-d:#2F5F8A; --swim-l:#B8D0E6; --swim-tr:#DCE7F2; --swim-hl:#2F5F8A; --swim-sep:#C3D6EA; --swim-mu:#4A5F73;
   --kraft:#8C7BC2; --kraft-t:#ECE8F6; --kraft-d:#5E4E99; --kraft-l:#CFC6EA; --kraft-tr:#ECE8F6; --kraft-hl:#5E4E99; --kraft-sep:#D6CFEE; --kraft-mu:#5B5470;
   --mob:#4BA3A3; --mob-t:#E0F0F0; --mob-d:#2F7474; --mob-l:#B5DADA; --mob-tr:#E0F0F0; --mob-hl:#2F7474; --mob-sep:#C2DEDE; --mob-mu:#4A6262;
+  --bike-s:#F1D8C6; --run-s:#CEE4D7; --swim-s:#CCDEEE; --kraft-s:#DED7F0; --mob-s:#CBE5E5;
   --ok:#248A3D; --warn:#B7791F; --warn-t:#FBEFD9; --bad:#C0392B; --bad-t:#F9E1DE;
   --nav-bg:rgba(255,255,255,.88); --shadow:0 8px 24px rgba(0,0,0,.08);
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;
@@ -41,6 +42,7 @@ if(m){var f=function(){var t=document.getElementById('themecolor');if(t)t.setAtt
   --swim:#6A9FCF; --swim-t:#182838; --swim-d:#9CC4E8; --swim-l:#2C4B68; --swim-tr:#1C2B3A; --swim-hl:#B5D4F0; --swim-sep:#33506B; --swim-mu:#B3C6D8;
   --kraft:#A797DB; --kraft-t:#241F36; --kraft-d:#C9BDF2; --kraft-l:#463B6E; --kraft-tr:#2A2440; --kraft-hl:#D6CCF7; --kraft-sep:#4A4170; --kraft-mu:#C6BEDF;
   --mob:#5EBDBD; --mob-t:#152E2E; --mob-d:#8FDCD9; --mob-l:#2A5555; --mob-tr:#163434; --mob-hl:#A8E8E5; --mob-sep:#2E5656; --mob-mu:#B1D6D6;
+  --bike-s:var(--bike-t); --run-s:var(--run-t); --swim-s:var(--swim-t); --kraft-s:var(--kraft-t); --mob-s:var(--mob-t);
   --ok:#30D158; --warn:#F0B44C; --warn-t:#3A2C12; --bad:#F2766A; --bad-t:#3D1C19;
   --nav-bg:rgba(44,44,46,.9); --shadow:0 8px 24px rgba(0,0,0,.5);
   color-scheme:dark;
@@ -84,7 +86,7 @@ input{font:inherit}
 .link{background:none;border:0;padding:6px 0;font-weight:600;font-size:14px;color:var(--c-d,var(--fg));min-height:36px}
 
 /* Einheit aufgeklappt */
-.unit{background:var(--c-t);border-radius:28px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.unit{background:var(--c-s,var(--c-t));border-radius:28px;padding:18px;display:flex;flex-direction:column;gap:14px}
 .u-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .u-sport{display:flex;align-items:center;gap:8px;min-width:0}
 .dot-ico,.u-sport .dot-ico{width:34px;height:34px;border-radius:50%;background:var(--c-d);color:#fff;display:grid;place-items:center;flex:none}
@@ -574,7 +576,7 @@ nav.tabs a[aria-current="page"]{background:transparent}
 .mwrap{display:flex;flex-direction:column;gap:12px}
 .mhead.wide{padding:14px 4px 0}
 .mhead.wide b{font-size:24px}
-.mu{display:flex;flex-direction:column;gap:10px;width:100%;text-align:left;border:0;background:var(--c-t);border-radius:28px;padding:18px 20px;color:var(--fg)}
+.mu{display:flex;flex-direction:column;gap:10px;width:100%;text-align:left;border:0;background:var(--c-s,var(--c-t));border-radius:28px;padding:18px 20px;color:var(--fg)}
 .mu-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .mu-t{font-size:30px;font-weight:800;letter-spacing:-.025em;line-height:1.05;text-wrap:balance}
 .mu-n{font-size:15px;color:var(--c-mu)}
@@ -755,18 +757,30 @@ kbd{font-family:var(--round);font-size:11px;font-weight:700;line-height:1;min-wi
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 /* Zugeklappte Einheiten tragen schon die Farbe der Sportart, wie die aufgeklappte Karte */
-.tile,.tile:active{background:var(--c-t)}
+.tile,.tile:active{background:var(--c-s,var(--c-t))}
 .tile .ic,.row .ic{background:var(--c-d);color:#fff}
 @media (prefers-color-scheme: dark){.tile .ic,.row .ic{background:var(--c);color:#1C1C1E}}
 .tile .tx small{color:var(--c-mu,var(--muted))}
 .tile .done-pill,.tile .miss-pill{background:var(--card)}
-.tile:active{background:color-mix(in srgb,var(--c-t) 88%,var(--fg))}
-@media (hover:hover){.tile:hover{background-color:color-mix(in srgb,var(--c-t) 94%,var(--fg))}}
+.tile:active{background:color-mix(in srgb,var(--c-s,var(--c-t)) 88%,var(--fg))}
+@media (hover:hover){.tile:hover{background-color:color-mix(in srgb,var(--c-s,var(--c-t)) 94%,var(--fg))}}
 @media (max-width:959px){
-  .day .row,.day.we .row{background:var(--c-t)}
+  .day .row,.day.we .row{background:var(--c-s,var(--c-t))}
   .day .row .tx small,.day .row .r{color:var(--c-mu,var(--muted))}
-  .day .row:active{background-color:color-mix(in srgb,var(--c-t) 88%,var(--fg))}
+  .day .row:active{background-color:color-mix(in srgb,var(--c-s,var(--c-t)) 88%,var(--fg))}
 }
+/* Erledigte Einheiten sehen aus wie offene Kacheln, nur rechts sitzt der Haken */
+.sum-row{background:var(--c-s,var(--c-t));border-radius:24px;padding:12px 16px;min-height:60px}
+.sum-row .ic{width:34px;height:34px;background:var(--c-d);color:#fff}
+.sum-row .ic svg{width:20px;height:20px}
+.sum-row b{font-size:15px;font-weight:600}
+.sum-row small{font-size:12px;color:var(--c-mu,var(--muted))}
+.sum-row .ok{width:26px;height:26px;background:var(--c-d);color:#fff}
+.sum-row .ok svg{width:14px;height:14px}
+.sum-row.done-tile{border-radius:24px;padding:12px 16px;min-height:60px}
+@media (prefers-color-scheme: dark){.sum-row .ic,.sum-row .ok{background:var(--c);color:#1C1C1E}}
+.sum-row:active{background:color-mix(in srgb,var(--c-s,var(--c-t)) 88%,var(--fg))}
+@media (hover:hover){.sum-row:hover{background-color:color-mix(in srgb,var(--c-s,var(--c-t)) 94%,var(--fg))}}
 </style>
 </head>
 <body>
