@@ -254,7 +254,7 @@
     'abschlag': ['Abschlag', 'Ein Arm bleibt vorn gestreckt, bis der andere nach dem Zug vorn ankommt und ihn „abschlägt“. Erst dann zieht der vordere Arm.', 'Lange Gleitphase und ruhiges Timing zwischen beiden Armen.'],
     'fäuste': ['Fäuste', 'Kraul mit geschlossenen Fäusten. Danach wieder mit offener Hand weiterschwimmen.', 'Du ziehst mit dem ganzen Unterarm und hältst den Ellbogen hoch. Mit offener Hand spürst du danach deutlich mehr Druck am Wasser.'],
     'einarmig': ['Einarmig', 'Nur ein Arm zieht, der andere bleibt vorn gestreckt liegen. Zur Seite des ziehenden Arms atmen, nach jeder Bahn den Arm wechseln.', 'Ein vollständiger Zug bis zur Hüfte und eine Körperdrehung, die mit dem Zug mitgeht.'],
-    'wriggen': ['Wriggen', 'Pullbuoy zwischen die Oberschenkel, Gesicht im Wasser, Arme vor dem Kopf gestreckt. Die Hände drücken in kleinen, flachen Achterbewegungen abwechselnd nach außen und innen, dadurch kommst du langsam voran. Nach 25 m in normales Kraul übergehen.', 'Gefühl für den Wasserdruck an Hand und Unterarm. Das ist die Grundlage für einen Zug, der früh greift.'],
+    'wriggen': ['Wriggen', 'Pullbuoy zwischen die Oberschenkel, Gesicht im Wasser, Arme vor dem Kopf gestreckt. Die Hände drücken in kleinen, flachen Achterbewegungen abwechselnd nach außen und innen, dadurch kommst du langsam voran. Zum Atmen den Kopf alle paar Sekunden nach vorn heben, bis der Mund knapp über Wasser ist, einatmen und wieder ins Wasser. Unter Wasser ruhig ausatmen. Mit Schnorchel bleibt der Kopf einfach unten. Nach 25 m in normales Kraul übergehen.', 'Gefühl für den Wasserdruck an Hand und Unterarm. Das ist die Grundlage für einen Zug, der früh greift.'],
     'seitlage-kick': ['Seitlage-Kick', 'Mit Flossen. Auf der Seite liegen, der untere Arm vorn gestreckt, der obere an der Hüfte, Gesicht im Wasser. 6 Beinschläge, dann ein Zug und auf die andere Seite rollen. Zum Atmen nur den Kopf drehen, mit Schnorchel einfach weiteratmen.', 'Gleichgewicht in Seitlage und eine Rotation, die aus der Hüfte kommt. Genau diese Position hast du bei jedem Kraulzug.'],
     'reißverschluss': ['Reißverschluss', 'Normales Kraul, aber in der Rückholphase streifen die Daumen seitlich am Körper entlang von der Hüfte bis zur Achsel, wie beim Hochziehen eines Reißverschlusses. Dann vor der Schulter eintauchen.', 'Hoher Ellbogen in der Rückholphase und ein Eintauchen vor der Schulter statt über die Körpermitte.'],
     'rechts-links-kraul': ['Rechts-Links-Kraul', '3 Züge nur mit dem rechten Arm, der linke bleibt vorn gestreckt. Dann 3 Züge nur links, dann 3 Züge normales Kraul. So im Wechsel weiter.', 'Jeder Arm wird einzeln sauber, danach setzt du beide wieder zusammen. Gleicht Unterschiede zwischen den Seiten aus.'],
@@ -1153,11 +1153,20 @@
   ['touchstart', 'wheel'].forEach(ev => window.addEventListener(ev, () => { scrollRun++; }, { passive: true }));
   /* Aufgeklapptes Feld ganz zeigen: steht es schon ganz im Bild, bleibt alles stehen;
      ragt es unten raus, rückt es in die Mitte des freien Bereichs (wie beim Aufklappen einer Einheit) */
-  function bringIntoView(el) {
+  /* Holt ein Element (optional bis einschließlich endEl) ganz ins Bild; passt es nicht, beginnt es oben */
+  function bringIntoView(el, endEl) {
+    const r0 = el.getBoundingClientRect(), r1 = endEl ? endEl.getBoundingClientRect() : r0;
+    const r = { top: r0.top, bottom: Math.max(r0.bottom, r1.bottom) }; r.height = r.bottom - r.top;
+    const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
     let box = el.parentElement;
     while (box && box !== document.body && !(/(auto|scroll)/.test(getComputedStyle(box).overflowY) && box.scrollHeight > box.clientHeight)) box = box.parentElement;
-    if (box && box !== document.body) { el.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); return; }
-    const r = el.getBoundingClientRect();
+    if (box && box !== document.body) {
+      const b = box.getBoundingClientRect(), t = b.top + 12, bt = b.bottom - 12, rm = bt - t;
+      let d = 0;
+      if (r.top < t) d = r.top - t; else if (r.bottom > bt) d = r.height <= rm ? r.bottom - bt : r.top - t;
+      if (d) box.scrollBy({ top: d, behavior: smooth ? 'smooth' : 'auto' });
+      return;
+    }
     const sb = $('.statusbg'), top = (sb ? sb.offsetHeight : 0) + 16;
     const nav = $('nav.tabs'), nr = nav && nav.getBoundingClientRect();
     const bottom = nr && nr.height ? nr.top - 16 : window.innerHeight - 16;
@@ -1341,8 +1350,13 @@
     if (q('a.skip')) { e.preventDefault(); const m = $('#app'); m.focus({ preventScroll: true }); const f = m.querySelector('button,[href],input,[tabindex="0"]'); if (f) f.focus(); return; }
     if (q('[data-reload]')) { load(true); return; }
     if ((el = q('[data-drill]'))) {
-      e.stopPropagation(); const k = el.dataset.drill; state.drillOpen[k] = !state.drillOpen[k]; render();
-      if (state.drillOpen[k]) { const b = document.querySelector(`[data-drill="${CSS.escape(k)}"]`); if (b) bringIntoView(b.closest('li') || b); }
+      e.stopPropagation(); const k = el.dataset.drill, opening = !state.drillOpen[k];
+      /* Immer nur eine Erklärung offen: beim Aufklappen alle anderen schließen */
+      state.drillOpen = opening ? { [k]: true } : {}; render();
+      if (opening) {
+        const b = document.querySelector(`[data-drill="${CSS.escape(k)}"]`);
+        if (b) { const li = b.closest('li'); if (li) bringIntoView(li); else { const row = b.closest('.st') || b, x = row.nextElementSibling; bringIntoView(row, x && x.classList.contains('dr-x') ? x : null); } }
+      }
       return;
     }
     if ((el = q('[data-jump]'))) {
