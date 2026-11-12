@@ -20,13 +20,14 @@ if(m){var f=function(){var t=document.getElementById('themecolor');if(t)t.setAtt
 <style>
 /* Layout: iPhone-App mit Tab-Pille unten; ab 960 px Seitenleiste links und zweispaltige Heute-Ansicht */
 :root{
-  --bg:#F2F2F7; --card:#FFFFFF; --fill:#E5E5EA; --mm-body:#4A4A4F; --mm-in:#5C5C62; --mm-act:#EFA3BD; --fill-2:#F2F2F7; --fg:#1C1C1E; --fg-2:#3A3A3C; --muted:#6E6E73; --faint:#8E8E93; --line:#E5E5EA; --chev:#C7C7CC;
+  --bg:#F2F2F7; --card:#FFFFFF; --fill:#E5E5EA; --mm-body:#5E5E64; --mm-in:#727278; --mm-act:#E895B2; --fill-2:#F2F2F7; --fg:#1C1C1E; --fg-2:#3A3A3C; --muted:#6E6E73; --faint:#8E8E93; --line:#E5E5EA; --chev:#C7C7CC;
   --ink:#1C1C1E; --on-ink:#FFFFFF;
   --bike:#D9824F; --bike-t:#F7E9DF; --bike-d:#8A4A23; --bike-l:#EBC6AC; --bike-tr:#F1E2D6; --bike-hl:#A85A2C; --bike-sep:#E2C7B4; --bike-mu:#6B4A36;
   --run:#5FA27E; --run-t:#E3F0E8; --run-d:#3F7A5A; --run-l:#B9D9C6; --run-tr:#DCEDE3; --run-hl:#2E6B4B; --run-sep:#BFD8C8; --run-mu:#4A6655;
   --swim:#4F86B8; --swim-t:#E1ECF6; --swim-d:#2F5F8A; --swim-l:#B8D0E6; --swim-tr:#DCE7F2; --swim-hl:#2F5F8A; --swim-sep:#C3D6EA; --swim-mu:#4A5F73;
   --kraft:#8C7BC2; --kraft-t:#ECE8F6; --kraft-d:#5E4E99; --kraft-l:#CFC6EA; --kraft-tr:#ECE8F6; --kraft-hl:#5E4E99; --kraft-sep:#D6CFEE; --kraft-mu:#5B5470;
   --mob:#C9718F; --mob-t:#F7E4EB; --mob-d:#9A4664; --mob-l:#EBC2D1; --mob-tr:#F7E4EB; --mob-hl:#9A4664; --mob-sep:#E9C9D5; --mob-mu:#66404F;
+  --mob-mm:#E895B2; --kraft-mm:#B6A7E6;
   --bike-s:#F1D8C6; --run-s:#CEE4D7; --swim-s:#CCDEEE; --kraft-s:#DED7F0; --mob-s:#F1D3DE;
   --ok:#248A3D; --warn:#B7791F; --warn-t:#FBEFD9; --bad:#C0392B; --bad-t:#F9E1DE;
   --nav-bg:rgba(255,255,255,.88); --shadow:0 8px 24px rgba(0,0,0,.08);
@@ -35,13 +36,14 @@ if(m){var f=function(){var t=document.getElementById('themecolor');if(t)t.setAtt
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root{
-  --bg:#000000; --card:#1C1C1E; --fill:#3A3A3C; --mm-body:#CFCFD5; --mm-in:#BBBBC3; --mm-act:#9A4664; --fill-2:#2C2C2E; --fg:#F2F2F7; --fg-2:#D1D1D6; --muted:#98989F; --faint:#8E8E93; --line:#38383A; --chev:#48484A;
+  --bg:#000000; --card:#1C1C1E; --fill:#3A3A3C; --mm-body:#BABAC1; --mm-in:#A6A6AE; --mm-act:#8C3F5B; --fill-2:#2C2C2E; --fg:#F2F2F7; --fg-2:#D1D1D6; --muted:#98989F; --faint:#8E8E93; --line:#38383A; --chev:#48484A;
   --ink:#F2F2F7; --on-ink:#1C1C1E;
   --bike:#E0915F; --bike-t:#33241A; --bike-d:#F0B48C; --bike-l:#6E4630; --bike-tr:#3E2B1F; --bike-hl:#F2A877; --bike-sep:#5A4030; --bike-mu:#D9B9A3;
   --run:#6DB58D; --run-t:#1C3126; --run-d:#8FD1AC; --run-l:#2F5A43; --run-tr:#1F3528; --run-hl:#A6E0BF; --run-sep:#355745; --run-mu:#B5D3C2;
   --swim:#6A9FCF; --swim-t:#182838; --swim-d:#9CC4E8; --swim-l:#2C4B68; --swim-tr:#1C2B3A; --swim-hl:#B5D4F0; --swim-sep:#33506B; --swim-mu:#B3C6D8;
   --kraft:#A797DB; --kraft-t:#241F36; --kraft-d:#C9BDF2; --kraft-l:#463B6E; --kraft-tr:#2A2440; --kraft-hl:#D6CCF7; --kraft-sep:#4A4170; --kraft-mu:#C6BEDF;
   --mob:#D98AA6; --mob-t:#331C25; --mob-d:#F2B6CB; --mob-l:#63364A; --mob-tr:#3A2029; --mob-hl:#F7C9D8; --mob-sep:#5A3445; --mob-mu:#DDB8C6;
+  --mob-mm:#8C3F5B; --kraft-mm:#54458B;
   --bike-s:var(--bike-t); --run-s:var(--run-t); --swim-s:var(--swim-t); --kraft-s:var(--kraft-t); --mob-s:var(--mob-t);
   --ok:#30D158; --warn:#F0B44C; --warn-t:#3A2C12; --bad:#F2766A; --bad-t:#3D1C19;
   --nav-bg:rgba(44,44,46,.9); --shadow:0 8px 24px rgba(0,0,0,.5);
@@ -781,6 +783,8 @@ kbd{font-family:var(--round);font-size:11px;font-weight:700;line-height:1;min-wi
 @media (prefers-color-scheme: dark){.sum-row .ic,.sum-row .ok{background:var(--c);color:#1C1C1E}}
 .sum-row:active{background:color-mix(in srgb,var(--c-s,var(--c-t)) 88%,var(--fg))}
 @media (hover:hover){.sum-row:hover{background-color:color-mix(in srgb,var(--c-s,var(--c-t)) 94%,var(--fg))}}
+/* Muskelkarte: beanspruchte Muskeln im Ton der Sportart */
+.musc{--mm-act:var(--c-mm,var(--mob-mm))}
 /* Tipp auf Übungsskizze oder Muskelkarte: groß ansehen */
 .zoomable{cursor:zoom-in}
 button.fig.zoomable{display:block;width:100%;border:0;font:inherit;color:inherit;text-align:center}
