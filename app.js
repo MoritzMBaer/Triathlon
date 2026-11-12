@@ -849,7 +849,7 @@
     const chev = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="${d}"/></svg>`;
     const when = state.weekOff === 0 ? 'Diese Woche' : state.weekOff === 1 ? 'Nächste Woche' : state.weekOff === -1 ? 'Letzte Woche' : 'KW ' + isoWeek(mon);
     let h = header('Woche', 'KW ' + isoWeek(mon)) + banner();
-    h += `<div class="wnav"><button data-week="-1" aria-label="Vorige Woche" title="Vorige Woche (←)">${chev('m15 18-6-6 6-6')}</button><div><b>${when}</b><small>${fmtShort(mon)} – ${fmtShort(sun)}</small>${state.weekOff ? '<button class="link today-link" data-week-now title="Zur aktuellen Woche (T)">Zur aktuellen Woche</button>' : ''}</div><button data-week="1" aria-label="Nächste Woche" title="Nächste Woche (→)">${chev('m9 18 6-6-6-6')}</button></div>`;
+    h += `<div class="wnav"><button data-week="-1" aria-label="Vorige Woche" title="Vorige Woche (←)">${chev('m15 18-6-6 6-6')}</button><div><b>${when}</b><small>${fmtShort(mon)} – ${fmtShort(sun)}</small></div><button data-week="1" aria-label="Nächste Woche" title="Nächste Woche (→)">${chev('m9 18 6-6-6-6')}</button></div>`;
     h += weekCard(M, mon, !wide(), false, true) + '<div class="wgrid">';
     /* Handy, aktuelle Woche: vergangene Tage ausgegraut ans Ende */
     const order = [0, 1, 2, 3, 4, 5, 6];
@@ -1308,7 +1308,6 @@
       return;
     }
     if ((el = q('[data-week]'))) { state.weekOff += +el.dataset.week; render(); return; }
-    if (q('[data-week-now]')) { state.weekOff = 0; render(); return; }
     if ((el = q('[data-sheet]'))) { state.sheetId = el.dataset.sheet; render(); return; }
     if ((el = q('[data-open]'))) { toggleUnit(el.dataset.open, true); return; }
     if ((el = q('[data-fold]'))) { toggleUnit(el.dataset.fold, false); return; }
