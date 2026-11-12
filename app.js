@@ -458,7 +458,7 @@
     const done = !!p.done;
     let h = backBar(p, `Übung ${act + 1} von ${exs.length}`) + `<div class="ex-card"><div class="ex-head"><b>${esc(ex.name)}</b><span>Ziel ${goal}${hist ? ' · ' + esc(histText(hist, lib, ex)) : ''}</span></div>`;
     h += `<div class="ex-body${lib ? '' : ' solo'}"><div class="ex-l">`;
-    if (lib) h += `<div class="fig">${U.svg(lib, { id: 'live:' + encodeURIComponent(ex.name), label: 'Animation: ' + ex.name })}</div>${U.bodyMap(lib)}<p class="howto">${esc(lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(lib.cue)}</p>`;
+    if (lib) h += `<button class="fig zoomable" data-zoom="${esc(ex.name)}" aria-label="Skizze ${esc(ex.name)} vergrößern">${U.svg(lib, { id: 'live:' + encodeURIComponent(ex.name), label: 'Animation: ' + ex.name })}</button>${zoomMap(U.bodyMap(lib), ex.name)}<p class="howto">${esc(lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(lib.cue)}</p>`;
     h += '</div><div class="ex-r">';
     if (!done && sg.why) h += `<div class="sugg">${k === 'w' && sg.kg != null ? `<b>Heute ${fmtKg(sg.kg)}.</b> ` : ''}${esc(sg.why)}</div>`;
     h += `<div class="sets" role="group" aria-label="Sätze ${esc(ex.name)}"><div class="set head"><span>SATZ</span><span>${k === 'time' ? 'SEKUNDEN' : 'WDH'}</span><span>${k === 'w' ? 'KG' : ''}</span><span></span></div>`;
@@ -528,7 +528,7 @@
         ${review ? '' : `<button class="mcheck" data-mob="${p.id}|${i}" aria-pressed="${on}" aria-label="${esc(it.name)} erledigt">${on ? CHECK : ''}</button>`}</div>`;
       if (open) {
         h += `<div class="mob-detail${it.lib ? '' : ' solo'}">`;
-        if (it.lib) h += `<div class="mob-l"><div class="fig">${U.svg(it.lib, { id: 'live:' + encodeURIComponent(it.name), label: 'Animation: ' + it.name })}</div>${U.bodyMap(it.lib)}</div>`;
+        if (it.lib) h += `<div class="mob-l"><button class="fig zoomable" data-zoom="${esc(it.name)}" aria-label="Skizze ${esc(it.name)} vergrößern">${U.svg(it.lib, { id: 'live:' + encodeURIComponent(it.name), label: 'Animation: ' + it.name })}</button>${zoomMap(U.bodyMap(it.lib), it.name)}</div>`;
         h += '<div class="mob-r">';
         if (it.lib) h += `<p class="howto">${esc(it.lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(it.lib.cue)}</p>`;
         h += mobStepsHTML(p, i, it, review);
@@ -753,6 +753,33 @@
     const noKey = /Kein Zugriff/.test(state.err);
     const at = state.data && state.data._at ? new Date(state.data._at) : null;
     return `<div class="banner err"><b>${noKey ? 'Kein Zugriff auf deine Daten' : 'Gerade keine Verbindung'}</b><span>${noKey ? 'Der App-Schlüssel passt nicht. Prüfe ihn in der Einrichtung.' : at ? `Du siehst den Stand von ${at.toLocaleString('de-DE', { weekday: 'short', hour: '2-digit', minute: '2-digit' })} Uhr. ` + 'Sobald du wieder online bist, aktualisiert sich die App.' : 'Prüfe die Internetverbindung und versuche es noch einmal.'}</span>${noKey ? '<a class="link" href="#einrichtung">Zur Einrichtung</a>' : ''}</div>`;
+  }
+  /* Muskelkarte antippbar machen, damit sie sich vergrößern lässt */
+  function zoomMap(html, name) {
+    return html ? html.replace('<div class="musc">', `<div class="musc zoomable" role="button" tabindex="0" data-zoom="${esc(name)}" aria-label="Muskelkarte ${esc(name)} vergrößern">`) : '';
+  }
+  /* Vergrößerte Ansicht liegt außerhalb der App, damit sie beim Neuzeichnen offen bleibt */
+  function openZoom(el) {
+    closeZoom(true);
+    const src = el.closest('[style*="--c:"]'), bg = document.createElement('div');
+    bg.className = 'zoom-bg'; bg.setAttribute('role', 'dialog'); bg.setAttribute('aria-modal', 'true');
+    const isMap = el.classList.contains('musc'), name = el.dataset.zoom || '';
+    bg.setAttribute('aria-label', (isMap ? 'Muskelkarte ' : 'Skizze ') + name);
+    if (src) bg.setAttribute('style', src.getAttribute('style'));
+    const body = isMap ? el.outerHTML.replace(/ (role|tabindex|aria-label|data-zoom)="[^"]*"/g, '').replace('musc zoomable', 'musc') : el.innerHTML;
+    bg.innerHTML = `<div class="zoom-c"><div class="zoom-h"><b>${esc(name)}</b><button class="zoom-x" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>${body}</div>`;
+    bg.addEventListener('click', () => closeZoom());
+    document.body.appendChild(bg);
+    state.zoomFrom = el;
+    U.animate(app);
+    bg.querySelector('.zoom-x').focus();
+  }
+  function closeZoom(now) {
+    const bg = document.querySelector('.zoom-bg'); if (!bg) return;
+    const back = state.zoomFrom; state.zoomFrom = null;
+    const done = () => { bg.remove(); U.animate(app); };
+    if (now || reduceMotion()) done(); else { bg.classList.add('closing'); setTimeout(done, 180); }
+    if (!now && back && document.contains(back)) back.focus({ preventScroll: true });
   }
   function viewHeute(M) {
     const now = new Date(), tk = today();
@@ -1311,6 +1338,7 @@
       if (!jumpTo(el.dataset.jump)) { state.weekOff = Math.round((monday(parseISO(el.dataset.jump)) - monday(new Date())) / (7 * 864e5)); state.pendingJump = el.dataset.jump; if (location.hash === '#woche') { render(); requestAnimationFrame(() => jumpTo(state.pendingJump)); state.pendingJump = null; } else location.hash = '#woche'; }
       return;
     }
+    if ((el = q('.zoomable'))) { openZoom(el); return; }
     if ((el = q('[data-week]'))) { state.weekOff += +el.dataset.week; render(); return; }
     if ((el = q('[data-sheet]'))) { state.sheetId = el.dataset.sheet; render(); return; }
     if ((el = q('[data-open]'))) { toggleUnit(el.dataset.open, true); return; }
@@ -1438,6 +1466,8 @@
   window.addEventListener('scroll', onScroll, { passive: true }); window.addEventListener('resize', stuckTimer); onScroll();
   document.addEventListener('scroll', e => { if (e.target && e.target.id === 'sheet') stuckTimer(); }, { passive: true, capture: true });
   document.addEventListener('keydown', e => {
+    if (document.querySelector('.zoom-bg') && e.key === 'Escape') { e.preventDefault(); closeZoom(); return; }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('div.zoomable')) { e.preventDefault(); openZoom(e.target); return; }
     if (e.key === 'Escape' && state.sheetId) { closeSheet(); return; }
     if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
     const t = e.target;

@@ -267,11 +267,13 @@
   function animate(root) {
     live.clear();
     if (reduce()) return;
-    root.querySelectorAll('svg[data-fig^="live:"]').forEach(s => {
+    /* vergrößerte Ansicht (außerhalb der App) läuft mit */
+    const zoom = document.querySelector('.zoom-bg');
+    [root].concat(zoom ? [zoom] : []).forEach(r => r.querySelectorAll('svg[data-fig^="live:"]').forEach(s => {
       const ex = lib(decodeURIComponent(s.getAttribute('data-fig').slice(5)));
       const g = s.querySelector('.fig-live');
       if (ex && g) live.set(g, ex);
-    });
+    }));
     if (live.size && !raf) raf = requestAnimationFrame(tick);
   }
 
