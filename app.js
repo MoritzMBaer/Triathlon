@@ -1497,9 +1497,11 @@
     i = Math.max(0, Math.min(hs.length - 1, i));
     chartTip(svg, hs[i]); e.preventDefault();
   });
-  /* Tipp auf den Tab, der schon offen ist: sanft nach oben */
+  /* Tipp auf den Tab, der schon offen ist: sanft nach oben; bei Woche zurück zur aktuellen Woche */
   document.querySelectorAll('nav a[data-v]').forEach(a => a.addEventListener('click', () => {
-    if (a.dataset.v === current() && window.scrollY > 0) window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' });
+    if (a.dataset.v !== current()) return;
+    if (a.dataset.v === 'woche' && state.weekOff) { state.weekOff = 0; render(); window.scrollTo({ top: 0, behavior: 'auto' }); return; }
+    if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' });
   }));
   window.addEventListener('hashchange', () => { if (state.sheetId) { state.sheetId = null; closeSheetNow(); } render(); if (state.pendingJump) { const k = state.pendingJump; state.pendingJump = null; requestAnimationFrame(() => setTimeout(() => jumpTo(k), 60)); } });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { cache = { at: -1 }; load(false); render(); } });
