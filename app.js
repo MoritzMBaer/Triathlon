@@ -140,7 +140,11 @@
   function readiness(M) {
     const F = M.fitness;
     if (!F.length) return null;
-    const last = F[F.length - 1], before = F.filter(f => f.date < last.date);
+    const raw = F[F.length - 1], before = F.filter(f => f.date < raw.date);
+    /* Fehlen heute noch Werte (Uhr noch nicht synchronisiert), die vom Vortag nehmen und kennzeichnen */
+    const prev = before[before.length - 1], old = [];
+    const last = Object.assign({}, raw);
+    if (prev && prev.date === iso(addDays(parseISO(raw.date), -1))) ['sleep', 'score', 'hrv', 'rhr'].forEach(k => { if (last[k] == null && prev[k] != null) { last[k] = prev[k]; old.push(k); } });
     const flags = [], notes = [];
     const afterNight = M.nights.has(iso(addDays(new Date(), -1)));
     const from60 = iso(addDays(parseISO(last.date), -60));
@@ -150,12 +154,13 @@
       const m = mean(base), s = sdev(base); range = [Math.round(m - s), Math.round(m + s)];
       const two = F.filter(f => f.hrv != null).slice(-2);
       if (two.length === 2 && two.every(f => f.hrv < m - s)) flags.push(`HRV seit 2 Tagen unter deinem Normalbereich (${range[0]}–${range[1]})`);
-      else if (last.hrv != null && last.hrv < m - s) notes.push('HRV heute niedrig, noch kein Trend');
+      else if (raw.hrv != null && raw.hrv < m - s) notes.push('HRV heute niedrig, noch kein Trend');
     }
     const rh = before.slice(-7).map(f => f.rhr).filter(x => x != null);
     if (last.rhr != null && rh.length >= 3 && last.rhr > mean(rh) + 5) flags.push(`Ruhepuls ${last.rhr}, Schnitt ${Math.round(mean(rh))}`);
     const two = F.slice(-2);
     const pick = k => { const xs = (afterNight ? two : [last]).map(f => f[k]).filter(x => x != null); return xs.length ? mean(xs) : null; };
+    if (old.length) { const nm = { sleep: 'Schlaf', score: 'Score', hrv: 'HRV', rhr: 'Ruhepuls' }, ns = old.map(k => nm[k]); notes.push(`${ns.length > 1 ? ns.slice(0, -1).join(', ') + ' und ' + ns[ns.length - 1] : ns[0]} von heute ${ns.length > 1 ? 'fehlen' : 'fehlt'} noch, grau sind die Werte von gestern`); }
     const sl = pick('sleep'), sc = pick('score');
     if (sl != null && sl < 6) flags.push(`${afterNight ? 'Schlaf im Schnitt' : 'Schlaf'} ${de1(sl)} h`);
     if (sc != null && sc < 60) flags.push(`Schlafscore ${Math.round(sc)}`);
@@ -168,7 +173,7 @@
       if (a <= 1.5) { feelRed = true; flags.push(`Gefühl ${de1(a)} von 5`); } else if (a <= 2.5) flags.push(`Gefühl ${de1(a)} von 5`);
     }
     const lvl = feelRed || flags.length >= 2 ? 'r' : flags.length === 1 ? 'y' : 'g';
-    return { lvl, flags, notes, last, range, stale: last.date !== today() };
+    return { lvl, flags, notes, last, old, range, stale: last.date !== today() };
   }
   const INTENSE = /tempo|sweet|schwelle|steigerung|rampe|test|intervall/i;
   function advice(r, units) {
@@ -695,14 +700,15 @@
     const head = r.lvl === 'g' ? 'Bereit für das Training' : r.lvl === 'y' ? 'Heute lieber locker' : 'Heute Pause';
     const adv = advice(r, units);
     const k = [];
-    if (L.sleep != null) k.push(`Schlaf <b>${de1(L.sleep)} h</b>`);
-    if (L.score != null) k.push(`Score <b>${Math.round(L.score)}</b>`);
-    if (L.hrv != null) k.push(`HRV <b>${Math.round(L.hrv)}</b>`);
-    if (L.rhr != null) k.push(`Ruhepuls <b>${L.rhr}</b>`);
+    const o = key => r.old.includes(key) ? ' class="old"' : '';
+    if (L.sleep != null) k.push([`Schlaf <b>${de1(L.sleep)} h</b>`, o('sleep')]);
+    if (L.score != null) k.push([`Score <b>${Math.round(L.score)}</b>`, o('score')]);
+    if (L.hrv != null) k.push([`HRV <b>${Math.round(L.hrv)}</b>`, o('hrv')]);
+    if (L.rhr != null) k.push([`Ruhepuls <b>${L.rhr}</b>`, o('rhr')]);
     const nt = [r.stale ? 'Werte von gestern, die heutigen fehlen noch' : '', ...r.notes].filter(Boolean);
     return `<section class="card stcard" aria-label="Tagesform"><div class="st-h"><span class="st-dot ${r.lvl}" aria-hidden="true"></span><b>${head}</b><span class="st-form">Form <b>${L.tsb == null ? '–' : (L.tsb > 0 ? '+' : '') + de1(L.tsb)}</b></span></div>
       ${r.flags.length ? `<div class="st-fl">${esc(r.flags.join(' · '))}</div>` : ''}
-      <div class="st-k">${k.map(x => `<span>${x}</span>`).join('')}</div>
+      <div class="st-k">${k.map(([x, c]) => `<span${c}>${x}</span>`).join('')}</div>
       ${adv ? `<div class="advice ${r.lvl}">${esc(adv)}</div>` : ''}
       ${nt.length ? `<div class="hint">${esc(nt.join('. '))}.</div>` : ''}${checkCard(M, true)}</section>`;
   }
