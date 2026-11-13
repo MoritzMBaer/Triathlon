@@ -224,6 +224,13 @@
       if (st) {
         if (!cur) { cur = { h: '', rep: 0, steps: [] }; out.push(cur); }
         const body = l.replace(/^-\s*/, ''), cue = body.slice(0, st.index + st[1].length), rest = body.slice(st.index + st[0].length).trim();
+        /* Echter Pausen-Schritt für die Uhr („- 20s intensity=rest“): in der App an die vorige Übung hängen, wie bisher „Pause 20 s“ */
+        if (/\bintensity=rest\b/.test(rest)) {
+          const pt = 'Pause ' + fmtDur(st[2]), prev = cur.steps[cur.steps.length - 1];
+          if (prev && !prev.pause && !prev.tgt) { prev.tgt = pt; prev.pause = true; }
+          else cur.steps.push({ dur: '', raw: st[2], tgt: pt, lab: '', pause: true, v: 0 });
+          return;
+        }
         const tg = splitTarget(rest, cue);
         cur.steps.push({ dur: fmtDur(st[2]), raw: st[2], tgt: tg.t, lab: tg.l, pause: tg.pause, v: tg.v });
       } else {
