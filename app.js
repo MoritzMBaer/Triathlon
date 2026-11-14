@@ -132,8 +132,12 @@
   }
   function statusOf(p, M) {
     if (M.match[p.id] || p.done) return 'done';
-    if (p.date < today()) return 'miss';
+    if (p.date < today()) return canCatch(p) ? 'catch' : 'miss';
     return 'open';
+  }
+  /* Verpasste Kraft-/Mobility-Einheiten der laufenden Woche bleiben nachholbar */
+  function canCatch(p) {
+    return ['Kraft', 'Mobility'].includes(sp(p.sport).fam) && p.date >= iso(monday(new Date()));
   }
 
   /* ---------- Tagesform ---------- */
@@ -335,7 +339,7 @@
   let wake = null, wakeBusy = false;
   async function syncWake(M) {
     if (!('wakeLock' in navigator)) return;
-    const want = document.visibilityState === 'visible' && !!(M && M.plan.some(p => p.date === today() && ['Kraft', 'Mobility'].includes(sp(p.sport).fam) && isStarted(p)));
+    const want = document.visibilityState === 'visible' && !!(M && M.plan.some(p => p.date <= today() && ['Kraft', 'Mobility'].includes(sp(p.sport).fam) && isStarted(p)));
     if (want && !wake && !wakeBusy) {
       wakeBusy = true;
       try { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } catch (e) { wake = null; }
@@ -642,7 +646,7 @@
   function unitExpanded(M, p, opts) {
     opts = opts || {};
     const S = sp(p.sport), st = statusOf(p, M), t = M.match[p.id];
-    const pill = st === 'done' ? `<span class="done-pill">${CHECK}Erledigt</span>` : st === 'miss' ? '<span class="miss-pill">Ausgelassen</span>' : `<span class="u-dur">${esc(unitMeta(p))}</span>`;
+    const pill = st === 'done' ? `<span class="done-pill">${CHECK}Erledigt</span>` : st === 'miss' ? '<span class="miss-pill">Ausgelassen</span>' : st === 'catch' ? '<span class="catch-pill">Nachholen</span>' : `<span class="u-dur">${esc(unitMeta(p))}</span>`;
     let body = '', prog = null, compact = null, review = false;
     if (S.k === 'mob' && p.done) { body = mobBody(M, p).html; review = true; }
     else if (S.k === 'kraft' || S.k === 'mob') {
@@ -676,7 +680,7 @@
       if (t && opts.showActual) h += actualHTML(p, t);
       h += '</section>';
     }
-    return opts.fold ? `<div class="uwrap" data-uid="${esc(p.id)}">${h}</div>` : h;
+    return opts.fold ? `<div class="uwrap${st === 'catch' ? ' catch' : ''}" data-uid="${esc(p.id)}">${h}</div>` : h;
   }
   function actualHTML(p, t) {
     const c = [];
@@ -691,7 +695,7 @@
   }
   function tile(M, p, sub) {
     const S = sp(p.sport), st = statusOf(p, M);
-    const right = st === 'done' ? `<span class="done-pill">${CHECK}Erledigt</span>` : st === 'miss' ? '<span class="miss-pill">Ausgelassen</span>' : CHEV_D;
+    const right = st === 'done' ? `<span class="done-pill">${CHECK}Erledigt</span>` : st === 'miss' ? '<span class="miss-pill">Ausgelassen</span>' : st === 'catch' ? '<span class="catch-pill">Nachholen</span>' : CHEV_D;
     return `<button class="tile" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-expanded="false" aria-label="${esc(p.title)} aufklappen"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(p.title)}</b><small>${esc(sub || sportLabel(p) + ' · ' + unitMeta(p))}</small></span>${right}</button>`;
   }
   /* Aufgeklappt oder als Kachel, je nachdem was gerade offen ist */
@@ -927,8 +931,8 @@
   }
   function rowHTML(M, p) {
     const S = sp(p.sport), st = statusOf(p, M);
-    const right = st === 'done' ? `<span class="ok" style="background:var(--${S.k})">${CHECK}</span>` : st === 'miss' ? '<span class="r">Ausgelassen</span>' : `<span class="r">${esc(unitMeta(p))}</span>`;
-    return `<button class="row" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-expanded="false"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(p.title)}</b><small>${esc(p.sport)}</small><small class="mt">${st === 'miss' ? 'Ausgelassen' : esc(unitMeta(p))}</small></span>${right}</button>`;
+    const right = st === 'done' ? `<span class="ok" style="background:var(--${S.k})">${CHECK}</span>` : st === 'miss' ? '<span class="r">Ausgelassen</span>' : st === 'catch' ? '<span class="catch-pill">Nachholen</span>' : `<span class="r">${esc(unitMeta(p))}</span>`;
+    return `<button class="row${st === 'catch' ? ' catch' : ''}" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-expanded="false"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(p.title)}</b><small>${esc(p.sport)}</small><small class="mt">${st === 'miss' ? 'Ausgelassen' : esc(unitMeta(p))}</small></span>${right}</button>`;
   }
   function viewFortschritt(M) {
     const F = M.fitness, last = F[F.length - 1] || {};
