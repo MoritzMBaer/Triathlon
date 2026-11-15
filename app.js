@@ -63,7 +63,7 @@
     data: ls.get('tri:data', null),
     loading: false, err: null, busy: {}, msgs: {},
     weekOff: 0, sheetId: null, active: {}, drafts: {}, open: {}, slide: 0, started: {},
-    drillOpen: {}, rest: null, timer: null, timerSeen: {}, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
+    drillOpen: {}, warmOpen: {}, rest: null, timer: null, timerSeen: {}, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
   };
 
   /* ---------- Schnittstelle ---------- */
@@ -427,6 +427,12 @@
   }
   const kind = (lib, ex) => lib ? (lib.t === 'time' ? 'time' : lib.t === 'bw' ? 'bw' : 'w') : (ex.secs ? 'time' : 'bw');
   const roundKg = x => Math.max(0, Math.round(x * 2) / 2);
+  /* Wiederholungen in Reserve (RIR): wie viele saubere Wiederholungen am Satzende noch gehen sollen */
+  const rir = () => { const v = +ls.get('tri:rir', 2); return v >= 0 && v <= 4 ? v : 2; };
+  const e1 = (reps, res) => 1 + (reps + res) / 30; /* Epley: Last in Abhängigkeit von Wdh. + Reserve */
+  const stepKg = (x, inc) => { inc = inc || 2; return Math.max(inc, Math.round(x / inc) * inc); };
+  /* Startgewicht ohne Verlauf: Referenz = 10 Wdh. mit 3 in Reserve, auf Ziel-Wdh. und eingestellte Reserve umgerechnet */
+  const startKg = (lib, reps) => lib && lib.start ? stepKg(lib.start * e1(10, 3) / e1(reps, rir()), lib.inc) : null;
   function suggest(lib, ex, tg, hist) {
     const k = kind(lib, ex);
     if (k === 'time') {
@@ -439,14 +445,14 @@
       const best = Math.max(...hist.sets.map(s => s.reps || 0));
       return hist.sets.every(s => (s.reps || 0) >= tg.reps) ? { r: Math.max(tg.reps, best + 1), why: 'Letztes Mal alles geschafft: eine Wiederholung mehr pro Satz.' } : { r: tg.reps, why: '' };
     }
-    if (!hist) return { r: tg.reps, kg: null, why: tg.heavy ? 'Noch kein Verlauf: Gewicht wählen, bei dem 2 Wiederholungen Reserve bleiben.' : 'Erstes Mal: ein leichtes Gewicht wählen, bei dem noch 3 Wiederholungen gehen würden.' };
+    if (!hist) { const kg = startKg(lib, tg.reps); return { r: tg.reps, kg, first: true, why: kg != null ? `Geschätztes Startgewicht für ${tg.reps} Wdh. mit ${rir()} in Reserve. Zu leicht oder zu schwer? Einfach anpassen, ab dann rechnet die App mit deinem Wert.` : `Gewicht wählen, bei dem noch ${rir()} Wiederholungen gehen würden.` }; }
     const kgs = hist.sets.map(s => s.kg).filter(x => x != null);
     const lastKg = kgs.length ? Math.max(...kgs) : null;
     if (lastKg == null) return { r: tg.reps, kg: null, why: '' };
     const lt = (hist.target.match(/×(\d+)/) || [])[1];
     if (lt && +lt !== tg.reps) {
       const avg = mean(hist.sets.map(s => s.reps || 0));
-      return { r: tg.reps, kg: roundKg(lastKg * (1 + (avg + 2) / 30) / (1 + (tg.reps + 2) / 30)), why: `Umgerechnet von ${hist.target} mit ${fmtKg(lastKg)} auf ${tg.reps} Wiederholungen mit 2 in Reserve.` };
+      return { r: tg.reps, kg: roundKg(lastKg * e1(avg, rir()) / e1(tg.reps, rir())), why: `Umgerechnet von ${hist.target} mit ${fmtKg(lastKg)} auf ${tg.reps} Wiederholungen mit ${rir()} in Reserve.` };
     }
     const need = +(hist.target.match(/^(\d+)/) || [])[1] || 1;
     if (hist.sets.length >= need && hist.sets.every(s => (s.reps || 0) >= tg.reps)) return { r: tg.reps, kg: roundKg(lastKg + lib.inc), why: `Letztes Mal alle Sätze geschafft, also ${String(lib.inc).replace('.', ',')} kg mehr.` };
@@ -462,11 +468,20 @@
         const mine = own.filter(r => r.ex === ex.name).sort((a, b) => a.set - b.set);
         if (mine.length) return mine.map(r => ({ r: r.reps, s: r.secs, kg: r.kg, ok: true }));
         const sg = suggest(lib, ex, tg, lastFor(M, ex.name, p.id));
-        return Array.from({ length: tg.sets }, () => ({ r: sg.r != null ? sg.r : tg.reps, s: sg.s != null ? sg.s : null, kg: sg.kg != null ? sg.kg : null, ok: false }));
+        return Array.from({ length: tg.sets }, () => ({ r: sg.r != null ? sg.r : tg.reps, s: sg.s != null ? sg.s : null, kg: sg.kg != null ? sg.kg : null, a: true, ok: false }));
       }) };
-    }
+    } else autoKg(M, p, d, true);
     state.drafts[p.id] = d;
     return d;
+  }
+  /* Automatisch gesetzte Gewichte offener Sätze an den aktuellen Vorschlag anpassen (z. B. nach Änderung der Reserve) */
+  function autoKg(M, p, d, onlyEmpty) {
+    exercises(p).forEach((ex, i) => {
+      const lib = U.lib(ex.name); if (kind(lib, ex) !== 'w' || !d.ex[i]) return;
+      const sg = suggest(lib, ex, target(p, ex, lib), lastFor(M, ex.name, p.id));
+      if (sg.kg == null) return;
+      d.ex[i].forEach(s => { if (!s.ok && (onlyEmpty ? s.kg == null : s.a !== false)) { s.kg = sg.kg; s.a = true; } });
+    });
   }
   const putDraft = (pid, d) => { state.drafts[pid] = d; ls.set('tri:draft:' + pid, d); };
   function histText(h, lib, ex) {
@@ -487,11 +502,13 @@
     const goal = `${tg.sets} × ${tg.reps}${k === 'time' ? ' s' : ''}${tg.side ? ' je Seite' : ''}`;
     const firstOpen = sets.findIndex(s => !s.ok);
     const done = !!p.done;
-    let h = backBar(p, `Übung ${act + 1} von ${exs.length}`) + `<div class="ex-card"><div class="ex-head"><b>${esc(ex.name)}</b><span>Ziel ${goal}${hist ? ' · ' + esc(histText(hist, lib, ex)) : ''}</span></div>`;
+    let h = backBar(p, `Übung ${act + 1} von ${exs.length}`) + (done ? '' : warmupHTML(p, exs, d));
+    h += `<div class="ex-card"><div class="ex-head"><b>${esc(ex.name)}</b><span>Ziel ${goal}${hist ? ' · ' + esc(histText(hist, lib, ex)) : ''}</span></div>`;
     h += `<div class="ex-body${lib ? '' : ' solo'}"><div class="ex-l">`;
     if (lib) h += `<button class="fig zoomable" data-zoom="${esc(ex.name)}" aria-label="Skizze ${esc(ex.name)} vergrößern">${U.svg(lib, { id: 'live:' + encodeURIComponent(ex.name), label: 'Animation: ' + ex.name })}</button>${zoomMap(U.bodyMap(lib), ex.name)}<p class="howto">${esc(lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(lib.cue)}</p>`;
     h += '</div><div class="ex-r">';
-    if (!done && sg.why) h += `<div class="sugg">${k === 'w' && sg.kg != null ? `<b>Heute ${fmtKg(sg.kg)}.</b> ` : ''}${esc(sg.why)}</div>`;
+    if (!done && sg.why) h += `<div class="sugg">${k === 'w' && sg.kg != null ? `<b>Heute ${fmtKg(sg.kg)}${lib && lib.per ? ' ' + lib.per : ''}.</b> ` : ''}${esc(sg.why)}</div>`;
+    if (!done && k === 'w' && firstOpen === 0) h += rampHTML(exs, act, lib, sets[0].kg);
     h += `<div class="sets" role="group" aria-label="Sätze ${esc(ex.name)}"><div class="set head"><span>SATZ</span><span>${k === 'time' ? 'SEKUNDEN' : 'WDH'}</span><span>${k === 'w' ? 'KG' : ''}</span><span></span></div>`;
     sets.forEach((s, j) => {
       const f = k === 'time' ? 's' : 'r', v = (k === 'time' ? s.s : s.r) || 0, step = k === 'time' ? 5 : 1, key = `${p.id}|${act}|${j}`;
@@ -605,6 +622,32 @@
       <text id="timer-txt" x="42" y="48" text-anchor="middle" font-family="ui-rounded,-apple-system,system-ui,sans-serif" font-size="20" font-weight="700" fill="var(--fg)">${Math.floor(left / 60)}:${pad(left % 60)}</text></svg>
       <div class="tx"><small><b class="now">${esc(it.parts[part] || 'Halten')}</b><br>Teil ${part + 1} von ${it.parts.length}${it.parts[part + 1] ? ' · danach: ' + esc(it.parts[part + 1]) : ''}</small>
       <div class="bts"><button data-timer="${p.id}|${i}|toggle">${T && T.running ? 'Pause' : (T && T.left < it.sec ? 'Weiter' : 'Start')}</button><button class="go" data-timer="${p.id}|${i}|next">${part + 1 < it.parts.length ? 'Nächster Teil' : 'Fertig'}</button></div></div></div>`;
+  }
+  /* Aufwärmen: aufklappbare Karte vor der ersten Übung, danach schmale Zeile */
+  const WARM = [
+    ['5 min locker Cardio', 'Rad, Crosstrainer oder Rudergerät. Ruhig anfangen, am Ende leicht schwitzen.'],
+    ['2 min dynamisch bewegen', 'Je 10 × Armkreisen und Hüftkreisen pro Richtung, 10 Kniebeugen ohne Gewicht, 5 Ausfallschritte je Seite.'],
+    ['Aufwärmsätze', 'Vor der ersten Übung leichte Sätze mit weniger Gewicht. Die App zeigt sie bei der Übung an, sie zählen nicht mit.']
+  ];
+  function warmupHTML(p, exs, d) {
+    const ok = !!ls.get('tri:warm:' + p.id, false), open = state.warmOpen[p.id] != null ? state.warmOpen[p.id] : !ok;
+    const r = rir();
+    let h = `<div class="warm${ok ? ' ok' : ''}"><button class="warm-h" data-warm="${esc(p.id)}|fold" aria-expanded="${open}"><span class="warm-ic">${ok ? CHECK : ICON.kraft}</span><span class="tx"><b>Aufwärmen</b><small>${ok ? 'Erledigt' : 'ca. 8 Minuten'}</small></span>${open ? CHEV_D : CHEV_R}</button>`;
+    if (open) {
+      h += '<ol class="warm-l">' + WARM.map(([t, x]) => `<li><b>${t}</b><span>${x}</span></li>`).join('') + '</ol>';
+      h += `<button class="btn${ok ? ' ghost' : ''}" data-warm="${esc(p.id)}|done"${ok ? '' : ' style="background:var(--c-d);color:var(--card)"'}>${ok ? 'Doch nicht erledigt' : 'Aufgewärmt'}</button>`;
+    }
+    h += `<div class="rir"><div class="rir-t"><b>Reserve pro Satz</b><small>So viele Wiederholungen sollten am Ende jedes Satzes noch sauber gehen. Danach richten sich die Gewichtsvorschläge.</small></div><div class="seg" role="radiogroup" aria-label="Wiederholungen in Reserve">${[1, 2, 3, 4].map(n => `<button role="radio" aria-checked="${n === r}" data-rir="${esc(p.id)}|${n}">${n}</button>`).join('')}</div></div>`;
+    return h + '</div>';
+  }
+  function rampHTML(exs, act, lib, kg) {
+    if (kg == null || kg < 8) return '';
+    const firstW = exs.findIndex(e => kind(U.lib(e.name), e) === 'w');
+    const inc = (lib && lib.inc) || 2, per = lib && lib.per ? ' ' + lib.per : '';
+    const sets = act === firstW ? [[10, stepKg(kg * 0.5, inc)], [5, stepKg(kg * 0.75, inc)]] : [[6, stepKg(kg * 0.6, inc)]];
+    const ss = sets.filter(([, w]) => w < kg);
+    if (!ss.length) return '';
+    return `<div class="ramp"><b>Aufwärmsätze</b><span>${ss.map(([r, w]) => `${r} × ${fmtKg(w)}`).join(' · ')}${per}</span><small>zählen nicht mit</small></div>`;
   }
   function kraftTimerHTML(p, i, j, sec, side, nSets) {
     let T = state.timer && state.timer.kr && state.timer.pid === p.id && state.timer.i === i && state.timer.j === j ? state.timer : null;
@@ -1483,6 +1526,18 @@
       else render();
       return;
     }
+    if ((el = q('[data-warm]'))) {
+      const [pid, what] = el.dataset.warm.split('|'), k = 'tri:warm:' + pid, ok = !!ls.get(k, false);
+      if (what === 'fold') state.warmOpen[pid] = !(state.warmOpen[pid] != null ? state.warmOpen[pid] : !ok);
+      else { if (ok) ls.del(k); else ls.set(k, true); state.warmOpen[pid] = ok; if (!ok) { state.scrollEx = pid; } }
+      render(); return;
+    }
+    if ((el = q('[data-rir]'))) {
+      const [pid, n] = el.dataset.rir.split('|'); ls.set('tri:rir', +n);
+      /* alle offenen Entwürfe mit automatischen Gewichten neu berechnen */
+      M.plan.filter(x => sp(x.sport).k === 'kraft' && !x.done).forEach(x => { const d = draft(M, x); autoKg(M, x, d, false); putDraft(x.id, d); });
+      render(); return;
+    }
     if ((el = q('[data-ktimer]'))) {
       const [pid, i, j, what] = el.dataset.ktimer.split('|'); const p = plan(pid); if (!p) return;
       const d = draft(M, p), s = d.ex[+i] && d.ex[+i][+j]; if (!s) return;
@@ -1537,8 +1592,8 @@
     const el = e.target.closest('[data-kg]'); if (!el) return;
     const M = model(); const [pid, i, j] = el.dataset.kg.split('|'); const p = M.plan.find(x => x.id === pid); if (!p) return;
     const d = draft(M, p), v = num(el.value), a = d.ex[+i];
-    a[+j].kg = v;
-    for (let k = +j + 1; k < a.length; k++) if (!a[k].ok) a[k].kg = v;
+    a[+j].kg = v; a[+j].a = false;
+    for (let k = +j + 1; k < a.length; k++) if (!a[k].ok) { a[k].kg = v; a[k].a = false; }
     putDraft(pid, d); render();
   });
   document.addEventListener('submit', e => {

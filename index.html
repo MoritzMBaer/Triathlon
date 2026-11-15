@@ -365,6 +365,31 @@ button.dsd:active{background:var(--fill)}
 .tick svg{width:20px;height:20px}
 .set.ok .tick{background:var(--c);border-color:var(--c);color:#fff}
 .set-acts{display:flex;gap:18px;flex-wrap:wrap}
+/* Aufwärmen + Reserve */
+.warm{background:var(--card);border-radius:24px;padding:6px 16px 14px;display:flex;flex-direction:column;gap:12px}
+.warm-h{display:flex;align-items:center;gap:12px;background:none;border:0;padding:8px 0 0;text-align:left;color:var(--fg);min-height:48px;width:100%}
+.warm-h .tx{display:flex;flex-direction:column;flex-grow:1;min-width:0}
+.warm-h .tx b{font-size:16px;font-weight:600}
+.warm-h .tx small{font-size:12px;color:var(--muted)}
+.warm-h .chev{width:18px;height:18px;color:var(--chev);flex:none}
+.warm-ic{width:34px;height:34px;border-radius:50%;background:var(--c-t);color:var(--c-d);display:grid;place-items:center;flex:none}
+.warm-ic svg{width:18px;height:18px}
+.warm.ok .warm-ic{background:var(--c-d);color:var(--card)}
+.warm-l{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;counter-reset:w}
+.warm-l li{display:grid;grid-template-columns:24px 1fr;column-gap:10px;counter-increment:w}
+.warm-l li::before{content:counter(w);grid-row:span 2;width:24px;height:24px;border-radius:50%;background:var(--fill-2);font:700 13px/24px var(--round);text-align:center;color:var(--c-d)}
+.warm-l b{font-size:15px;font-weight:600}
+.warm-l span{font-size:14px;color:var(--muted);line-height:1.4}
+.rir{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.rir-t b{display:block;font-size:15px;font-weight:600}
+.rir-t small{font-size:13px;color:var(--muted);line-height:1.35}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--fill-2);border-radius:12px;padding:3px}
+.seg button{height:40px;border:0;border-radius:10px;background:none;font:700 16px var(--round);color:var(--fg-2)}
+.seg button[aria-checked="true"]{background:var(--c-d);color:var(--card)}
+.ramp{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;row-gap:2px;border:1.5px dashed var(--c-t);border-radius:12px;padding:8px 12px;font-size:14px}
+.ramp b{font-weight:600}
+.ramp span{font-family:var(--round);font-weight:700;color:var(--c-d)}
+.ramp small{font-size:12px;color:var(--muted);margin-left:auto}
 .exlist{background:var(--card);border-radius:24px;overflow:hidden;overflow:clip}
 .exrow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:none;border:0;border-bottom:.5px solid var(--line);padding:10px 16px;min-height:64px}
 .exrow:last-child{border-bottom:0}
