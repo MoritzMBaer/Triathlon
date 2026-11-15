@@ -502,7 +502,10 @@
     });
     h += '</div>';
     if (!done) h += `<div class="set-acts"><button class="link" data-addset="${p.id}|${act}">+ Satz hinzufügen</button>${sets.length > 1 ? `<button class="link" data-delset="${p.id}|${act}">Letzten Satz entfernen</button>` : ''}</div>`;
-    h += '</div></div></div>';
+    h += '</div></div>';
+    /* Halteübungen (z. B. Unterarmstütz): Timer für den aktuellen Satz, schwebt unten, während man liest */
+    if (k === 'time' && !done && firstOpen >= 0) h += kraftTimerHTML(p, act, firstOpen, sets[firstOpen].s || tg.reps, tg.side, sets.length);
+    h += '</div>';
     h += '<div class="exlist">' + exs.map((e, i) => {
       if (i === act) return '';
       const lb = U.lib(e.name), t2 = target(p, e, lb), k2 = kind(lb, e), s2 = d.ex[i] || [];
@@ -603,6 +606,42 @@
       <div class="tx"><small><b class="now">${esc(it.parts[part] || 'Halten')}</b><br>Teil ${part + 1} von ${it.parts.length}${it.parts[part + 1] ? ' · danach: ' + esc(it.parts[part + 1]) : ''}</small>
       <div class="bts"><button data-timer="${p.id}|${i}|toggle">${T && T.running ? 'Pause' : (T && T.left < it.sec ? 'Weiter' : 'Start')}</button><button class="go" data-timer="${p.id}|${i}|next">${part + 1 < it.parts.length ? 'Nächster Teil' : 'Fertig'}</button></div></div></div>`;
   }
+  function kraftTimerHTML(p, i, j, sec, side, nSets) {
+    let T = state.timer && state.timer.kr && state.timer.pid === p.id && state.timer.i === i && state.timer.j === j ? state.timer : null;
+    /* Sekunden wurden vor dem Start geändert: Timer neu aufziehen */
+    if (T && !T.running && T.part === 0 && T.left >= T.sec && T.sec !== sec) { T.sec = T.left = T.endLeft = sec; }
+    const parts = side ? ['Links', 'Rechts'] : ['Halten'];
+    const part = T ? T.part : 0, tsec = T ? T.sec : sec, left = T ? Math.max(0, Math.ceil(T.left)) : sec;
+    const C = 2 * Math.PI * 36, frac = left / tsec;
+    const k = 'kr|' + p.id + '|' + i;
+    const restLeft = state.rest ? Math.ceil((state.rest.end - Date.now()) / 1000) : 0;
+    const rest = state.rest ? (restLeft > 0 ? 'Pause ' + Math.floor(restLeft / 60) + ':' + pad(restLeft % 60) : 'Pause vorbei') : '';
+    const started = T && (T.running || T.left < T.sec);
+    const info = `Satz ${j + 1} von ${nSets}${side ? ' · ' + parts[part] : ''}`;
+    const after = side && part === 0 ? 'danach: Rechts' : (j + 1 < nSets ? 'danach Pause, dann Satz ' + (j + 2) : 'letzter Satz');
+    return `<div class="timer kt${state.timerSeen[k] ? ' t-free' : ''}" id="timer" data-k="${k}"><svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label="Timer: noch ${left} Sekunden">
+      <circle cx="42" cy="42" r="36" fill="none" stroke="var(--c-t)" stroke-width="7"/>
+      <circle id="timer-arc" cx="42" cy="42" r="36" fill="none" stroke="var(--c)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(C * frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 42 42)"/>
+      <text id="timer-txt" x="42" y="48" text-anchor="middle" font-family="ui-rounded,-apple-system,system-ui,sans-serif" font-size="20" font-weight="700" fill="var(--fg)">${Math.floor(left / 60)}:${pad(left % 60)}</text></svg>
+      <div class="tx"><small><b class="now">${info}</b><br><span id="kt-rest" class="kt-rest">${rest}</span><span class="kt-after"${rest ? ' hidden' : ''}>${after}</span></small>
+      <div class="bts"><button data-ktimer="${p.id}|${i}|${j}|toggle">${T && T.running ? 'Pause' : (started ? 'Weiter' : 'Start')}</button><button class="go" data-ktimer="${p.id}|${i}|${j}|next">${side && part === 0 ? 'Rechts' : 'Satz fertig'}</button></div></div></div>`;
+  }
+  /* Kraft-Timer abgelaufen oder „Satz fertig“: nächste Seite bereitlegen oder Satz abhaken, Pause starten */
+  function finishKraftSet(T, early) {
+    T.running = false;
+    const M = model(), p = M && M.plan.find(x => x.id === T.pid);
+    if (!p) { state.timer = null; return; }
+    const ex = exercises(p)[T.i], tg = ex && target(p, ex, U.lib(ex.name));
+    if (tg && tg.side && T.part === 0) { T.part = 1; T.left = T.endLeft = T.sec; return; }
+    const d = draft(M, p), s = d.ex[T.i] && d.ex[T.i][T.j];
+    state.timer = null;
+    if (!s) return;
+    /* früher aufgehört: tatsächlich gehaltene Zeit eintragen, damit die Steigerung stimmt */
+    if (early && !tg.side && T.left > 0 && T.left < T.sec) s.s = Math.max(5, Math.round((T.sec - T.left) / 5) * 5);
+    s.ok = true; putDraft(T.pid, d);
+    state.rest = { end: Date.now() + 90000 };
+    if (d.ex[T.i].every(x => x.ok)) { const nx = d.ex.findIndex(x => x.some(y => !y.ok)); if (nx >= 0) { state.active[T.pid] = nx; state.scrollEx = T.pid; } }
+  }
   let audio = null;
   function beep() {
     try {
@@ -634,6 +673,7 @@
     T.left = T.endLeft - (Date.now() - T.startedAt) / 1000;
     if (T.left <= 0) {
       T.running = false; beep(); /* Timer ist vorbei: anhalten, weiterschalten, aber nicht selbst neu starten */
+      if (T.kr) { try { finishKraftSet(T, false); } catch (e) { state.timer = null; } render(); return; }
       try { if (!advanceTimer(T)) render(); } catch (e) { state.timer = null; render(); }
       return;
     }
@@ -1349,9 +1389,11 @@
 
   /* ---------- Pausen-Timer Kraft ---------- */
   function tickRest() {
-    const b = $('#restbar');
-    if (!state.rest) { b.hidden = true; return; }
+    const b = $('#restbar'), kt = document.getElementById('kt-rest');
+    if (!state.rest) { b.hidden = true; if (kt) { kt.textContent = ''; const a = kt.nextElementSibling; if (a) a.hidden = false; } return; }
     const left = Math.ceil((state.rest.end - Date.now()) / 1000);
+    /* Bei Halteübungen zeigt der Timer-Block die Pause, die Leiste würde ihn verdecken */
+    if (kt) { b.hidden = true; kt.textContent = left > 0 ? 'Pause ' + Math.floor(left / 60) + ':' + pad(left % 60) : 'Pause vorbei'; const a = kt.nextElementSibling; if (a) a.hidden = true; if (left <= 0 && !state.rest.beeped) { state.rest.beeped = true; beep(); setTimeout(() => { state.rest = null; tickRest(); }, 4000); } return; }
     b.hidden = false;
     if (left <= 0) { b.querySelector('b').textContent = 'Pause vorbei'; if (!state.rest.beeped) { state.rest.beeped = true; beep(); setTimeout(() => { state.rest = null; tickRest(); }, 4000); } return; }
     b.querySelector('b').textContent = 'Pause ' + Math.floor(left / 60) + ':' + pad(left % 60);
@@ -1403,6 +1445,7 @@
     if ((el = q('[data-tick]'))) {
       const [pid, i, j] = el.dataset.tick.split('|'); const p = plan(pid); if (!p) return;
       const d = draft(M, p), s = d.ex[+i][+j]; s.ok = !s.ok; putDraft(pid, d);
+      if (state.timer && state.timer.kr && state.timer.pid === pid) state.timer = null;
       if (s.ok) {
         state.rest = { end: Date.now() + 90000 };
         if (d.ex[+i].every(x => x.ok)) { const nx = d.ex.findIndex(x => x.some(y => !y.ok)); if (nx >= 0) { state.active[pid] = nx; state.scrollEx = pid; } }
@@ -1426,7 +1469,7 @@
       render(); return;
     }
     if ((el = q('[data-stop]'))) { setStarted(el.dataset.stop, false); state.timer = null; render(); return; }
-    if ((el = q('[data-ex]'))) { const [pid, i] = el.dataset.ex.split('|'); state.active[pid] = +i; state.scrollEx = pid; render(); return; }
+    if ((el = q('[data-ex]'))) { const [pid, i] = el.dataset.ex.split('|'); state.active[pid] = +i; if (state.timer && state.timer.kr && state.timer.pid === pid && !state.timer.running) state.timer = null; state.scrollEx = pid; render(); return; }
     if ((el = q('[data-mob-open]'))) { const [pid, i] = el.dataset.mobOpen.split('|'); state.active[pid] = state.active[pid] === +i ? -1 : +i; if (state.active[pid] >= 0) state.scrollEx = pid; render(); return; }
     if ((el = q('[data-mob]'))) {
       const [pid, i] = el.dataset.mob.split('|'); const p = plan(pid); if (!p) return;
@@ -1439,6 +1482,18 @@
       else if (t.length < items.length && p.done) setDone(p, '');
       else render();
       return;
+    }
+    if ((el = q('[data-ktimer]'))) {
+      const [pid, i, j, what] = el.dataset.ktimer.split('|'); const p = plan(pid); if (!p) return;
+      const d = draft(M, p), s = d.ex[+i] && d.ex[+i][+j]; if (!s) return;
+      const ex = exercises(p)[+i], sec = s.s || target(p, ex, U.lib(ex.name)).reps;
+      let T = state.timer;
+      if (!T || !T.kr || T.pid !== pid || T.i !== +i || T.j !== +j) T = state.timer = { kr: true, pid, i: +i, j: +j, part: 0, sec, left: sec, endLeft: sec, running: false };
+      if (what === 'toggle') {
+        if (T.running) { T.running = false; }
+        else { if (T.left <= 0) T.left = T.sec; T.endLeft = T.left; T.startedAt = Date.now(); T.running = true; state.rest = null; beepInit(); }
+      } else finishKraftSet(T, true);
+      render(); tickRest(); return;
     }
     if ((el = q('[data-timer]'))) {
       const [pid, i, what] = el.dataset.timer.split('|'); const p = plan(pid); if (!p) return;
@@ -1497,7 +1552,7 @@
   });
   /* Schwebender Timer: erkennen, ob er gerade unten „klebt“, damit der Bereich darunter verdeckt wird */
   function stuckTimer() {
-    document.querySelectorAll('.mob-ex.active .timer').forEach(t => {
+    document.querySelectorAll('.mob-ex.active .timer,.ex-card>.timer').forEach(t => {
       const d = t.parentElement, r = t.getBoundingClientRect(), dr = d.getBoundingClientRect();
       /* Erst schweben lassen, wenn man einmal bis zum Timer gescrollt hat – vorher in Ruhe lesen */
       if (!t.classList.contains('t-free')) {
