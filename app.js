@@ -63,7 +63,7 @@
     data: ls.get('tri:data', null),
     loading: false, err: null, busy: {}, msgs: {},
     weekOff: 0, sheetId: null, active: {}, drafts: {}, open: {}, slide: 0, started: {},
-    drillOpen: {}, warmOpen: {}, rest: null, timer: null, timerSeen: {}, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
+    drillOpen: {}, warmOpen: {}, rirEdit: null, rest: null, timer: null, timerSeen: {}, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
   };
 
   /* ---------- Schnittstelle ---------- */
@@ -111,7 +111,7 @@
       date: normDate(r[0]), ctl: num(r[1]), atl: num(r[2]), tsb: num(r[3]), rhr: num(r[4]), hrv: num(r[5]), sleep: num(r[6]), score: num(r[8]), ready: num(r[9])
     })).sort((a, b) => a.date.localeCompare(b.date));
     const klog = rows(d.kraftlog).filter(r => r[1] && r[3]).map(r => ({
-      date: normDate(r[0]), pid: r[1], unit: r[2], ex: r[3], set: num(r[4]), reps: num(r[5]), secs: num(r[6]), kg: num(r[7]), target: r[8] || '', saved: r[9] || ''
+      date: normDate(r[0]), pid: r[1], unit: r[2], ex: r[3], set: num(r[4]), reps: num(r[5]), secs: num(r[6]), kg: num(r[7]), target: r[8] || '', rir: (/RIR (\d)/.exec(r[8] || '') || [])[1] != null ? +/RIR (\d)/.exec(r[8])[1] : null, saved: r[9] || ''
     }));
     const check = rows(d.check).filter(r => r[0] && r[1] !== '').map(r => ({ date: normDate(r[0]), legs: num(r[1]), energy: num(r[2]), mot: num(r[3]) }));
     const shifts = {}, nights = new Set();
@@ -428,8 +428,9 @@
   const kind = (lib, ex) => lib ? (lib.t === 'time' ? 'time' : lib.t === 'bw' ? 'bw' : 'w') : (ex.secs ? 'time' : 'bw');
   const roundKg = x => Math.max(0, Math.round(x * 2) / 2);
   /* Wiederholungen in Reserve (RIR): wie viele saubere Wiederholungen am Satzende noch gehen sollen */
-  const rir = () => { const v = +ls.get('tri:rir', 2); return v >= 0 && v <= 4 ? v : 2; };
+  const rir = () => 2; /* Ziel: 2 Wiederholungen in Reserve (2–3 ist der gute Bereich) */
   const e1 = (reps, res) => 1 + (reps + res) / 30; /* Epley: Last in Abhängigkeit von Wdh. + Reserve */
+  const fmtR = x => String(Math.round(x * 10) / 10).replace('.', ',');
   const stepKg = (x, inc) => { inc = inc || 2; return Math.max(inc, Math.round(x / inc) * inc); };
   /* Startgewicht ohne Verlauf: Referenz = 10 Wdh. mit 3 in Reserve, auf Ziel-Wdh. und eingestellte Reserve umgerechnet */
   const startKg = (lib, reps) => lib && lib.start ? stepKg(lib.start * e1(10, 3) / e1(reps, rir()), lib.inc) : null;
@@ -443,7 +444,11 @@
     if (k === 'bw') {
       if (!hist) return { r: tg.reps, why: '' };
       const best = Math.max(...hist.sets.map(s => s.reps || 0));
-      return hist.sets.every(s => (s.reps || 0) >= tg.reps) ? { r: Math.max(tg.reps, best + 1), why: 'Letztes Mal alles geschafft: eine Wiederholung mehr pro Satz.' } : { r: tg.reps, why: '' };
+      const rr = hist.sets.map(s => s.rir).filter(x => x != null), ar = rr.length ? mean(rr) : null;
+      if (!hist.sets.every(s => (s.reps || 0) >= tg.reps)) return { r: tg.reps, why: '' };
+      if (ar != null && ar >= 4) return { r: Math.max(tg.reps, best + 2), why: `Letztes Mal noch ${fmtR(ar)} in Reserve: zwei Wiederholungen mehr pro Satz.` };
+      if (ar != null && ar < 1.5) return { r: Math.max(tg.reps, best), why: 'Letztes Mal fast am Limit: Wiederholungen halten.' };
+      return { r: Math.max(tg.reps, best + 1), why: 'Letztes Mal alles geschafft: eine Wiederholung mehr pro Satz.' };
     }
     if (!hist) { const kg = startKg(lib, tg.reps); return { r: tg.reps, kg, first: true, why: kg != null ? `Geschätztes Startgewicht für ${tg.reps} Wdh. mit ${rir()} in Reserve. Zu leicht oder zu schwer? Einfach anpassen, ab dann rechnet die App mit deinem Wert.` : `Gewicht wählen, bei dem noch ${rir()} Wiederholungen gehen würden.` }; }
     const kgs = hist.sets.map(s => s.kg).filter(x => x != null);
@@ -455,6 +460,16 @@
       return { r: tg.reps, kg: roundKg(lastKg * e1(avg, rir()) / e1(tg.reps, rir())), why: `Umgerechnet von ${hist.target} mit ${fmtKg(lastKg)} auf ${tg.reps} Wiederholungen mit ${rir()} in Reserve.` };
     }
     const need = +(hist.target.match(/^(\d+)/) || [])[1] || 1;
+    /* Reserve gemeldet: daraus die Leistung schätzen und das Gewicht anpassen */
+    const rs = hist.sets.filter(s => s.rir != null && s.kg != null && s.reps);
+    if (rs.length) {
+      const ar = mean(rs.map(s => s.rir)), allReps = hist.sets.length >= need && hist.sets.every(s => (s.reps || 0) >= tg.reps);
+      const est = Math.min(...rs.map(s => s.kg * e1(s.reps, s.rir))), fit = stepKg(est / e1(tg.reps, rir()), lib.inc);
+      if (allReps && ar >= 4) { const lo = lastKg + lib.inc, hi = Math.max(lo, stepKg(lastKg * 1.15, lib.inc)), kg = Math.min(hi, Math.max(lo, fit)); /* höchstens ca. 15 % Sprung */ return { r: tg.reps, kg, why: `Letztes Mal noch ${fmtR(ar)} Wdh. in Reserve, das war zu leicht: ${fmtKg(kg)}.` }; }
+      if (allReps && ar >= 2) return { r: tg.reps, kg: roundKg(lastKg + lib.inc), why: `Letztes Mal alle Sätze mit ${fmtR(ar)} in Reserve, also ${String(lib.inc).replace('.', ',')} kg mehr.` };
+      if (ar < 1 || hist.sets.some(s => (s.reps || 0) < tg.reps - 2)) { const kg = Math.min(lastKg, Math.max(lib.inc, fit)); return { r: tg.reps, kg, why: kg < lastKg ? `Letztes Mal am Limit: etwas leichter, damit wieder ${rir()} Wdh. Reserve bleiben.` : 'Letztes Mal am Limit: Gewicht halten.' }; }
+      return { r: tg.reps, kg: lastKg, why: `Letztes Mal ${fmtR(ar)} in Reserve: Gewicht halten, bis 2–3 Wdh. Reserve bleiben.` };
+    }
     if (hist.sets.length >= need && hist.sets.every(s => (s.reps || 0) >= tg.reps)) return { r: tg.reps, kg: roundKg(lastKg + lib.inc), why: `Letztes Mal alle Sätze geschafft, also ${String(lib.inc).replace('.', ',')} kg mehr.` };
     return { r: tg.reps, kg: lastKg, why: hist.sets.some(s => (s.reps || 0) < tg.reps - 2) ? 'Letztes Mal deutlich unter dem Ziel: Gewicht halten und sauber ausführen.' : 'Gewicht halten, bis alle Sätze sitzen.' };
   }
@@ -516,6 +531,12 @@
         <span class="stp"><button data-step="${key}|${f}|-${step}" aria-label="weniger" ${done ? 'disabled' : ''}>−</button><b>${v}</b><button data-step="${key}|${f}|${step}" aria-label="mehr" ${done ? 'disabled' : ''}>+</button></span>
         ${k === 'w' ? `<input type="number" inputmode="decimal" step="0.5" min="0" id="kg-${esc(p.id)}-${act}-${j}" data-kg="${key}" value="${s.kg == null ? '' : s.kg}" placeholder="kg" aria-label="Gewicht Satz ${j + 1}" ${done ? 'disabled' : ''}>` : '<span class="dash">–</span>'}
         <button class="tick" data-tick="${key}" aria-pressed="${!!s.ok}" aria-label="Satz ${j + 1} erledigt" ${done ? 'disabled' : ''}>${CHECK}</button></div>`;
+      if (k !== 'time' && s.ok) {
+        const ask = !done && (s.rir == null || state.rirEdit === key);
+        h += ask
+          ? `<div class="rirq"><span>Wie viele Wdh. wären noch gegangen?</span><div class="rchips" role="radiogroup" aria-label="Reserve Satz ${j + 1}">${[0, 1, 2, 3, 4].map(n => `<button role="radio" aria-checked="${s.rir === n}" data-rirset="${key}|${n}"${n >= 2 && n <= 3 ? ' class="good"' : ''}>${n === 4 ? '4+' : n}</button>`).join('')}</div></div>`
+          : s.rir != null ? `<button class="rirv" data-riredit="${key}" ${done ? 'disabled' : ''}>${s.rir === 4 ? '4+' : s.rir} in Reserve</button>` : '';
+      }
     });
     h += '</div>';
     if (!done) h += `<div class="set-acts"><button class="link" data-addset="${p.id}|${act}">+ Satz hinzufügen</button>${sets.length > 1 ? `<button class="link" data-delset="${p.id}|${act}">Letzten Satz entfernen</button>` : ''}</div>`;
@@ -637,7 +658,6 @@
       h += '<ol class="warm-l">' + WARM.map(([t, x]) => `<li><b>${t}</b><span>${x}</span></li>`).join('') + '</ol>';
       h += `<button class="btn${ok ? ' ghost' : ''}" data-warm="${esc(p.id)}|done"${ok ? '' : ' style="background:var(--c-d);color:var(--card)"'}>${ok ? 'Doch nicht erledigt' : 'Aufgewärmt'}</button>`;
     }
-    h += `<div class="rir"><div class="rir-t"><b>Reserve pro Satz</b><small>So viele Wiederholungen sollten am Ende jedes Satzes noch sauber gehen. Danach richten sich die Gewichtsvorschläge.</small></div><div class="seg" role="radiogroup" aria-label="Wiederholungen in Reserve">${[1, 2, 3, 4].map(n => `<button role="radio" aria-checked="${n === r}" data-rir="${esc(p.id)}|${n}">${n}</button>`).join('')}</div></div>`;
     return h + '</div>';
   }
   function rampHTML(exs, act, lib, kg) {
@@ -1400,7 +1420,7 @@
     const zeilen = [];
     exs.forEach((ex, i) => {
       const lib = U.lib(ex.name), tg = target(p, ex, lib), k = kind(lib, ex);
-      (d.ex[i] || []).filter(s => s.ok).forEach((s, j) => zeilen.push({ datum: today(), einheit: p.title, uebung: ex.name, satz: j + 1, wdh: k === 'time' ? '' : (s.r == null ? '' : s.r), sek: k === 'time' ? (s.s == null ? '' : s.s) : '', kg: k === 'w' ? (s.kg == null ? '' : s.kg) : '', ziel: `${tg.sets}×${tg.reps}${k === 'time' ? ' s' : ''}`, gespeichert: stamp }));
+      (d.ex[i] || []).filter(s => s.ok).forEach((s, j) => zeilen.push({ datum: today(), einheit: p.title, uebung: ex.name, satz: j + 1, wdh: k === 'time' ? '' : (s.r == null ? '' : s.r), sek: k === 'time' ? (s.s == null ? '' : s.s) : '', kg: k === 'w' ? (s.kg == null ? '' : s.kg) : '', ziel: `${tg.sets}×${tg.reps}${k === 'time' ? ' s' : ''}${k !== 'time' && s.rir != null ? ' · RIR ' + s.rir : ''}`, gespeichert: stamp }));
     });
     if (!zeilen.length) { state.msgs[p.id] = 'Hake mindestens einen Satz ab, bevor du speicherst.'; render(); return; }
     state.busy[p.id] = true; delete state.msgs[p.id]; render();
@@ -1487,11 +1507,13 @@
     if ((el = q('[data-step]'))) { if (holdUsed) { holdUsed = false; return; } doStep(el); return; }
     if ((el = q('[data-tick]'))) {
       const [pid, i, j] = el.dataset.tick.split('|'); const p = plan(pid); if (!p) return;
-      const d = draft(M, p), s = d.ex[+i][+j]; s.ok = !s.ok; putDraft(pid, d);
+      const d = draft(M, p), s = d.ex[+i][+j]; s.ok = !s.ok; if (!s.ok) s.rir = null; putDraft(pid, d); state.active[pid] = +i;
       if (state.timer && state.timer.kr && state.timer.pid === pid) state.timer = null;
       if (s.ok) {
         state.rest = { end: Date.now() + 90000 };
-        if (d.ex[+i].every(x => x.ok)) { const nx = d.ex.findIndex(x => x.some(y => !y.ok)); if (nx >= 0) { state.active[pid] = nx; state.scrollEx = pid; } }
+        /* Halteübungen springen gleich weiter; sonst erst, wenn die Reserve des letzten Satzes eingetragen ist */
+        const ex = exercises(p)[+i];
+        if (kind(U.lib(ex.name), ex) === 'time' && d.ex[+i].every(x => x.ok)) { const nx = d.ex.findIndex(x => x.some(y => !y.ok)); if (nx >= 0) { state.active[pid] = nx; state.scrollEx = pid; } }
       }
       render(); return;
     }
@@ -1532,12 +1554,13 @@
       else { if (ok) ls.del(k); else ls.set(k, true); state.warmOpen[pid] = ok; if (!ok) { state.scrollEx = pid; } }
       render(); return;
     }
-    if ((el = q('[data-rir]'))) {
-      const [pid, n] = el.dataset.rir.split('|'); ls.set('tri:rir', +n);
-      /* alle offenen Entwürfe mit automatischen Gewichten neu berechnen */
-      M.plan.filter(x => sp(x.sport).k === 'kraft' && !x.done).forEach(x => { const d = draft(M, x); autoKg(M, x, d, false); putDraft(x.id, d); });
+    if ((el = q('[data-rirset]'))) {
+      const [pid, i, j, n] = el.dataset.rirset.split('|'); const p = plan(pid); if (!p) return;
+      const d = draft(M, p), s = d.ex[+i][+j], first = s.rir == null; s.rir = +n; putDraft(pid, d); state.rirEdit = null;
+      if (first && d.ex[+i].every(x => x.ok)) { const nx = d.ex.findIndex(x => x.some(y => !y.ok)); if (nx >= 0) { state.active[pid] = nx; state.scrollEx = pid; } }
       render(); return;
     }
+    if ((el = q('[data-riredit]'))) { state.rirEdit = el.dataset.riredit; render(); return; }
     if ((el = q('[data-ktimer]'))) {
       const [pid, i, j, what] = el.dataset.ktimer.split('|'); const p = plan(pid); if (!p) return;
       const d = draft(M, p), s = d.ex[+i] && d.ex[+i][+j]; if (!s) return;
