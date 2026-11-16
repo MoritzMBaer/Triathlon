@@ -586,13 +586,6 @@
   function strengthBody(M, p) {
     const exs = exercises(p), d = draft(M, p);
     const total = d.ex.reduce((a, s) => a + s.length, 0), ok = d.ex.reduce((a, s) => a + s.filter(x => x.ok).length, 0);
-    let act = state.active[p.id];
-    if (act == null) { act = d.ex.findIndex(s => s.some(x => !x.ok)); if (act < 0) act = 0; }
-    const ex = exs[act], lib = U.lib(ex.name), tg = target(p, ex, lib), k = kind(lib, ex);
-    const hist = lastFor(M, ex.name, p.id), sg = suggest(lib, ex, tg, hist);
-    const sets = d.ex[act] || [];
-    const goal = `${tg.sets} × ${tg.reps}${k === 'time' ? ' s' : ''}${tg.side ? ' je Seite' : ''}`;
-    const firstOpen = sets.findIndex(s => !s.ok);
     const done = !!p.done;
     /* Die Übungen bleiben in der geplanten Reihenfolge: die aktive klappt an ihrer Stelle auf */
     const exRow = (e, i) => {
@@ -602,9 +595,32 @@
       const today2 = k2 === 'w' && sg2.kg != null ? ' · heute ' + fmtKg(sg2.kg) : k2 === 'time' && sg2.s ? ' · heute ' + sg2.s + ' s' : '';
       return `<button class="exrow${allOk ? ' done' : ''}" data-ex="${p.id}|${i}"><span class="thumb">${lb ? U.svg(lb, { t: 0.75 }) : ''}</span><span class="tx"><b>${esc(e.name)}</b><small>${t2.sets} × ${t2.reps}${k2 === 'time' ? ' s' : ''}${t2.side ? ' je Seite' : ''}${today2}</small>${lb ? `<span>${esc(lb.cue)}</span>` : ''}</span>${allOk ? `<span class="pill">✓ ${s2.length}</span>` : CHEV_R}</button>`;
     };
+    const tail = () => {
+      let t = '';
+      const note = p.workout.split('\n').map(s => s.trim()).filter(l => l && !/^\d+\./.test(l));
+      if (note.length) t += `<p class="note" style="padding:0 4px;margin:0">${esc(note.join(' '))}</p>`;
+      t += done
+        ? `<button class="btn ghost" data-act="undo" data-id="${esc(p.id)}">Training bearbeiten</button>`
+        : `<button class="btn" style="background:var(--c-d);color:var(--card)" data-act="kraft" data-id="${esc(p.id)}" ${state.busy[p.id] ? 'disabled' : ''}>${state.busy[p.id] ? 'Speichere …' : 'Training speichern'}</button>`;
+      if (state.msgs[p.id]) t += `<div class="msg">${esc(state.msgs[p.id])}</div>`;
+      return t;
+    };
+    let act = state.active[p.id];
+    if (act == null) { act = d.ex.findIndex(s => s.some(x => !x.ok)); if (act < 0) act = 0; }
+    if (act === -1) {
+      const n = exs.filter((_, i) => (d.ex[i] || []).length && d.ex[i].every(x => x.ok)).length;
+      let h = backBar(p, `${n} von ${exs.length} Übungen`) + (done ? '' : warmupHTML(p, exs, d));
+      h += '<div class="exlist">' + exs.map(exRow).join('') + '</div>';
+      return { html: h + tail(), progress: [ok, total] };
+    }
+    const ex = exs[act], lib = U.lib(ex.name), tg = target(p, ex, lib), k = kind(lib, ex);
+    const hist = lastFor(M, ex.name, p.id), sg = suggest(lib, ex, tg, hist);
+    const sets = d.ex[act] || [];
+    const goal = `${tg.sets} × ${tg.reps}${k === 'time' ? ' s' : ''}${tg.side ? ' je Seite' : ''}`;
+    const firstOpen = sets.findIndex(s => !s.ok);
     let h = backBar(p, `Übung ${act + 1} von ${exs.length}`) + (done ? '' : warmupHTML(p, exs, d));
     if (act > 0) h += '<div class="exlist">' + exs.slice(0, act).map(exRow).join('') + '</div>';
-    h += `<div class="ex-card"><div class="ex-head"><b>${esc(ex.name)}</b><span>Ziel ${goal}${hist ? ' · ' + esc(histText(hist, lib, ex)) : ''}</span></div>`;
+    h += `<div class="ex-card"><button class="ex-head" data-ex="${p.id}|${act}" aria-expanded="true" aria-label="${esc(ex.name)} zuklappen"><span class="exh-tx"><b>${esc(ex.name)}</b><span>Ziel ${goal}${hist ? ' · ' + esc(histText(hist, lib, ex)) : ''}</span></span>${CHEV_D}</button>`;
     h += `<div class="ex-body${lib ? '' : ' solo'}"><div class="ex-l">`;
     if (lib) h += `<button class="fig zoomable" data-zoom="${esc(ex.name)}" aria-label="Skizze ${esc(ex.name)} vergrößern">${U.svg(lib, { id: 'live:' + encodeURIComponent(ex.name), label: 'Animation: ' + ex.name })}</button>${zoomMap(U.bodyMap(lib), ex.name)}<p class="howto">${esc(lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(lib.cue)}</p>`;
     /* Eigene Notiz je Übung, z. B. Sitz- und Polstereinstellung am Gerät: bleibt für jedes weitere Training stehen */
@@ -633,12 +649,7 @@
     if (k === 'time' && !done && firstOpen >= 0) h += kraftTimerHTML(p, act, firstOpen, sets[firstOpen].s || tg.reps, tg.side, sets.length);
     h += '</div>';
     if (act < exs.length - 1) h += '<div class="exlist">' + exs.slice(act + 1).map((e, j) => exRow(e, act + 1 + j)).join('') + '</div>';
-    const note = p.workout.split('\n').map(s => s.trim()).filter(l => l && !/^\d+\./.test(l));
-    if (note.length) h += `<p class="note" style="padding:0 4px;margin:0">${esc(note.join(' '))}</p>`;
-    h += done
-      ? `<button class="btn ghost" data-act="undo" data-id="${esc(p.id)}">Training bearbeiten</button>`
-      : `<button class="btn" style="background:var(--c-d);color:var(--card)" data-act="kraft" data-id="${esc(p.id)}" ${state.busy[p.id] ? 'disabled' : ''}>${state.busy[p.id] ? 'Speichere …' : 'Training speichern'}</button>`;
-    if (state.msgs[p.id]) h += `<div class="msg">${esc(state.msgs[p.id])}</div>`;
+    h += tail();
     return { html: h, progress: [ok, total] };
   }
 
@@ -728,13 +739,12 @@
   /* Aufwärmen: aufklappbare Karte vor der ersten Übung, danach schmale Zeile */
   const WARM = [
     ['5 min locker Cardio', 'Rad, Crosstrainer oder Rudergerät. Ruhig anfangen, am Ende leicht schwitzen.'],
-    ['2 min dynamisch bewegen', 'Je 10 × Armkreisen und Hüftkreisen pro Richtung, 10 Kniebeugen ohne Gewicht, 5 Ausfallschritte je Seite.'],
-    ['Aufwärmsätze', 'Vor der ersten Übung leichte Sätze mit weniger Gewicht. Die App zeigt sie bei der Übung an, sie zählen nicht mit.']
+    ['2 min dynamisch bewegen', 'Je 10 × Armkreisen und Hüftkreisen pro Richtung, 10 Kniebeugen ohne Gewicht, 5 Ausfallschritte je Seite.']
   ];
   function warmupHTML(p, exs, d) {
     const ok = !!ls.get('tri:warm:' + p.id, false), open = state.warmOpen[p.id] != null ? state.warmOpen[p.id] : !ok;
     const r = rir();
-    let h = `<div class="warm${ok ? ' ok' : ''}"><button class="warm-h" data-warm="${esc(p.id)}|fold" aria-expanded="${open}"><span class="warm-ic">${ok ? CHECK : ICON.kraft}</span><span class="tx"><b>Aufwärmen</b><small>${ok ? 'Erledigt' : 'ca. 8 Minuten'}</small></span>${open ? CHEV_D : CHEV_R}</button>`;
+    let h = `<div class="warm${ok ? ' ok' : ''}"><button class="warm-h" data-warm="${esc(p.id)}|fold" aria-expanded="${open}"><span class="warm-ic">${ok ? CHECK : ICON.kraft}</span><span class="tx"><b>Aufwärmen</b><small>${ok ? 'Erledigt' : 'ca. 7 Minuten'}</small></span>${open ? CHEV_D : CHEV_R}</button>`;
     if (open) {
       h += '<ol class="warm-l">' + WARM.map(([t, x]) => `<li><b>${t}</b><span>${x}</span></li>`).join('') + '</ol>';
       h += `<button class="btn${ok ? ' ghost' : ''}" data-warm="${esc(p.id)}|done"${ok ? '' : ' style="background:var(--c-d);color:var(--card)"'}>${ok ? 'Doch nicht erledigt' : 'Aufgewärmt'}</button>`;
@@ -1629,7 +1639,7 @@
       render(); return;
     }
     if ((el = q('[data-stop]'))) { setStarted(el.dataset.stop, false); state.timer = null; render(); return; }
-    if ((el = q('[data-ex]'))) { const [pid, i] = el.dataset.ex.split('|'); state.active[pid] = +i; if (state.timer && state.timer.kr && state.timer.pid === pid && !state.timer.running) state.timer = null; state.scrollEx = pid; render(); return; }
+    if ((el = q('[data-ex]'))) { const [pid, i] = el.dataset.ex.split('|'); const wasOpen = el.classList.contains('ex-head'); state.active[pid] = wasOpen ? -1 : +i; if (wasOpen) { render(); return; } if (state.timer && state.timer.kr && state.timer.pid === pid && !state.timer.running) state.timer = null; state.scrollEx = pid; render(); return; }
     if ((el = q('[data-mob-open]'))) { const [pid, i] = el.dataset.mobOpen.split('|'); state.active[pid] = state.active[pid] === +i ? -1 : +i; if (state.active[pid] >= 0) state.scrollEx = pid; render(); return; }
     if ((el = q('[data-mob]'))) {
       const [pid, i] = el.dataset.mob.split('|'); const p = plan(pid); if (!p) return;
