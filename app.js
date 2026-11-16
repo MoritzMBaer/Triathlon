@@ -1137,27 +1137,32 @@
     const right = st === 'done' ? `<span class="ok" style="background:var(--${S.k})">${CHECK}</span>` : st === 'miss' ? '<span class="r">Ausgelassen</span>' : st === 'catch' ? '<span class="catch-pill">Nachholen</span>' : `<span class="r">${esc(unitMeta(p))}</span>`;
     return `<button class="row${st === 'catch' ? ' catch' : ''}" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-expanded="false"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(p.title)}</b><small>${esc(p.sport)}</small><small class="mt">${st === 'miss' ? 'Ausgelassen' : esc(unitMeta(p))}</small></span>${right}</button>`;
   }
-  /* Saisonplan aus dem Blatt „Saison“: aktuelle Phase, Lage im Jahr und was in dieser Phase gilt */
+  /* Saisonplan aus dem Blatt „Saison“: Phasen zum Antippen, die aktuelle ist vorausgewählt */
   function saisonCard(M) {
     const ph = M.saison;
     if (!ph.length) return '';
-    const tk = today(), start = parseISO(ph[0].von), end = parseISO(ph[ph.length - 1].bis);
-    const total = (end - start) / 864e5 + 1;
-    const cur = ph.find(p => tk >= p.von && tk <= p.bis) || (tk < ph[0].von ? ph[0] : ph[ph.length - 1]);
+    const tk = today(), start = parseISO(ph[0].von), days = p => (parseISO(p.bis) - parseISO(p.von)) / 864e5 + 1;
+    const total = (parseISO(ph[ph.length - 1].bis) - start) / 864e5 + 1;
+    const ci = Math.max(0, ph.findIndex(p => tk >= p.von && tk <= p.bis) >= 0 ? ph.findIndex(p => tk >= p.von && tk <= p.bis) : (tk < ph[0].von ? 0 : ph.length - 1));
+    const si = state.phase != null && ph[state.phase] ? state.phase : ci, sel = ph[si];
     const wk = Math.max(1, Math.floor((parseISO(tk) - start) / 864e5 / 7) + 1), wks = Math.round(total / 7);
-    const bar = ph.map(p => {
-      const len = (parseISO(p.bis) - parseISO(p.von)) / 864e5 + 1;
-      const isCur = p === cur, isPast = p.bis < tk;
-      const fill = isCur ? Math.min(100, Math.max(0, ((parseISO(tk) - parseISO(p.von)) / 864e5 + 1) / len * 100)) : 0;
-      return `<span class="ph${isCur ? ' cur' : ''}${isPast ? ' past' : ''}" style="flex:${len}" title="${esc(p.name)}">${isCur ? `<i style="width:${fill.toFixed(0)}%"></i>` : ''}</span>`;
+    const short = n => n.replace(/^Grundlage/, 'Grundl.').replace(/^Spitze und Taper$/, 'Taper');
+    const segs = ph.map((p, i) => {
+      const len = days(p), cur = i === ci, past = p.bis < tk;
+      const fill = cur ? Math.min(100, Math.max(4, ((parseISO(tk) - parseISO(p.von)) / 864e5 + 1) / len * 100)) : past ? 100 : 0;
+      return `<button class="phs${i === si ? ' on' : ''}${cur ? ' cur' : ''}" style="flex:${len}" data-phase="${i}" aria-pressed="${i === si}" aria-label="${esc(p.name)}, ${fmtShort(parseISO(p.von))} bis ${fmtShort(parseISO(p.bis))}${cur ? ', aktuell' : ''}">
+        <span class="phs-bar"><i style="width:${fill.toFixed(0)}%"></i></span><span class="phs-n">${esc(short(p.name))}</span></button>`;
     }).join('');
-    const rows = [['Laufen', cur.lauf], ['Langer Lauf', cur.lang], ['Kraft', cur.kraft], ['Tests', cur.tests]].filter(([, v]) => v && v !== '–');
-    return `<section class="card pcard saison" style="order:1"><span class="eyebrow">Saison · Woche ${Math.min(wk, wks)} von ${wks}</span>
-      <div class="ph-h"><b>${esc(cur.name)}</b><small>${fmtShort(parseISO(cur.von))} – ${fmtShort(parseISO(cur.bis))} · ${esc(cur.std)}</small></div>
-      <p class="ph-x">${esc(cur.fokus)}</p>
-      <div class="phbar" role="img" aria-label="${esc(ph.map(p => p.name).join(', '))}, aktuell ${esc(cur.name)}">${bar}</div>
-      <div class="ph-names">${ph.map(p => `<span style="flex:${(parseISO(p.bis) - parseISO(p.von)) / 864e5 + 1}"${p === cur ? ' class="cur"' : ''}>${esc(p.name.replace('Grundlage', 'GL').replace('Aufbau', 'AB').replace('Spitze und Taper', 'Taper'))}</span>`).join('')}</div>
-      <dl class="ph-l">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></section>`;
+    const rows = [['Laufen', sel.lauf], ['Langer Lauf', sel.lang], ['Kraft', sel.kraft], ['Tests', sel.tests]].filter(([, v]) => v && v !== '–');
+    const wSel = Math.round(days(sel) / 7);
+    return `<section class="card pcard saison" style="order:3"><div class="ph-top"><span class="eyebrow">Saison</span><span class="ph-wk">Woche ${Math.min(wk, wks)} von ${wks}</span></div>
+      <div class="phs-row" role="group" aria-label="Phasen bis zum Rennen">${segs}</div>
+      <div class="ph-d">
+        <div class="ph-h"><b>${esc(sel.name)}</b>${si === ci ? '<span class="ph-now">Jetzt</span>' : ''}</div>
+        <small class="ph-meta">${fmtShort(parseISO(sel.von))} – ${fmtShort(parseISO(sel.bis))} · ${wSel} Wochen · ${esc(sel.std)}</small>
+        <p class="ph-x">${esc(sel.fokus)}</p>
+        ${rows.length ? `<dl class="ph-l">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''}
+      </div></section>`;
   }
   function viewFortschritt(M) {
     const F = M.fitness, last = F[F.length - 1] || {};
@@ -1166,16 +1171,17 @@
     let h = header('Fortschritt', 'Seit dem Planstart') + banner();
     h += `<section class="card pcard"><span class="eyebrow">Stand heute</span><div class="big3"><div><b>${last.ctl == null ? '–' : Math.round(last.ctl)}</b><small>Fitness</small></div><div><b>${last.tsb == null ? '–' : (last.tsb > 0 ? '+' : '') + Math.round(last.tsb)}</b><small>Form</small></div><div><b>${past.length ? Math.round(done / past.length * 100) + ' %' : '–'}</b><small>Plan-Treue${past.length ? ` (${done}/${past.length})` : ''}</small></div></div></section>`;
     h = h.replace('<section class="card pcard"><span class="eyebrow">Stand heute', '<div class="pgrid"><div class="pcol"><section class="card pcard" style="order:1"><span class="eyebrow">Stand heute');
-    h += saisonCard(M) + '<!--A-->';
+    h += '<!--A-->';
     h += '</div><div class="pcol">';
     h += `<section class="card pcard chart" style="order:2"><span class="eyebrow">Fitness und Ermüdung · 12 Wochen</span>${fitChart(F.slice(-84))}<div class="clegend"><span><i style="background:var(--bike)"></i>Fitness</span><span><i style="background:var(--faint)"></i>Ermüdung</span></div></section>`;
-    h += `<section class="card pcard chart" style="order:3"><span class="eyebrow">Stunden pro Woche</span>${weekChart(M)}<div class="clegend"><span><i style="background:var(--fill)"></i>Geplant</span><span><i style="background:var(--fg)"></i>Absolviert</span></div></section>`;
+    h += saisonCard(M);
+    const stunden = `<section class="card pcard chart" style="order:4"><span class="eyebrow">Stunden pro Woche</span>${weekChart(M)}<div class="clegend"><span><i style="background:var(--fill)"></i>Geplant</span><span><i style="background:var(--fg)"></i>Absolviert</span></div></section>`;
     const from = M.plan.length ? M.plan.reduce((a, p) => p.date < a ? p.date : a, M.plan[0].date) : iso(addDays(new Date(), -28)), rec = M.trainings.filter(t => t.date >= from && t.date <= today());
-    h = h.replace('<!--A-->', `<section class="card pcard" style="order:4"><span class="eyebrow">Seit Planstart · ${fmtShort(parseISO(from))}</span>${[['Schwimmen', 'swim'], ['Rad', 'bike'], ['Laufen', 'run']].map(([f, k]) => {
+    h = h.replace('<!--A-->', `<section class="card pcard" style="order:5"><span class="eyebrow">Seit Planstart · ${fmtShort(parseISO(from))}</span>${[['Schwimmen', 'swim'], ['Rad', 'bike'], ['Laufen', 'run']].map(([f, k]) => {
       const xs = rec.filter(t => sp(t.sport).fam === f), km = xs.reduce((a, t) => a + (t.km || 0), 0), min = xs.reduce((a, t) => a + (t.dur || 0), 0);
       return `<div class="sprow" style="${cv(k)}"><span class="ic">${ICON[k]}</span><span><b>${f}</b><small>${xs.length === 1 ? '1 Einheit' : xs.length + ' Einheiten'}</small></span><span class="spv"><b class="num">${f === 'Schwimmen' ? Math.round(km * 1000).toLocaleString('de-DE') + ' m' : Math.round(km).toLocaleString('de-DE') + ' km'}</b><small class="num">${xs.length ? fmtH(min) : '–'}</small></span></div>`;
     }).join('')}</section>`);
-    h += '</div><div class="pcol pk">' + kraftProgress(M) + '</div></div>';
+    h += '</div><div class="pcol pk">' + stunden + kraftProgress(M) + '</div></div>';
     return h;
   }
   function kraftProgress(M) {
@@ -1618,6 +1624,7 @@
       return;
     }
     if ((el = q('.zoomable'))) { openZoom(el); return; }
+    if ((el = q('[data-phase]'))) { const i = +el.dataset.phase; state.phase = i; render(); return; }
     if ((el = q('[data-week]'))) { state.weekOff += +el.dataset.week; render(); return; }
     if ((el = q('[data-sheet]'))) { state.sheetId = el.dataset.sheet; render(); return; }
     if ((el = q('[data-open]'))) { toggleUnit(el.dataset.open, true); return; }
