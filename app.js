@@ -182,7 +182,10 @@
       if (p) { used.add(t.id); match[p.id] = t; }
     });
     const notes = {}; rows(d.geraete).forEach(r => { if (r[0]) notes[r[0]] = r[1] || ''; });
-    cache = { at: d._at, day: today(), notes, plan, trainings, fitness, klog, check, shifts, nights, match };
+    const saison = rows(d.saison).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(normDate(r[1])) && /^\d{4}-\d{2}-\d{2}$/.test(normDate(r[2])))
+      .map(r => ({ name: r[0], von: normDate(r[1]), bis: normDate(r[2]), fokus: r[3] || '', std: r[4] || '', lauf: r[5] || '', lang: r[6] || '', kraft: r[7] || '', tests: r[8] || '' }))
+      .sort((a, b) => a.von.localeCompare(b.von));
+    cache = { at: d._at, day: today(), notes, saison, plan, trainings, fitness, klog, check, shifts, nights, match };
     return cache;
   }
   function statusOf(p, M) {
@@ -1134,6 +1137,28 @@
     const right = st === 'done' ? `<span class="ok" style="background:var(--${S.k})">${CHECK}</span>` : st === 'miss' ? '<span class="r">Ausgelassen</span>' : st === 'catch' ? '<span class="catch-pill">Nachholen</span>' : `<span class="r">${esc(unitMeta(p))}</span>`;
     return `<button class="row${st === 'catch' ? ' catch' : ''}" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-expanded="false"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(p.title)}</b><small>${esc(p.sport)}</small><small class="mt">${st === 'miss' ? 'Ausgelassen' : esc(unitMeta(p))}</small></span>${right}</button>`;
   }
+  /* Saisonplan aus dem Blatt „Saison“: aktuelle Phase, Lage im Jahr und was in dieser Phase gilt */
+  function saisonCard(M) {
+    const ph = M.saison;
+    if (!ph.length) return '';
+    const tk = today(), start = parseISO(ph[0].von), end = parseISO(ph[ph.length - 1].bis);
+    const total = (end - start) / 864e5 + 1;
+    const cur = ph.find(p => tk >= p.von && tk <= p.bis) || (tk < ph[0].von ? ph[0] : ph[ph.length - 1]);
+    const wk = Math.max(1, Math.floor((parseISO(tk) - start) / 864e5 / 7) + 1), wks = Math.round(total / 7);
+    const bar = ph.map(p => {
+      const len = (parseISO(p.bis) - parseISO(p.von)) / 864e5 + 1;
+      const isCur = p === cur, isPast = p.bis < tk;
+      const fill = isCur ? Math.min(100, Math.max(0, ((parseISO(tk) - parseISO(p.von)) / 864e5 + 1) / len * 100)) : 0;
+      return `<span class="ph${isCur ? ' cur' : ''}${isPast ? ' past' : ''}" style="flex:${len}" title="${esc(p.name)}">${isCur ? `<i style="width:${fill.toFixed(0)}%"></i>` : ''}</span>`;
+    }).join('');
+    const rows = [['Laufen', cur.lauf], ['Langer Lauf', cur.lang], ['Kraft', cur.kraft], ['Tests', cur.tests]].filter(([, v]) => v && v !== '–');
+    return `<section class="card pcard saison" style="order:1"><span class="eyebrow">Saison · Woche ${Math.min(wk, wks)} von ${wks}</span>
+      <div class="ph-h"><b>${esc(cur.name)}</b><small>${fmtShort(parseISO(cur.von))} – ${fmtShort(parseISO(cur.bis))} · ${esc(cur.std)}</small></div>
+      <p class="ph-x">${esc(cur.fokus)}</p>
+      <div class="phbar" role="img" aria-label="${esc(ph.map(p => p.name).join(', '))}, aktuell ${esc(cur.name)}">${bar}</div>
+      <div class="ph-names">${ph.map(p => `<span style="flex:${(parseISO(p.bis) - parseISO(p.von)) / 864e5 + 1}"${p === cur ? ' class="cur"' : ''}>${esc(p.name.replace('Grundlage', 'GL').replace('Aufbau', 'AB').replace('Spitze und Taper', 'Taper'))}</span>`).join('')}</div>
+      <dl class="ph-l">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></section>`;
+  }
   function viewFortschritt(M) {
     const F = M.fitness, last = F[F.length - 1] || {};
     const past = M.plan.filter(p => p.date < today() && sp(p.sport).ring);
@@ -1141,7 +1166,7 @@
     let h = header('Fortschritt', 'Seit dem Planstart') + banner();
     h += `<section class="card pcard"><span class="eyebrow">Stand heute</span><div class="big3"><div><b>${last.ctl == null ? '–' : Math.round(last.ctl)}</b><small>Fitness</small></div><div><b>${last.tsb == null ? '–' : (last.tsb > 0 ? '+' : '') + Math.round(last.tsb)}</b><small>Form</small></div><div><b>${past.length ? Math.round(done / past.length * 100) + ' %' : '–'}</b><small>Plan-Treue${past.length ? ` (${done}/${past.length})` : ''}</small></div></div></section>`;
     h = h.replace('<section class="card pcard"><span class="eyebrow">Stand heute', '<div class="pgrid"><div class="pcol"><section class="card pcard" style="order:1"><span class="eyebrow">Stand heute');
-    h += '<!--A-->';
+    h += saisonCard(M) + '<!--A-->';
     h += '</div><div class="pcol">';
     h += `<section class="card pcard chart" style="order:2"><span class="eyebrow">Fitness und Ermüdung · 12 Wochen</span>${fitChart(F.slice(-84))}<div class="clegend"><span><i style="background:var(--bike)"></i>Fitness</span><span><i style="background:var(--faint)"></i>Ermüdung</span></div></section>`;
     h += `<section class="card pcard chart" style="order:3"><span class="eyebrow">Stunden pro Woche</span>${weekChart(M)}<div class="clegend"><span><i style="background:var(--fill)"></i>Geplant</span><span><i style="background:var(--fg)"></i>Absolviert</span></div></section>`;
