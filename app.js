@@ -164,7 +164,7 @@
     if (last.rhr != null && rh.length >= 3 && last.rhr > mean(rh) + 5) flags.push(`Ruhepuls ${last.rhr}, Schnitt ${Math.round(mean(rh))}`);
     const two = F.slice(-2);
     const pick = k => { const xs = (afterNight ? two : [last]).map(f => f[k]).filter(x => x != null); return xs.length ? mean(xs) : null; };
-    if (old.length) { const nm = { sleep: 'Schlaf', score: 'Score', hrv: 'HRV', rhr: 'Ruhepuls' }, ns = old.map(k => nm[k]); notes.push(`${ns.length > 1 ? ns.slice(0, -1).join(', ') + ' und ' + ns[ns.length - 1] : ns[0]} von heute ${ns.length > 1 ? 'fehlen' : 'fehlt'} noch, grau sind die Werte von gestern`); }
+    if (old.length) { const nm = { sleep: 'Schlaf', score: 'Score', hrv: 'HRV', rhr: 'Ruhepuls' }, ns = old.map(k => nm[k]); notes.push(`${ns.length > 1 ? ns.slice(0, -1).join(', ') + ' und ' + ns[ns.length - 1] : ns[0]} von heute ${ns.length > 1 ? 'fehlen' : 'fehlt'} noch`); }
     const sl = pick('sleep'), sc = pick('score');
     if (sl != null && sl < 6) flags.push(`${afterNight ? 'Schlaf im Schnitt' : 'Schlaf'} ${de1(sl)} h`);
     if (sc != null && sc < 60) flags.push(`Schlafscore ${Math.round(sc)}`);
