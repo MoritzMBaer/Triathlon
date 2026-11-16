@@ -182,8 +182,10 @@
       if (p) { used.add(t.id); match[p.id] = t; }
     });
     const notes = {}; rows(d.geraete).forEach(r => { if (r[0]) notes[r[0]] = r[1] || ''; });
+    const sh0 = (d.saison && d.saison[0]) || [], col = n => sh0.findIndex(h => String(h).trim().toLowerCase() === n);
+    const sc = { swim: col('schwimmen'), bike: col('rad'), run: col('laufen'), kraft: col('kraft') };
     const saison = rows(d.saison).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(normDate(r[1])) && /^\d{4}-\d{2}-\d{2}$/.test(normDate(r[2])))
-      .map(r => ({ name: r[0], von: normDate(r[1]), bis: normDate(r[2]), fokus: r[3] || '', std: r[4] || '', lauf: r[5] || '', lang: r[6] || '', kraft: r[7] || '', tests: r[8] || '' }))
+      .map(r => ({ name: r[0], von: normDate(r[1]), bis: normDate(r[2]), fokus: r[3] || '', std: r[4] || '', sp: Object.fromEntries(Object.entries(sc).map(([k, i]) => [k, i >= 0 ? String(r[i] || '').trim() : ''])) }))
       .sort((a, b) => a.von.localeCompare(b.von));
     cache = { at: d._at, day: today(), notes, saison, plan, trainings, fitness, klog, check, shifts, nights, match };
     return cache;
@@ -1150,10 +1152,14 @@
     const segs = ph.map((p, i) => {
       const len = days(p), cur = i === ci, past = p.bis < tk;
       const fill = cur ? Math.min(100, Math.max(4, ((parseISO(tk) - parseISO(p.von)) / 864e5 + 1) / len * 100)) : past ? 100 : 0;
-      return `<button class="phs${i === si ? ' on' : ''}${cur ? ' cur' : ''}" style="flex:${len}" data-phase="${i}" aria-pressed="${i === si}" aria-label="${esc(p.name)}, ${fmtShort(parseISO(p.von))} bis ${fmtShort(parseISO(p.bis))}${cur ? ', aktuell' : ''}">
-        <span class="phs-bar"><i style="width:${fill.toFixed(0)}%"></i></span><span class="phs-n">${esc(short(p.name))}</span></button>`;
+      return `<button class="phs${i === si ? ' on' : ''}${cur ? ' cur' : ''}" style="flex:${len} 1 0" data-phase="${i}" aria-pressed="${i === si}" aria-label="${esc(p.name)}, ${fmtShort(parseISO(p.von))} bis ${fmtShort(parseISO(p.bis))}${cur ? ', aktuell' : ''}">
+        <span class="phs-bar">${fill ? `<i style="width:max(8px,${fill.toFixed(0)}%)"></i>` : ''}</span><span class="phs-n">${esc(short(p.name))}</span></button>`;
     }).join('');
-    const rows = [['Laufen', sel.lauf], ['Langer Lauf', sel.lang], ['Kraft', sel.kraft], ['Tests', sel.tests]].filter(([, v]) => v && v !== '–');
+    const SPN = { swim: 'Schwimmen', bike: 'Rad', run: 'Laufen', kraft: 'Kraft' };
+    const tiles = ['swim', 'bike', 'run', 'kraft'].filter(k => sel.sp[k]).map(k => {
+      const [um, ...zi] = sel.sp[k].split(' · ');
+      return `<div class="ph-sp" style="${cv(k)}"><div class="ph-sp-h"><span class="ic">${ICON[k]}</span><b>${SPN[k]}</b></div><span class="um">${esc(um).replace(/ (m|min|h)\b/g, '\u00a0$1')}</span>${zi.length ? `<small>${esc(zi.join(' · '))}</small>` : ''}</div>`;
+    }).join('');
     const wSel = Math.round(days(sel) / 7);
     return `<section class="card pcard saison" style="order:3"><div class="ph-top"><span class="eyebrow">Saison</span><span class="ph-wk">Woche ${Math.min(wk, wks)} von ${wks}</span></div>
       <div class="phs-row" role="group" aria-label="Phasen bis zum Rennen">${segs}</div>
@@ -1161,7 +1167,7 @@
         <div class="ph-h"><b>${esc(sel.name)}</b>${si === ci ? '<span class="ph-now">Jetzt</span>' : ''}</div>
         <small class="ph-meta">${fmtShort(parseISO(sel.von))} – ${fmtShort(parseISO(sel.bis))} · ${wSel} Wochen · ${esc(sel.std)}</small>
         <p class="ph-x">${esc(sel.fokus)}</p>
-        ${rows.length ? `<dl class="ph-l">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''}
+        ${tiles ? `<div class="ph-sps">${tiles}</div>` : ''}
       </div></section>`;
   }
   function viewFortschritt(M) {
