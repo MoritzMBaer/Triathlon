@@ -1010,11 +1010,9 @@
   }
 
   /* ---------- Ansichten ---------- */
-  /* Dienst oben rechts: Titel und Uhrzeit untereinander, damit das Datum links nicht umbricht */
+  /* Dienst oben rechts, kurz in einer Zeile (z. B. „1NR 18–6“) */
   function shiftPill(shift) {
-    if (!shift) return '';
-    const m = shift.indexOf(', ') < 0 && shift.match(/^(.*\S)\s+(\d.*)$/);
-    return m ? `<span class="shift two" title="${esc(shift)}"><b>${esc(m[1])}</b><span>${esc(m[2])}</span></span>` : `<span class="shift">${esc(shift)}</span>`;
+    return shift ? `<span class="shift" title="${esc(shift)}">${esc(shift.replace(/ Uhr/g, ''))}</span>` : '';
   }
   function header(title, date, shift) {
     const days = Math.ceil((RACE - new Date(new Date().toDateString())) / 864e5);
