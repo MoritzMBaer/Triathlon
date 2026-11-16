@@ -511,7 +511,15 @@ button.dsd:active{background:var(--fill)}
 .timer .bts button.go{flex:1.35;background:var(--c-d);color:var(--card)}
 
 .restbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:20;display:flex;align-items:center;gap:12px;background:var(--ink);color:var(--on-ink);border-radius:999px;padding:6px 6px 6px 16px;box-shadow:var(--shadow)}
-.restbar b{font-family:var(--round);font-size:17px}
+.restbar b{font-family:var(--round);font-size:17px;font-variant-numeric:tabular-nums;min-width:8.6ch}
+.timer .kt-rest{font-variant-numeric:tabular-nums}
+.kt-rest.ring{display:inline-block}
+/* Pause vorbei: kurz aufleuchten */
+.ring{animation:ring .5s ease-in-out 3}
+@keyframes ring{50%{transform:scale(1.08);filter:brightness(1.25)}}
+.restbar.ring{animation-name:ringbar}
+@keyframes ringbar{50%{transform:translateX(-50%) scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.ring,.restbar.ring{animation:none}}
 .restbar button{border:0;border-radius:999px;padding:9px 14px;font-weight:600;font-size:14px;background:var(--on-ink);color:var(--ink)}
 .msg{font-size:14px;color:var(--bad)}
 

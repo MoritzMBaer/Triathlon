@@ -32,6 +32,12 @@
       A: P('17 34,22 40,40 60,47 47,61 39,57 34,46 48,60 40,56 35,28 55,38 62,27 56,37 63'),
       B: P('17 34,22 40,40 60,47.4 46.6,60.5 38.5,60 32,46.4 47.6,59.5 39.5,59 33,28 55,38 62,27 56,37 63'),
       props: ['presse', 'platte'], hl: [['Kn', 'An']], dur: 3 },
+    { re: /^beinbeuger liegend/i, m: ['hamstrings','wade'], t: 'w', inc: 5, start: 20,
+      how: 'Bauchlage auf der Bank, die Knie liegen knapp hinter der Polsterkante genau auf Höhe der Drehachse, das Rollenpolster liegt hinten knapp über den Fersen. Mit den Händen die Griffe vorn halten. Die Fersen in einem Bogen Richtung Gesäß ziehen, kurz halten und langsam zurückführen.',
+      cue: 'Hüfte bleibt fest auf dem Polster, kein Hohlkreuz, zurück doppelt so langsam wie hin.',
+      A: P('20 45,28 47,54 48,70 49,86 50,86.3 54,70 48.5,86 49.5,86.3 53.5,30 58,36 61,30 58,36 61'),
+      B: P('20 45,28 47,54 48,70 49,65 34,68.8 32.7,70 48.5,65 33.5,68.8 32.2,30 58,36 61,30 58,36 61'),
+      props: ['liege', 'rolle2'], hl: [['P', 'Kn']], dur: 3.4 },
     { re: /^beinbeuger/i, m: ['hamstrings','wade'], t: 'w', inc: 5, start: 25,
       how: 'Sitz so einstellen, dass die Knie genau an der Drehachse liegen und das Rollenpolster knapp über den Fersen. Oberschenkelpolster fest einstellen. Die Fersen in einem Bogen unter den Sitz ziehen, kurz halten und langsam zurückführen.',
       cue: 'Gesäß bleibt im Sitz, zurück doppelt so langsam wie hin.',
@@ -260,6 +266,7 @@
     if (pr.includes('ruderbank')) s.push('<rect x="28" y="60" width="26" height="4" rx="2" fill="var(--prop)"/><path d="M33 64V72M49 64V72M75 45 72 60M94 20V72" stroke="var(--prop)" stroke-width="3" stroke-linecap="round" fill="none"/>');
     if (pr.includes('presssitz')) s.push('<path d="M33 57 31 18" stroke="var(--prop)" stroke-width="6" stroke-linecap="round"/><rect x="31" y="58" width="22" height="4" rx="2" fill="var(--prop)"/><path d="M42 62V72" stroke="var(--prop)" stroke-width="3"/>');
     if (pr.includes('hyper')) s.push('<path d="M47 61 58 51" stroke="var(--prop)" stroke-width="6" stroke-linecap="round"/><path d="M53 57V72M22 60 31 70M24 72H60" stroke="var(--prop)" stroke-width="3" stroke-linecap="round" fill="none"/>');
+    if (pr.includes('liege')) s.push('<rect x="22" y="52" width="52" height="5" rx="2" fill="var(--prop)"/><path d="M30 57V72M66 57V72M30 61H38" stroke="var(--prop)" stroke-width="3" stroke-linecap="round"/>');
     if (pr.includes('tuer')) s.push('<rect x="34" y="4" width="5" height="69" rx="1.5" fill="var(--prop)"/>');
     return s.join('');
   }
@@ -270,6 +277,7 @@
     if (pr.includes('khf')) s.push(khAt(p.Wf[0], p.Wf[1] + 3));
     if (pr.includes('platte')) s.push(`<path d="M${f(p.Tn[0] + 9.2)} ${f(p.Tn[1] + 6.8)} L${f(p.Tn[0] - 2.8)} ${f(p.Tn[1] - 5.2)}" stroke="var(--c)" stroke-width="4"/>`);
     if (pr.includes('rolle')) { const dx = p.An[0] - p.Kn[0], dy = p.An[1] - p.Kn[1], l = Math.hypot(dx, dy) || 1, rx = p.An[0] - dx / l * 2 - dy / l * 4.5, ry = p.An[1] - dy / l * 2 + dx / l * 4.5; s.push(`<path d="M${f(p.Kn[0])} ${f(p.Kn[1] + 3)} L${f(rx)} ${f(ry)}" stroke="var(--c-d)" stroke-width="2"/><circle cx="${f(rx)}" cy="${f(ry)}" r="3.2" fill="var(--c)" stroke="none"/>`); }
+    if (pr.includes('rolle2')) { const dx = p.An[0] - p.Kn[0], dy = p.An[1] - p.Kn[1], l = Math.hypot(dx, dy) || 1, rx = p.An[0] - dx / l * 2 + dy / l * 4.5, ry = p.An[1] - dy / l * 2 - dx / l * 4.5; s.push(`<path d="M${f(p.Kn[0])} ${f(p.Kn[1] - 3)} L${f(rx)} ${f(ry)}" stroke="var(--c-d)" stroke-width="2"/><circle cx="${f(rx)}" cy="${f(ry)}" r="3.2" fill="var(--c)" stroke="none"/>`); }
     if (pr.includes('latstange')) s.push(`<path d="M${f(p.Wn[0])} ${f(p.Wn[1])} L58 2" stroke="var(--prop)" stroke-width="1.6"/>`);
     if (pr.includes('kabel')) s.push(`<path d="M${f(p.Wn[0])} ${f(p.Wn[1])} L94 41" stroke="var(--prop)" stroke-width="1.6"/>`);
     if (pr.includes('pressgriff')) s.push(`<path d="M${f(p.Wn[0] + 1)} ${f(p.Wn[1])} L50 6" stroke="var(--prop)" stroke-width="2.6"/>`);

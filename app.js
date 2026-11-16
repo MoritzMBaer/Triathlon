@@ -651,7 +651,7 @@
     if (!done) h += `<div class="set-acts"><button class="link" data-addset="${p.id}|${act}">+ Satz hinzufügen</button>${sets.length > 1 ? `<button class="link" data-delset="${p.id}|${act}">Letzten Satz entfernen</button>` : ''}</div>`;
     h += '</div></div>';
     /* Halteübungen (z. B. Unterarmstütz): Timer für den aktuellen Satz, schwebt unten, während man liest */
-    if (k === 'time' && !done && firstOpen >= 0) h += kraftTimerHTML(p, act, firstOpen, sets[firstOpen].s || tg.reps, tg.side, sets.length);
+    if (k === 'time' && !done && firstOpen >= 0) { const cn = circuitNext(p, d, act); h += kraftTimerHTML(p, act, firstOpen, sets[firstOpen].s || tg.reps, tg.side, sets.length, cn != null ? exs[cn].name : null); }
     h += '</div>';
     if (act < exs.length - 1) h += '<div class="exlist">' + exs.slice(act + 1).map((e, j) => exRow(e, act + 1 + j)).join('') + '</div>';
     h += tail();
@@ -737,7 +737,7 @@
     return `<div class="timer${state.timerSeen[k] ? ' t-free' : ''}" id="timer" data-k="${k}"><svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label="Timer: noch ${left} Sekunden">
       <circle cx="42" cy="42" r="36" fill="none" stroke="var(--c-t)" stroke-width="7"/>
       <circle id="timer-arc" cx="42" cy="42" r="36" fill="none" stroke="var(--c)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(C * frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 42 42)"/>
-      <text id="timer-txt" x="42" y="48" text-anchor="middle" font-family="ui-rounded,-apple-system,system-ui,sans-serif" font-size="20" font-weight="700" fill="var(--fg)">${Math.floor(left / 60)}:${pad(left % 60)}</text></svg>
+      <text id="timer-txt" x="42" y="48" text-anchor="middle" font-family="ui-rounded,-apple-system,system-ui,sans-serif" font-size="20" font-weight="700" fill="var(--fg)" style="font-variant-numeric:tabular-nums">${Math.floor(left / 60)}:${pad(left % 60)}</text></svg>
       <div class="tx"><small><b class="now">${esc(it.parts[part] || 'Halten')}</b><br>Teil ${part + 1} von ${it.parts.length}${it.parts[part + 1] ? ' · danach: ' + esc(it.parts[part + 1]) : ''}</small>
       <div class="bts"><button data-timer="${p.id}|${i}|toggle">${T && T.running ? 'Pause' : (T && T.left < it.sec ? 'Weiter' : 'Start')}</button><button class="go" data-timer="${p.id}|${i}|next">${part + 1 < it.parts.length ? 'Nächster Teil' : 'Fertig'}</button></div></div></div>`;
   }
@@ -765,7 +765,7 @@
     if (!ss.length) return '';
     return `<div class="ramp"><b>Aufwärmsätze</b><span>${ss.map(([r, w]) => `${r} × ${fmtKg(w)}`).join(' · ')}${per}</span><small>zählen nicht mit</small></div>`;
   }
-  function kraftTimerHTML(p, i, j, sec, side, nSets) {
+  function kraftTimerHTML(p, i, j, sec, side, nSets, nextName) {
     let T = state.timer && state.timer.kr && state.timer.pid === p.id && state.timer.i === i && state.timer.j === j ? state.timer : null;
     /* Sekunden wurden vor dem Start geändert: Timer neu aufziehen */
     if (T && !T.running && T.part === 0 && T.left >= T.sec && T.sec !== sec) { T.sec = T.left = T.endLeft = sec; }
@@ -777,11 +777,11 @@
     const rest = state.rest ? (restLeft > 0 ? 'Pause ' + Math.floor(restLeft / 60) + ':' + pad(restLeft % 60) : 'Pause vorbei') : '';
     const started = T && (T.running || T.left < T.sec);
     const info = `Satz ${j + 1} von ${nSets}${side ? ' · ' + parts[part] : ''}`;
-    const after = side && part === 0 ? 'danach: Rechts' : (j + 1 < nSets ? 'danach Pause, dann Satz ' + (j + 2) : 'letzter Satz');
+    const after = side && part === 0 ? 'danach: Rechts' : nextName ? 'danach ' + CIRCUIT_REST / 1000 + ' s Pause, dann ' + nextName : (j + 1 < nSets ? 'danach Pause, dann Satz ' + (j + 2) : 'letzter Satz');
     return `<div class="timer kt${state.timerSeen[k] ? ' t-free' : ''}" id="timer" data-k="${k}"><svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label="Timer: noch ${left} Sekunden">
       <circle cx="42" cy="42" r="36" fill="none" stroke="var(--c-t)" stroke-width="7"/>
       <circle id="timer-arc" cx="42" cy="42" r="36" fill="none" stroke="var(--c)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(C * frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 42 42)"/>
-      <text id="timer-txt" x="42" y="48" text-anchor="middle" font-family="ui-rounded,-apple-system,system-ui,sans-serif" font-size="20" font-weight="700" fill="var(--fg)">${Math.floor(left / 60)}:${pad(left % 60)}</text></svg>
+      <text id="timer-txt" x="42" y="48" text-anchor="middle" font-family="ui-rounded,-apple-system,system-ui,sans-serif" font-size="20" font-weight="700" fill="var(--fg)" style="font-variant-numeric:tabular-nums">${Math.floor(left / 60)}:${pad(left % 60)}</text></svg>
       <div class="tx"><small><b class="now">${info}</b><br><span id="kt-rest" class="kt-rest">${rest}</span><span class="kt-after"${rest ? ' hidden' : ''}>${after}</span></small>
       <div class="bts"><button data-ktimer="${p.id}|${i}|${j}|toggle">${T && T.running ? 'Pause' : (started ? 'Weiter' : 'Start')}</button><button class="go" data-ktimer="${p.id}|${i}|${j}|next">${side && part === 0 ? 'Rechts' : 'Satz fertig'}</button></div></div></div>`;
   }
@@ -798,17 +798,49 @@
     /* früher aufgehört: tatsächlich gehaltene Zeit eintragen, damit die Steigerung stimmt */
     if (early && !tg.side && T.left > 0 && T.left < T.sec) s.s = Math.max(5, Math.round((T.sec - T.left) / 5) * 5);
     s.ok = true; putDraft(T.pid, d);
-    state.rest = { end: Date.now() + 90000 };
-    if (d.ex[T.i].every(x => x.ok)) { const nx = d.ex.findIndex(x => x.some(y => !y.ok)); if (nx >= 0) { state.active[T.pid] = nx; state.scrollEx = T.pid; } }
+    afterSet(p, d, T.i, false);
+  }
+  /* Aufeinanderfolgende Halteübungen (Unterarmstütz, Seitstütz) im Wechsel: nächste mit offenem Satz */
+  function circuitNext(p, d, i) {
+    const exs = exercises(p), isT = k => exs[k] && kind(U.lib(exs[k].name), exs[k]) === 'time';
+    if (!isT(i)) return null;
+    let a = i, b = i;
+    while (isT(a - 1)) a--;
+    while (isT(b + 1)) b++;
+    if (a === b) return null;
+    for (let n = 1; n <= b - a; n++) { const k = a + (i - a + n) % (b - a + 1); if ((d.ex[k] || []).some(x => !x.ok)) return k; }
+    return null;
+  }
+  const CIRCUIT_REST = 30000;
+  /* Satz abgehakt: Pause starten und ggf. zur nächsten Übung (im Wechsel oder wenn alle Sätze fertig) */
+  function afterSet(p, d, i, heavy) {
+    const cn = circuitNext(p, d, i);
+    if (cn != null) { state.rest = { end: Date.now() + CIRCUIT_REST }; state.active[p.id] = cn; state.scrollEx = p.id; return; }
+    state.rest = { end: Date.now() + (heavy ? 150000 : 90000) };
+    const ex = exercises(p)[i];
+    if (kind(U.lib(ex.name), ex) === 'time' && d.ex[i].every(x => x.ok)) { const nx = d.ex.findIndex(x => x.some(y => !y.ok)); if (nx >= 0) { state.active[p.id] = nx; state.scrollEx = p.id; } }
   }
   let audio = null;
+  /* Signal am Ende von Timer und Pause: drei Töne (laut genug fürs Gym), Vibration wo möglich */
   function beep() {
     try {
+      /* iPhone: kurzer Hinweiston, Musik wird nur kurz leiser statt gestoppt */
+      if (navigator.audioSession) navigator.audioSession.type = 'transient';
       audio = audio || new (window.AudioContext || window.webkitAudioContext)();
-      const o = audio.createOscillator(), g = audio.createGain();
-      o.frequency.value = 880; g.gain.value = 0.12; o.connect(g); g.connect(audio.destination);
-      o.start(); o.stop(audio.currentTime + 0.25);
+      if (audio.state === 'suspended') audio.resume();
+      const t0 = audio.currentTime + 0.02;
+      [[0, 880], [0.28, 880], [0.56, 1175]].forEach(([dt, fq]) => {
+        const o = audio.createOscillator(), g = audio.createGain();
+        o.type = 'triangle'; o.frequency.value = fq; o.connect(g); g.connect(audio.destination);
+        g.gain.setValueAtTime(0.0001, t0 + dt);
+        g.gain.exponentialRampToValueAtTime(0.5, t0 + dt + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.22);
+        o.start(t0 + dt); o.stop(t0 + dt + 0.24);
+      });
     } catch (e) { /* kein Ton möglich */ }
+    try { if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 300]); } catch (e) { /* egal */ }
+    const el = document.getElementById('kt-rest') || document.getElementById('restbar') || document.getElementById('timer');
+    if (el) { el.classList.remove('ring'); void el.offsetWidth; el.classList.add('ring'); }
   }
   /* Nächster Teil bereitlegen (nicht starten); nach dem letzten Teil Übung abhaken und die nächste öffnen */
   function advanceTimer(T) {
@@ -1187,17 +1219,10 @@
       const xs = rec.filter(t => sp(t.sport).fam === f), km = xs.reduce((a, t) => a + (t.km || 0), 0), min = xs.reduce((a, t) => a + (t.dur || 0), 0);
       return `<div class="sprow" style="${cv(k)}"><span class="ic">${ICON[k]}</span><span><b>${f}</b><small>${xs.length === 1 ? '1 Einheit' : xs.length + ' Einheiten'}</small></span><span class="spv"><b class="num">${f === 'Schwimmen' ? Math.round(km * 1000).toLocaleString('de-DE') + ' m' : Math.round(km).toLocaleString('de-DE') + ' km'}</b><small class="num">${xs.length ? fmtH(min) : '–'}</small></span></div>`;
     }).join('')}</section>`);
-    h += '</div><div class="pcol pk">' + stunden + kraftProgress(M) + '</div></div>';
+    h += '</div><div class="pcol pk">' + stunden + '</div></div>';
     return h;
   }
-  function kraftProgress(M) {
-    const S = sessions(M);
-    if (!S.length) return `<section class="card pcard" style="${cv('kraft')}"><span class="eyebrow">Kraft</span><div class="kempty"><span class="ic">${ICON.kraft}</span><span>Sobald du die erste Krafteinheit gespeichert hast, siehst du hier deine Gewichte und wie sie steigen.</span></div></section>`;
-    const best = {};
-    S.forEach(s => s.rows.forEach(r => { if (r.kg != null) { const b = best[r.ex]; if (!b || r.kg > b.kg) best[r.ex] = { kg: r.kg, date: s.date }; } }));
-    const rows = Object.entries(best).slice(0, 8).map(([ex, b]) => `<div class="sprow" style="${cv('kraft')}"><span class="ic">${ICON.kraft}</span><span><b>${esc(ex)}</b><small>${fmtShort(parseISO(b.date))}</small></span><b class="num">${fmtKg(b.kg)}</b></div>`).join('');
-    return `<section class="card pcard"><span class="eyebrow">Kraft · beste Gewichte</span>${rows || '<span class="tiny">Noch keine Gewichte eingetragen.</span>'}</section>`;
-  }
+
   function fitChart(F) {
     if (F.length < 2) return '<p class="tiny">Noch zu wenige Tage im Sheet.</p>';
     const W = 600, H = wide() ? 330 : 200, pl = 34, pr = 10, pt = 10, pb = 24;
@@ -1655,8 +1680,8 @@
         /* Halteübungen springen gleich weiter; sonst erst, wenn die Reserve des letzten Satzes eingetragen ist */
         const ex = exercises(p)[+i];
         /* schwere Sätze (4×6) brauchen längere Pausen als die 90 s der Technikphase */
-        state.rest = { end: Date.now() + (target(p, ex, U.lib(ex.name)).heavy ? 150000 : 90000) };
-        if (kind(U.lib(ex.name), ex) === 'time' && d.ex[+i].every(x => x.ok)) { const nx = d.ex.findIndex(x => x.some(y => !y.ok)); if (nx >= 0) { state.active[pid] = nx; state.scrollEx = pid; } }
+        afterSet(p, d, +i, target(p, ex, U.lib(ex.name)).heavy);
+        beepInit();
       }
       render(); return;
     }
