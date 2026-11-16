@@ -1010,13 +1010,13 @@
   }
 
   /* ---------- Ansichten ---------- */
-  /* Dienst oben rechts, kurz in einer Zeile (z. B. „1NR 18–6“) */
+  /* Dienst rechts in der Datumszeile, kurz (z. B. „1NR 18–6“) */
   function shiftPill(shift) {
     return shift ? `<span class="shift" title="${esc(shift)}">${esc(shift.replace(/ Uhr/g, ''))}</span>` : '';
   }
   function header(title, date, shift) {
     const days = Math.ceil((RACE - new Date(new Date().toDateString())) / 864e5);
-    return `<header class="head"><div><div class="date">${esc(date)}</div><h1>${esc(title)}</h1></div><div class="side"><div class="side-top">${shiftPill(shift)}<button class="iconbtn${state.loading ? ' spin' : ''}" data-reload aria-label="Aktualisieren" title="Aktualisieren (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div><span class="tiny head-count">Tübingen in ${days} Tagen</span></div></header>`;
+    return `<header class="head"><div class="date-row"><div class="date">${esc(date)}</div>${shiftPill(shift)}</div><h1>${esc(title)}</h1><div class="side"><button class="iconbtn${state.loading ? ' spin' : ''}" data-reload aria-label="Aktualisieren" title="Aktualisieren (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="tiny head-count">Tübingen in ${days} Tagen</span></div></header>`;
   }
   function banner() {
     if (!state.err) return '';
