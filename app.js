@@ -126,6 +126,7 @@
     const d = state.data;
     if (!d) return null;
     if (cache.at === d._at && cache.day === today()) return cache;
+    setRefs(d.einstellungen);
     const rows = v => (v || []).slice(1);
     const plan = rows(d.plan).map((r, i) => ({
       id: r[0], date: normDate(r[1]), sport: r[2] || '', title: r[3] || '', workout: r[4] || '', dur: num(r[5]) || 0,
@@ -237,25 +238,39 @@
     if ((m = t.match(/^(\d+)s$/))) return m[1] + ' s';
     return t;
   }
+  const r5 = x => Math.round(x / 5) * 5;
+  const paceAt = pct => { const sec = r5(TPACE / (pct / 100)); return Math.floor(sec / 60) + ':' + pad(sec % 60); };
   function splitTarget(s, cue) {
     let m;
     cue = (cue || '').trim();
     /* Lauf nach Puls: intervals.icu bekommt % LTHR, auf der Uhr steht der bpm-Bereich als Hinweis davor */
     const bpm = cue.match(/^(\d+)\s*[-–]\s*(\d+)\s*bpm$/);
-    if ((m = s.match(/^(\d+)-(\d+)%\s*LTHR\s*(.*)$/))) return bpm ? { t: 'HF ' + bpm[1] + '–' + bpm[2], l: m[3], v: +bpm[1] / LTHR } : { t: m[1] + '–' + m[2] + ' % LTHR', l: m[3], v: m[1] / 100 };
+    if ((m = s.match(/^(\d+)-(\d+)%\s*LTHR\s*(.*)$/))) return bpm ? { t: 'HF ' + bpm[1] + '–' + bpm[2], l: m[3], v: +bpm[1] / LTHR } : { t: 'HF ' + Math.round(m[1] * LTHR / 100) + '–' + Math.round(m[2] * LTHR / 100), l: m[3] || cue, v: m[1] / 100 };
     if ((m = s.match(/^(\d+)-(\d+)w\b\s*(.*)$/))) return { t: m[1] + '–' + m[2] + ' W', l: m[3] || cue, v: +m[1] / FTP };
     if ((m = s.match(/^(\d+)w\b\s*(.*)$/))) return { t: m[1] + ' W', l: m[2] || cue, v: +m[1] / FTP };
     if ((m = s.match(/^(\d+)-(\d+)bpm HR\s*(.*)$/))) return { t: 'HF ' + m[1] + '–' + m[2], l: m[3] || cue, v: +m[1] / LTHR };
     /* Lauf nach Pace in % der Schwellenpace: die Pace steht als Hinweis davor („4:40–5:00/km 20s 108-116% Pace“) */
     const pc = cue.match(/^(\d+):(\d+)\s*[-–]\s*(\d+:\d+)\s*\/km$/);
-    if ((m = s.match(/^(\d+)-(\d+)%\s*Pace\s*(.*)$/))) return pc ? { t: pc[1] + ':' + pc[2] + '–' + pc[3] + ' /km', l: m[3], v: TPACE / (+pc[1] * 60 + +pc[2]) } : { t: m[1] + '–' + m[2] + ' % Pace', l: m[3] || cue, v: m[1] / 100 };
+    if ((m = s.match(/^(\d+)-(\d+)%\s*Pace\s*(.*)$/))) return pc ? { t: pc[1] + ':' + pc[2] + '–' + pc[3] + ' /km', l: m[3], v: TPACE / (+pc[1] * 60 + +pc[2]) } : { t: paceAt(m[2]) + '–' + paceAt(m[1]) + ' /km', l: m[3] || cue, v: m[2] / 100 };
+    /* Rad in % der FTP: Watt aus dem Blatt „Einstellungen“, auf 5 W gerundet (wie beim Senden an intervals.icu) */
+    if ((m = s.match(/^(\d+)-(\d+)%\s*(.*)$/))) return { t: r5(m[1] * FTP / 100) + '–' + r5(m[2] * FTP / 100) + ' W', l: m[3] || cue, v: m[1] / 100 };
     if ((m = s.match(/^([\d:]+)-([\d:]+)\/km Pace\s*(.*)$/))) { const [mm, ss] = m[1].split(':').map(Number); return { t: m[1] + '–' + m[2] + ' /km', l: m[3] || cue, v: TPACE / ((mm || 7) * 60 + (ss || 0)) }; }
     const pm = s.match(/^(.*?)\.?\s*(\d+) s Pause\s*$/);
     if (pm) return { t: 'Pause ' + pm[2] + ' s', l: pm[1], pause: true, v: 0 };
     return { t: '', l: [cue, s].filter(Boolean).join(' '), v: 0 };
   }
   /* Bezugswerte, damit Puls-, Pace- und Wattangaben in einer Einheit vergleichbar hoch dargestellt werden */
-  const LTHR = 182, FTP = 210, TPACE = 325;
+  /* Bezugswerte für die Balkenhöhen. Vorgabe hier, maßgeblich ist das Blatt „Einstellungen“ im Sheet. */
+  let LTHR = 182, FTP = 210, TPACE = 325;
+  function setRefs(rows) {
+    (rows || []).slice(1).forEach(r => {
+      const k = String(r[0] || '').toLowerCase(), v = String(r[1] || '').trim();
+      if (!v) return;
+      if (/pace/.test(k)) { const m = v.match(/(\d+):(\d+)/); const sec = m ? +m[1] * 60 + +m[2] : 0; if (sec >= 150 && sec <= 600) TPACE = sec; }
+      else if (/ftp/.test(k)) { const n = num(v); if (n >= 80 && n <= 500) FTP = n; }
+      else if (/puls/.test(k)) { const n = num(v); if (n >= 120 && n <= 220) LTHR = n; }
+    });
+  }
   const DUR_RE = /(^|\s)(\d+m\d+s|\d+mtr|\d+m|\d+s)(?=\s|$)/;
   function blocks(p) {
     const out = []; let cur = null;
