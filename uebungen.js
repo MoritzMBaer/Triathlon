@@ -246,21 +246,21 @@
   function staticProps(ex) {
     const s = [];
     const pr = ex.props || [];
-    if (pr.includes('stufe')) s.push('<rect x="48" y="62" width="30" height="11" rx="2" fill="var(--fill)"/>');
-    if (pr.includes('wand')) s.push('<rect x="96" y="6" width="5" height="67" rx="1.5" fill="var(--fill)"/>');
-    if (pr.includes('wand2')) s.push('<rect x="100" y="6" width="5" height="67" rx="1.5" fill="var(--fill)"/>');
-    if (pr.includes('bank')) s.push('<rect x="78" y="50" width="36" height="7" rx="2" fill="var(--fill)"/><path d="M82 57V72M110 57V72" stroke="var(--fill)" stroke-width="3"/>');
-    if (pr.includes('bankl')) s.push('<rect x="4" y="40" width="26" height="7" rx="2" fill="var(--fill)"/><path d="M8 47V72M26 47V72" stroke="var(--fill)" stroke-width="3"/>');
-    if (pr.includes('bankr')) s.push('<rect x="46" y="48" width="58" height="6" rx="2" fill="var(--fill)"/><path d="M50 54V72M100 54V72" stroke="var(--fill)" stroke-width="3"/>');
-    if (pr.includes('box')) s.push('<rect x="62" y="60" width="34" height="13" rx="2" fill="var(--fill)"/>');
-    if (pr.includes('box2')) s.push('<rect x="80" y="58" width="28" height="15" rx="2" fill="var(--fill)"/>');
-    if (pr.includes('presse')) s.push('<path d="M38 67 16 43" stroke="var(--fill)" stroke-width="6" stroke-linecap="round"/><path d="M30 70H48M42 69 82 29M82 29V72" stroke="var(--fill)" stroke-width="3" stroke-linecap="round" fill="none"/>');
-    if (pr.includes('sitz')) s.push('<path d="M34 53 30 20" stroke="var(--fill)" stroke-width="6" stroke-linecap="round"/><rect x="30" y="52" width="27" height="5" rx="2" fill="var(--fill)"/><rect x="46" y="40" width="11" height="4" rx="2" fill="var(--fill)"/><path d="M44 57V72" stroke="var(--fill)" stroke-width="3"/>');
-    if (pr.includes('latturm')) s.push('<rect x="48" y="56" width="16" height="4" rx="2" fill="var(--fill)"/><rect x="62" y="44" width="12" height="4" rx="2" fill="var(--fill)"/><path d="M56 60V72M58 2H88V72" stroke="var(--fill)" stroke-width="3" stroke-linecap="round" fill="none"/>');
-    if (pr.includes('ruderbank')) s.push('<rect x="28" y="60" width="26" height="4" rx="2" fill="var(--fill)"/><path d="M33 64V72M49 64V72M75 45 72 60M94 20V72" stroke="var(--fill)" stroke-width="3" stroke-linecap="round" fill="none"/>');
-    if (pr.includes('presssitz')) s.push('<path d="M33 57 31 18" stroke="var(--fill)" stroke-width="6" stroke-linecap="round"/><rect x="31" y="58" width="22" height="4" rx="2" fill="var(--fill)"/><path d="M42 62V72" stroke="var(--fill)" stroke-width="3"/>');
-    if (pr.includes('hyper')) s.push('<path d="M47 61 58 51" stroke="var(--fill)" stroke-width="6" stroke-linecap="round"/><path d="M53 57V72M22 60 31 70M24 72H60" stroke="var(--fill)" stroke-width="3" stroke-linecap="round" fill="none"/>');
-    if (pr.includes('tuer')) s.push('<rect x="34" y="4" width="5" height="69" rx="1.5" fill="var(--fill)"/>');
+    if (pr.includes('stufe')) s.push('<rect x="48" y="62" width="30" height="11" rx="2" fill="var(--prop)"/>');
+    if (pr.includes('wand')) s.push('<rect x="96" y="6" width="5" height="67" rx="1.5" fill="var(--prop)"/>');
+    if (pr.includes('wand2')) s.push('<rect x="100" y="6" width="5" height="67" rx="1.5" fill="var(--prop)"/>');
+    if (pr.includes('bank')) s.push('<rect x="78" y="50" width="36" height="7" rx="2" fill="var(--prop)"/><path d="M82 57V72M110 57V72" stroke="var(--prop)" stroke-width="3"/>');
+    if (pr.includes('bankl')) s.push('<rect x="4" y="40" width="26" height="7" rx="2" fill="var(--prop)"/><path d="M8 47V72M26 47V72" stroke="var(--prop)" stroke-width="3"/>');
+    if (pr.includes('bankr')) s.push('<rect x="46" y="48" width="58" height="6" rx="2" fill="var(--prop)"/><path d="M50 54V72M100 54V72" stroke="var(--prop)" stroke-width="3"/>');
+    if (pr.includes('box')) s.push('<rect x="62" y="60" width="34" height="13" rx="2" fill="var(--prop)"/>');
+    if (pr.includes('box2')) s.push('<rect x="80" y="58" width="28" height="15" rx="2" fill="var(--prop)"/>');
+    if (pr.includes('presse')) s.push('<path d="M38 67 16 43" stroke="var(--prop)" stroke-width="6" stroke-linecap="round"/><path d="M30 70H48M42 69 82 29M82 29V72" stroke="var(--prop)" stroke-width="3" stroke-linecap="round" fill="none"/>');
+    if (pr.includes('sitz')) s.push('<path d="M34 53 30 20" stroke="var(--prop)" stroke-width="6" stroke-linecap="round"/><rect x="30" y="52" width="27" height="5" rx="2" fill="var(--prop)"/><rect x="46" y="40" width="11" height="4" rx="2" fill="var(--prop)"/><path d="M44 57V72" stroke="var(--prop)" stroke-width="3"/>');
+    if (pr.includes('latturm')) s.push('<rect x="48" y="56" width="16" height="4" rx="2" fill="var(--prop)"/><rect x="62" y="44" width="12" height="4" rx="2" fill="var(--prop)"/><path d="M56 60V72M58 2H88V72" stroke="var(--prop)" stroke-width="3" stroke-linecap="round" fill="none"/>');
+    if (pr.includes('ruderbank')) s.push('<rect x="28" y="60" width="26" height="4" rx="2" fill="var(--prop)"/><path d="M33 64V72M49 64V72M75 45 72 60M94 20V72" stroke="var(--prop)" stroke-width="3" stroke-linecap="round" fill="none"/>');
+    if (pr.includes('presssitz')) s.push('<path d="M33 57 31 18" stroke="var(--prop)" stroke-width="6" stroke-linecap="round"/><rect x="31" y="58" width="22" height="4" rx="2" fill="var(--prop)"/><path d="M42 62V72" stroke="var(--prop)" stroke-width="3"/>');
+    if (pr.includes('hyper')) s.push('<path d="M47 61 58 51" stroke="var(--prop)" stroke-width="6" stroke-linecap="round"/><path d="M53 57V72M22 60 31 70M24 72H60" stroke="var(--prop)" stroke-width="3" stroke-linecap="round" fill="none"/>');
+    if (pr.includes('tuer')) s.push('<rect x="34" y="4" width="5" height="69" rx="1.5" fill="var(--prop)"/>');
     return s.join('');
   }
   function moving(ex, p) {
@@ -270,9 +270,9 @@
     if (pr.includes('khf')) s.push(khAt(p.Wf[0], p.Wf[1] + 3));
     if (pr.includes('platte')) s.push(`<path d="M${f(p.Tn[0] + 9.2)} ${f(p.Tn[1] + 6.8)} L${f(p.Tn[0] - 2.8)} ${f(p.Tn[1] - 5.2)}" stroke="var(--c)" stroke-width="4"/>`);
     if (pr.includes('rolle')) { const dx = p.An[0] - p.Kn[0], dy = p.An[1] - p.Kn[1], l = Math.hypot(dx, dy) || 1, rx = p.An[0] - dx / l * 2 - dy / l * 4.5, ry = p.An[1] - dy / l * 2 + dx / l * 4.5; s.push(`<path d="M${f(p.Kn[0])} ${f(p.Kn[1] + 3)} L${f(rx)} ${f(ry)}" stroke="var(--c-d)" stroke-width="2"/><circle cx="${f(rx)}" cy="${f(ry)}" r="3.2" fill="var(--c)" stroke="none"/>`); }
-    if (pr.includes('latstange')) s.push(`<path d="M${f(p.Wn[0])} ${f(p.Wn[1])} L58 2" stroke="var(--fill)" stroke-width="1.6"/>`);
-    if (pr.includes('kabel')) s.push(`<path d="M${f(p.Wn[0])} ${f(p.Wn[1])} L94 41" stroke="var(--fill)" stroke-width="1.6"/>`);
-    if (pr.includes('pressgriff')) s.push(`<path d="M${f(p.Wn[0] + 1)} ${f(p.Wn[1])} L50 6" stroke="var(--fill)" stroke-width="2.6"/>`);
+    if (pr.includes('latstange')) s.push(`<path d="M${f(p.Wn[0])} ${f(p.Wn[1])} L58 2" stroke="var(--prop)" stroke-width="1.6"/>`);
+    if (pr.includes('kabel')) s.push(`<path d="M${f(p.Wn[0])} ${f(p.Wn[1])} L94 41" stroke="var(--prop)" stroke-width="1.6"/>`);
+    if (pr.includes('pressgriff')) s.push(`<path d="M${f(p.Wn[0] + 1)} ${f(p.Wn[1])} L50 6" stroke="var(--prop)" stroke-width="2.6"/>`);
     if (pr.includes('scheibe')) s.push(`<rect x="${f(p.P[0] - 8)}" y="${f(p.P[1] - 9)}" width="16" height="6" rx="3" fill="var(--c)"/>`);
     return s.join('');
   }
@@ -306,7 +306,7 @@
     const ys = [];
     ['A', 'B'].forEach(k => Object.values(ex[k]).forEach(pt => ys.push(pt[1])));
     const top = Math.max(0, Math.min(...ys) - 9);
-    return `<svg viewBox="0 ${top} 120 ${80 - top}"${label} data-fig="${opts.id || ''}" style="--fig:var(--fg);--fig-2:var(--faint)">
+    return `<svg viewBox="0 ${top} 120 ${80 - top}"${label} data-fig="${opts.id || ''}" style="--fig:var(--fg);--fig-2:var(--faint);--prop:color-mix(in srgb,var(--fg) 34%,transparent)">
       <line x1="6" y1="73" x2="114" y2="73" stroke="var(--line)" stroke-width="1.5"/>
       ${staticProps(ex)}<g class="fig-live">${inner(ex, t)}</g></svg>`;
   }

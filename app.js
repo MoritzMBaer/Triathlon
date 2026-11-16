@@ -95,7 +95,21 @@
     outbox.forEach(o => {
       if (o.action === 'erledigt') { const r = (d.plan || []).find(r => r[0] === o.payload.id); if (r) { while (r.length < 12) r.push(''); r[11] = o.payload.wert; } }
       if (o.action === 'check') putCheck(d, o.payload);
+      if (o.action === 'notiz') putNote(d, o.payload);
     });
+  }
+  function putNote(d, n) {
+    const rows = d.geraete && d.geraete.length ? d.geraete : (d.geraete = [['Übung', 'Einstellung', 'Geändert']]);
+    const i = rows.findIndex((r, k) => k > 0 && r[0] === n.uebung);
+    if (i > 0) rows[i][1] = n.text; else rows.push([n.uebung, n.text, '']);
+  }
+  async function saveNote(name, text) {
+    const M = model(); if (!M || (M.notes[name] || '') === text) return;
+    const n = { uebung: name, text };
+    putNote(state.data, n); state.data._at = Date.now(); ls.set('tri:data', state.data);
+    try { await api('notiz', n); outbox = outbox.filter(o => o.key !== 'note:' + name); ls.set('tri:outbox', outbox); toast('Einstellung gemerkt'); }
+    catch (e) { if (e.server) toast('Notiz konnte nicht gespeichert werden'); else { enqueue('notiz', n, 'note:' + name); toast('Gemerkt – wird übertragen, sobald du online bist'); } }
+    render();
   }
   function putCheck(d, c) {
     const rows = d.check || (d.check = [['Datum']]);
@@ -167,7 +181,8 @@
         .sort((a, b) => (Math.abs(days(t.date, a.date)) * 30 + gap(a, t)) - (Math.abs(days(t.date, b.date)) * 30 + gap(b, t)))[0];
       if (p) { used.add(t.id); match[p.id] = t; }
     });
-    cache = { at: d._at, day: today(), plan, trainings, fitness, klog, check, shifts, nights, match };
+    const notes = {}; rows(d.geraete).forEach(r => { if (r[0]) notes[r[0]] = r[1] || ''; });
+    cache = { at: d._at, day: today(), notes, plan, trainings, fitness, klog, check, shifts, nights, match };
     return cache;
   }
   function statusOf(p, M) {
@@ -530,9 +545,17 @@
   function draft(M, p) {
     if (state.drafts[p.id]) return state.drafts[p.id];
     let d = ls.get('tri:draft:' + p.id, null);
-    if (!d || d.v !== 3) {
+    /* Der Entwurf gehört zu einer bestimmten Übungsliste. Wurde der Plan geändert (z. B. Geräte statt Hanteln),
+       gelten die alten Gewichte nicht mehr: ohne abgehakte Sätze neu aufbauen, sonst offene Sätze neu vorschlagen. */
+    const sig = exercises(p).map(e => e.name + '#' + target(p, e, U.lib(e.name)).sets + 'x' + target(p, e, U.lib(e.name)).reps).join('|');
+    if (d && (d.v === 3 || d.v === 4) && d.n !== sig) {
+      const exs = exercises(p);
+      if (d.ex.length !== exs.length || !d.ex.some(st => st.some(x => x.ok))) d = null;
+      else { d.ex.forEach((st, i) => { const tg = target(p, exs[i], U.lib(exs[i].name)); st.forEach(x => { if (!x.ok) { x.kg = null; x.a = true; x.r = tg.reps; } }); }); d.v = 4; d.n = sig; autoKg(M, p, d, true); ls.set('tri:draft:' + p.id, d); }
+    }
+    if (!d || d.v !== 4) {
       const own = (sessions(M).find(s => s.pid === p.id) || { rows: [] }).rows;
-      d = { v: 3, ex: exercises(p).map(ex => {
+      d = { v: 4, n: sig, ex: exercises(p).map(ex => {
         const lib = U.lib(ex.name), tg = target(p, ex, lib);
         const mine = own.filter(r => r.ex === ex.name).sort((a, b) => a.set - b.set);
         if (mine.length) return mine.map(r => ({ r: r.reps, s: r.secs, kg: r.kg, ok: true }));
@@ -571,10 +594,21 @@
     const goal = `${tg.sets} × ${tg.reps}${k === 'time' ? ' s' : ''}${tg.side ? ' je Seite' : ''}`;
     const firstOpen = sets.findIndex(s => !s.ok);
     const done = !!p.done;
+    /* Die Übungen bleiben in der geplanten Reihenfolge: die aktive klappt an ihrer Stelle auf */
+    const exRow = (e, i) => {
+      const lb = U.lib(e.name), t2 = target(p, e, lb), k2 = kind(lb, e), s2 = d.ex[i] || [];
+      const allOk = s2.length && s2.every(x => x.ok);
+      const sg2 = suggest(lb, e, t2, lastFor(M, e.name, p.id));
+      const today2 = k2 === 'w' && sg2.kg != null ? ' · heute ' + fmtKg(sg2.kg) : k2 === 'time' && sg2.s ? ' · heute ' + sg2.s + ' s' : '';
+      return `<button class="exrow${allOk ? ' done' : ''}" data-ex="${p.id}|${i}"><span class="thumb">${lb ? U.svg(lb, { t: 0.75 }) : ''}</span><span class="tx"><b>${esc(e.name)}</b><small>${t2.sets} × ${t2.reps}${k2 === 'time' ? ' s' : ''}${t2.side ? ' je Seite' : ''}${today2}</small>${lb ? `<span>${esc(lb.cue)}</span>` : ''}</span>${allOk ? `<span class="pill">✓ ${s2.length}</span>` : CHEV_R}</button>`;
+    };
     let h = backBar(p, `Übung ${act + 1} von ${exs.length}`) + (done ? '' : warmupHTML(p, exs, d));
+    if (act > 0) h += '<div class="exlist">' + exs.slice(0, act).map(exRow).join('') + '</div>';
     h += `<div class="ex-card"><div class="ex-head"><b>${esc(ex.name)}</b><span>Ziel ${goal}${hist ? ' · ' + esc(histText(hist, lib, ex)) : ''}</span></div>`;
     h += `<div class="ex-body${lib ? '' : ' solo'}"><div class="ex-l">`;
     if (lib) h += `<button class="fig zoomable" data-zoom="${esc(ex.name)}" aria-label="Skizze ${esc(ex.name)} vergrößern">${U.svg(lib, { id: 'live:' + encodeURIComponent(ex.name), label: 'Animation: ' + ex.name })}</button>${zoomMap(U.bodyMap(lib), ex.name)}<p class="howto">${esc(lib.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(lib.cue)}</p>`;
+    /* Eigene Notiz je Übung, z. B. Sitz- und Polstereinstellung am Gerät: bleibt für jedes weitere Training stehen */
+    h += `<label class="exnote" for="note-${esc(p.id)}-${act}"><span>Meine Einstellung</span><input type="text" id="note-${esc(p.id)}-${act}" data-note="${esc(ex.name)}" value="${esc(M.notes[ex.name] || '')}" placeholder="z. B. Sitz 4, Lehne 2" maxlength="120" autocomplete="off" enterkeyhint="done"></label>`;
     h += '</div><div class="ex-r">';
     if (!done && sg.why) h += `<div class="sugg">${k === 'w' && sg.kg != null ? `<b>Heute ${fmtKg(sg.kg)}${lib && lib.per ? ' ' + lib.per : ''}.</b> ` : ''}${esc(sg.why)}</div>`;
     if (!done && k === 'w' && firstOpen === 0) h += rampHTML(exs, act, lib, sets[0].kg);
@@ -598,14 +632,7 @@
     /* Halteübungen (z. B. Unterarmstütz): Timer für den aktuellen Satz, schwebt unten, während man liest */
     if (k === 'time' && !done && firstOpen >= 0) h += kraftTimerHTML(p, act, firstOpen, sets[firstOpen].s || tg.reps, tg.side, sets.length);
     h += '</div>';
-    h += '<div class="exlist">' + exs.map((e, i) => {
-      if (i === act) return '';
-      const lb = U.lib(e.name), t2 = target(p, e, lb), k2 = kind(lb, e), s2 = d.ex[i] || [];
-      const allOk = s2.length && s2.every(x => x.ok);
-      const sg2 = suggest(lb, e, t2, lastFor(M, e.name, p.id));
-      const today2 = k2 === 'w' && sg2.kg != null ? ' · heute ' + fmtKg(sg2.kg) : k2 === 'time' && sg2.s ? ' · heute ' + sg2.s + ' s' : '';
-      return `<button class="exrow${allOk ? ' done' : ''}" data-ex="${p.id}|${i}"><span class="thumb">${lb ? U.svg(lb, { t: 0.75 }) : ''}</span><span class="tx"><b>${esc(e.name)}</b><small>${t2.sets} × ${t2.reps}${k2 === 'time' ? ' s' : ''}${t2.side ? ' je Seite' : ''}${today2}</small>${lb ? `<span>${esc(lb.cue)}</span>` : ''}</span>${allOk ? `<span class="pill">✓ ${s2.length}</span>` : CHEV_R}</button>`;
-    }).join('') + '</div>';
+    if (act < exs.length - 1) h += '<div class="exlist">' + exs.slice(act + 1).map((e, j) => exRow(e, act + 1 + j)).join('') + '</div>';
     const note = p.workout.split('\n').map(s => s.trim()).filter(l => l && !/^\d+\./.test(l));
     if (note.length) h += `<p class="note" style="padding:0 4px;margin:0">${esc(note.join(' '))}</p>`;
     h += done
@@ -936,9 +963,9 @@
   }
 
   /* ---------- Ansichten ---------- */
-  function header(title, date) {
+  function header(title, date, shift) {
     const days = Math.ceil((RACE - new Date(new Date().toDateString())) / 864e5);
-    return `<header class="head"><div><div class="date">${esc(date)}</div><h1>${esc(title)}</h1></div><div class="side"><button class="iconbtn${state.loading ? ' spin' : ''}" data-reload aria-label="Aktualisieren" title="Aktualisieren (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="tiny head-count">Tübingen in ${days} Tagen</span></div></header>`;
+    return `<header class="head"><div><div class="date">${esc(date)}</div><h1>${esc(title)}${shift ? ` <span class="shift">${esc(shift)}</span>` : ''}</h1></div><div class="side"><button class="iconbtn${state.loading ? ' spin' : ''}" data-reload aria-label="Aktualisieren" title="Aktualisieren (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="tiny head-count">Tübingen in ${days} Tagen</span></div></header>`;
   }
   function banner() {
     if (!state.err) return '';
@@ -999,7 +1026,7 @@
     else {
       right += weekCard(M, monday(now), true, true, true);
     }
-    return header('Heute', WDL[now.getDay()] + ', ' + fmtDay(now)) + banner() + `<div class="grid2"><div class="col">${left}</div><div class="col">${right}</div></div>`;
+    return header('Heute', WDL[now.getDay()] + ', ' + fmtDay(now), M.shifts[tk]) + banner() + `<div class="grid2"><div class="col">${left}</div><div class="col">${right}</div></div>`;
   }
   /* Erledigte Einheit: Werte statt Plan, mit Haken */
   function doneRow(M, p, cls) {
@@ -1680,6 +1707,7 @@
   ['pointerup', 'pointercancel'].forEach(t => document.addEventListener(t, stopHold));
   function beepInit() { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch (e) { /* egal */ } }
   document.addEventListener('change', e => {
+    if (e.target.dataset && e.target.dataset.note != null) { saveNote(e.target.dataset.note, e.target.value.trim()); return; }
     const el = e.target.closest('[data-kg]'); if (!el) return;
     const M = model(); const [pid, i, j] = el.dataset.kg.split('|'); const p = M.plan.find(x => x.id === pid); if (!p) return;
     const d = draft(M, p), v = num(el.value), a = d.ex[+i];
