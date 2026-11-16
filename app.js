@@ -73,15 +73,44 @@
     const res = await fetch(cfg.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ action, key: cfg.key }, payload || {})) });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const j = await res.json();
-    if (!j.ok) throw new Error(j.fehler || 'Fehler');
+    if (!j.ok) { const err = new Error(j.fehler || 'Fehler'); err.server = true; throw err; }
     return j.data;
+  }
+  /* ---------- Ausgang: was ohne Netz nicht gespeichert werden konnte, wird später nachgereicht ---------- */
+  let outbox = ls.get('tri:outbox', []), flushing = false;
+  function enqueue(action, payload, key) { outbox = outbox.filter(o => o.key !== key).concat({ action, payload, key }); ls.set('tri:outbox', outbox); }
+  async function flush() {
+    if (flushing || !outbox.length) return;
+    flushing = true;
+    while (outbox.length) {
+      const o = outbox[0];
+      try { await api(o.action, o.payload); }
+      catch (e) { if (!e.server || /Kein Zugriff/.test(e.message)) break; /* vom Server abgelehnt: nicht endlos wiederholen */ }
+      outbox = outbox.filter(x => x !== o); ls.set('tri:outbox', outbox);
+    }
+    flushing = false;
+  }
+  /* Noch nicht übertragene Änderungen über frisch geladene Daten legen */
+  function applyOutbox(d) {
+    outbox.forEach(o => {
+      if (o.action === 'erledigt') { const r = (d.plan || []).find(r => r[0] === o.payload.id); if (r) { while (r.length < 12) r.push(''); r[11] = o.payload.wert; } }
+      if (o.action === 'check') putCheck(d, o.payload);
+    });
+  }
+  function putCheck(d, c) {
+    const rows = d.check || (d.check = [['Datum']]);
+    const i = rows.findIndex(r => normDate(r[0]) === c.datum);
+    const row = [c.datum, String(c.beine), String(c.energie), String(c.motivation), c.uhrzeit || ''];
+    if (i > 0) rows[i] = row; else rows.push(row);
   }
   async function load(force) {
     if (!state.cfg || state.loading) return;
     if (!force && state.data && Date.now() - (state.data._at || 0) < 60000) return;
     state.loading = true; render();
     try {
+      await flush();
       const d = await api('lesen');
+      applyOutbox(d);
       d._at = Date.now();
       state.data = d; state.err = null;
       ls.set('tri:data', d);
@@ -120,12 +149,22 @@
       if (h >= 17) nights.add(k);
       shifts[k] = (shifts[k] ? shifts[k] + ', ' : '') + e.titel + ' ' + h + '–' + he + ' Uhr';
     });
-    // Einheiten mit absolvierten Trainings verbinden: gleicher Tag, gleiche Sportart
+    /* Einheiten mit absolvierten Trainings verbinden: gleiche Sportart und mindestens die halbe geplante Dauer
+       (eine kurze Fahrt zum Bäcker hakt keine 60-Minuten-Einheit ab). Erst der geplante Tag, danach
+       verschobene Ausdauereinheiten: bis zu 3 Tage später oder 1 Tag früher. */
     const used = new Set(), match = {};
+    const fits = (p, t) => !used.has(t.id) && sp(t.sport).fam === sp(p.sport).fam && (!p.dur || t.dur == null || t.dur >= p.dur * 0.5);
+    const gap = (p, t) => Math.abs((t.dur == null ? p.dur : t.dur) - p.dur);
     plan.forEach(p => {
-      const fam = sp(p.sport).fam;
-      const t = trainings.find(t => !used.has(t.id) && t.date === p.date && sp(t.sport).fam === fam);
+      const t = trainings.filter(t => t.date === p.date && fits(p, t)).sort((a, b) => gap(p, a) - gap(p, b))[0];
       if (t) { used.add(t.id); match[p.id] = t; }
+    });
+    const days = (a, b) => Math.round((parseISO(a) - parseISO(b)) / 864e5);
+    trainings.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(t => {
+      if (used.has(t.id) || !['Schwimmen', 'Rad', 'Laufen'].includes(sp(t.sport).fam)) return;
+      const p = plan.filter(p => !match[p.id] && !p.done && fits(p, t) && days(t.date, p.date) >= -1 && days(t.date, p.date) <= 3)
+        .sort((a, b) => (Math.abs(days(t.date, a.date)) * 30 + gap(a, t)) - (Math.abs(days(t.date, b.date)) * 30 + gap(b, t)))[0];
+      if (p) { used.add(t.id); match[p.id] = t; }
     });
     cache = { at: d._at, day: today(), plan, trainings, fitness, klog, check, shifts, nights, match };
     return cache;
@@ -405,7 +444,7 @@
   function target(p, ex, lib) {
     const t = { sets: ex.sets || 1, reps: ex.reps || 10, secs: ex.secs, side: ex.side };
     const h = (p.note || '').match(/Schwerer:\s*(\d+)×(\d+)/);
-    if (h && lib && lib.t === 'w') { t.sets = +h[1]; t.reps = +h[2]; t.heavy = true; }
+    if (h && lib && lib.t === 'w' && !lib.noHeavy) { t.sets = +h[1]; t.reps = +h[2]; t.heavy = true; }
     return t;
   }
   function sessions(M) {
@@ -781,6 +820,9 @@
       h += flowBar(bl, S.k) + `<div class="steps${S.k === 'swim' ? ' swim' : ''}">${stepsHTML(p)}</div>`;
       if (p.note) h += `<span class="note">${esc(p.note)}</span>`;
       if (t && opts.showActual) h += actualHTML(p, t);
+      /* Ohne Aufzeichnung trainiert (Uhr vergessen, Akku leer): von Hand abhaken */
+      if (!t && p.date <= today() && ['bike', 'run', 'swim'].includes(S.k)) h += `<button class="link manual" data-act="${p.done ? 'undo' : 'done'}" data-id="${esc(p.id)}" ${state.busy[p.id] ? 'disabled' : ''}>${p.done ? 'Doch nicht erledigt' : 'Ohne Aufzeichnung erledigt'}</button>`;
+      if (state.msgs[p.id]) h += `<div class="msg">${esc(state.msgs[p.id])}</div>`;
       h += '</section>';
     }
     return opts.fold ? `<div class="uwrap${st === 'catch' ? ' catch' : ''}" data-uid="${esc(p.id)}">${h}</div>` : h;
@@ -794,7 +836,7 @@
     if (t.pace) c.push(['Pace', t.pace + ' /km']);
     if (t.hr) c.push(['Ø Puls', Math.round(t.hr)]);
     if (t.load) c.push(['Belastung', Math.round(t.load)]);
-    return `<div class="act-h">Deine Werte</div><div class="actual">${c.slice(0, 6).map(x => `<div><b>${esc(x[1])}</b><small>${x[0]}</small></div>`).join('')}</div>`;
+    return `<div class="act-h">Deine Werte${t.date !== p.date ? ' · ' + (t.date > p.date ? 'nachgeholt' : 'vorgezogen') + ' am ' + fmtShort(parseISO(t.date)) : ''}</div><div class="actual">${c.slice(0, 6).map(x => `<div><b>${esc(x[1])}</b><small>${x[0]}</small></div>`).join('')}</div>`;
   }
   function tile(M, p, sub) {
     const S = sp(p.sport), st = statusOf(p, M);
@@ -933,6 +975,9 @@
       if (statusOf(p, M) === 'done' && !isOpen('heute', p.id, def)) { left += doneRow(M, p, 'done-tile').html; return; }
       left += unitOrTile(M, p, statusOf(p, M) !== 'done' ? (p === cur ? 'Heute · ' : 'Danach · ') + unitMeta(p) + (sp(p.sport).k === 'mob' ? ' · ' + mobItems(p).length + ' Übungen' : '') : null, 'heute', def);
     });
+    /* Krafteinheiten, die diese Woche liegen geblieben sind, hier zum Nachholen anbieten */
+    const late = M.plan.filter(p => p.date < tk && sp(p.sport).fam === 'Kraft' && statusOf(p, M) === 'catch');
+    if (late.length) left += `<div class="mhead"><b>Noch offen</b><small>aus dieser Woche</small></div>` + late.map(p => unitOrTile(M, p, 'Nachholen · ' + WDL[parseISO(p.date).getDay()] + ' · ' + unitMeta(p), 'heute', null)).join('');
     if (wide()) left += morgenWide(M, now);
     let right = wide() ? statusCard(M, units) : '';
     if (!wide()) right += morgenCard(M, now); /* Handy: was morgen ansteht statt Wochenkarte */
@@ -1085,7 +1130,7 @@
     for (let w = 0; w < 9; w++) {
       const a = addDays(start, w * 7), b = addDays(a, 6), A = iso(a), B = iso(b);
       const plan = M.plan.filter(p => p.date >= A && p.date <= B && sp(p.sport).ring).reduce((s, p) => s + p.dur, 0) / 60;
-      const act = A <= today() ? M.trainings.filter(t => t.date >= A && t.date <= B).reduce((s, t) => s + (t.dur || 0), 0) / 60 : 0;
+      const act = A <= today() ? (M.trainings.filter(t => t.date >= A && t.date <= B && sp(t.sport).ring).reduce((s, t) => s + (t.dur || 0), 0) + M.plan.filter(p => p.date >= A && p.date <= B && sp(p.sport).fam === 'Kraft' && p.done && !M.match[p.id]).reduce((s, p) => s + p.dur, 0)) / 60 : 0;
       weeks.push({ a, plan, act, cur: today() >= A && today() <= B });
     }
     const W = 600, H = wide() ? 330 : 200, pl = 30, pr = 6, pt = 10, pb = 24;
@@ -1400,12 +1445,18 @@
   /* ---------- Speichern ---------- */
   async function setDone(p, val) {
     state.busy[p.id] = true; delete state.msgs[p.id]; render();
-    try {
-      await api('erledigt', { id: p.id, wert: val });
+    const apply = () => {
       p.done = val; patchPlan(p.id, val); if (val) setStarted(p.id, false);
       if (val && state.open.heute) delete state.open.heute[p.id];
-      if (val) toast(p.title + ' erledigt');
-    } catch (e) { state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e); }
+    };
+    try {
+      await api('erledigt', { id: p.id, wert: val });
+      outbox = outbox.filter(o => o.key !== 'erl:' + p.id); ls.set('tri:outbox', outbox);
+      apply(); if (val) toast(p.title + ' erledigt');
+    } catch (e) {
+      if (e.server) state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e);
+      else { enqueue('erledigt', { id: p.id, wert: val }, 'erl:' + p.id); apply(); toast('Gemerkt – wird übertragen, sobald du online bist'); }
+    }
     state.busy[p.id] = false; render();
   }
   function patchPlan(id, val) {
@@ -1437,16 +1488,16 @@
     const d = state.checkDraft; if (!d || d.legs == null || d.energy == null || d.mot == null) return;
     const now = new Date();
     state.checkBusy = true; state.checkMsg = ''; render();
+    const c = { datum: today(), beine: d.legs, energie: d.energy, motivation: d.mot, uhrzeit: pad(now.getHours()) + ':' + pad(now.getMinutes()) };
+    const apply = () => { putCheck(state.data, c); state.data._at = Date.now(); ls.set('tri:data', state.data); state.checkDraft = null; state.checkEdit = false; };
     try {
-      await api('check', { datum: today(), beine: d.legs, energie: d.energy, motivation: d.mot, uhrzeit: pad(now.getHours()) + ':' + pad(now.getMinutes()) });
-      const rows = state.data.check || (state.data.check = [['Datum']]);
-      const i = rows.findIndex(r => normDate(r[0]) === today());
-      const row = [today(), String(d.legs), String(d.energy), String(d.mot)];
-      if (i > 0) rows[i] = row; else rows.push(row);
-      state.data._at = Date.now(); ls.set('tri:data', state.data);
-      state.checkDraft = null; state.checkEdit = false;
-      toast('Kurz-Check gespeichert');
-    } catch (e) { state.checkMsg = 'Speichern hat nicht geklappt: ' + (e.message || e); }
+      await api('check', c);
+      outbox = outbox.filter(o => o.key !== 'check:' + c.datum); ls.set('tri:outbox', outbox);
+      apply(); toast('Kurz-Check gespeichert');
+    } catch (e) {
+      if (e.server) state.checkMsg = 'Speichern hat nicht geklappt: ' + (e.message || e);
+      else { enqueue('check', c, 'check:' + c.datum); apply(); toast('Gemerkt – wird übertragen, sobald du online bist'); }
+    }
     state.checkBusy = false; render();
   }
 
@@ -1502,6 +1553,7 @@
       const p = plan(el.dataset.id); if (!p) return;
       if (el.dataset.act === 'kraft') saveKraft(M, p);
       if (el.dataset.act === 'undo') setDone(p, '');
+      if (el.dataset.act === 'done') setDone(p, today());
       return;
     }
     if ((el = q('[data-step]'))) { if (holdUsed) { holdUsed = false; return; } doStep(el); return; }
@@ -1510,9 +1562,10 @@
       const d = draft(M, p), s = d.ex[+i][+j]; s.ok = !s.ok; if (!s.ok) s.rir = null; putDraft(pid, d); state.active[pid] = +i;
       if (state.timer && state.timer.kr && state.timer.pid === pid) state.timer = null;
       if (s.ok) {
-        state.rest = { end: Date.now() + 90000 };
         /* Halteübungen springen gleich weiter; sonst erst, wenn die Reserve des letzten Satzes eingetragen ist */
         const ex = exercises(p)[+i];
+        /* schwere Sätze (4×6) brauchen längere Pausen als die 90 s der Technikphase */
+        state.rest = { end: Date.now() + (target(p, ex, U.lib(ex.name)).heavy ? 150000 : 90000) };
         if (kind(U.lib(ex.name), ex) === 'time' && d.ex[+i].every(x => x.ok)) { const nx = d.ex.findIndex(x => x.some(y => !y.ok)); if (nx >= 0) { state.active[pid] = nx; state.scrollEx = pid; } }
       }
       render(); return;
@@ -1715,6 +1768,7 @@
     if (a.dataset.v === 'woche' && state.weekOff) { state.weekOff = 0; render(); window.scrollTo({ top: 0, behavior: 'auto' }); return; }
     if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' });
   }));
+  window.addEventListener('online', () => { load(true); });
   window.addEventListener('hashchange', () => { if (state.sheetId) { state.sheetId = null; closeSheetNow(); } render(); if (state.pendingJump) { const k = state.pendingJump; state.pendingJump = null; requestAnimationFrame(() => setTimeout(() => jumpTo(k), 60)); } });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { cache = { at: -1 }; load(false); render(); } });
   let lastW = window.innerWidth;

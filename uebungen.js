@@ -13,6 +13,55 @@
   const STAND = '60 13,60 21,60 46,61 59,60 72,68 72,59 59,58 72,65 72,61 34,61 46,59 34,59 46';
 
   const LIB = [
+    /* ---------- Geräte (bevorzugt): geführte Bewegung, wenig Technik nötig ---------- */
+    { re: /^beinpresse.*einbeinig/i, m: ['quad','gesaess'], t: 'w', inc: 5, start: 30, per: 'aufgelegt',
+      how: 'Wie die Beinpresse, aber nur ein Fuß steht mittig auf der Platte, der andere bleibt locker unten. Langsam absenken, bis das Knie etwa 90° gebeugt ist, dann über die ganze Fußsohle hochdrücken. Erst alle Wiederholungen mit einem Bein, dann wechseln.',
+      cue: 'Knie zeigt über die Zehen und fällt nicht nach innen, oben nicht ganz durchstrecken.',
+      A: P('17 34,22 40,40 60,47 47,60 39,55.5 34.5,50 58,56 68,62 69,28 55,38 62,27 56,37 63'),
+      B: P('17 34,22 40,40 60,37 45,52 47,47.5 42.5,50 58,56 68,62 69,28 55,38 62,27 56,37 63'),
+      props: ['presse', 'platte'], hl: [['P', 'Kn']], dur: 3.4 },
+    { re: /^beinpresse/i, m: ['quad','gesaess','adduktoren'], t: 'w', inc: 5, start: 60, per: 'aufgelegt',
+      how: 'Rücken und Gesäß fest ins Polster, Füße hüftbreit mittig auf die Platte. Sicherung lösen und langsam absenken, bis die Knie etwa 90° gebeugt sind. Über die ganze Fußsohle hochdrücken. Nach dem letzten Satz die Sicherung wieder einlegen.',
+      cue: 'Gesäß bleibt im Polster, Knie oben nicht ganz durchstrecken.',
+      A: P('17 34,22 40,40 60,47 47,60 39,55.5 34.5,46 48,59 40,54.5 35.5,28 55,38 62,27 56,37 63'),
+      B: P('17 34,22 40,40 60,37 45,52 47,47.5 42.5,36 46,51 48,46.5 43.5,28 55,38 62,27 56,37 63'),
+      props: ['presse', 'platte'], hl: [['P', 'Kn']], dur: 3.4 },
+    { re: /^wadenheben an der beinpresse/i, m: ['wade','soleus'], t: 'w', inc: 5, start: 40, per: 'aufgelegt', noHeavy: true,
+      how: 'In der Beinpresse die Beine fast strecken und nur die Fußballen auf die untere Kante der Platte stellen. Fersen langsam absenken, bis die Waden gedehnt sind, dann die Platte so weit wie möglich mit den Fußballen wegdrücken. Die Sicherung bleibt dabei eingelegt oder in Reichweite.',
+      cue: 'Knie bleiben fast gestreckt, oben kurz halten, 3 Sekunden absenken.',
+      A: P('17 34,22 40,40 60,47 47,61 39,57 34,46 48,60 40,56 35,28 55,38 62,27 56,37 63'),
+      B: P('17 34,22 40,40 60,47.4 46.6,60.5 38.5,60 32,46.4 47.6,59.5 39.5,59 33,28 55,38 62,27 56,37 63'),
+      props: ['presse', 'platte'], hl: [['Kn', 'An']], dur: 3 },
+    { re: /^beinbeuger/i, m: ['hamstrings','wade'], t: 'w', inc: 5, start: 25,
+      how: 'Sitz so einstellen, dass die Knie genau an der Drehachse liegen und das Rollenpolster knapp über den Fersen. Oberschenkelpolster fest einstellen. Die Fersen in einem Bogen unter den Sitz ziehen, kurz halten und langsam zurückführen.',
+      cue: 'Gesäß bleibt im Sitz, zurück doppelt so langsam wie hin.',
+      A: P('35 16,36 24,40 48,56 48,71 47,74 41,56 49,71 48,74 42,40 37,47 46,39 38,46 47'),
+      B: P('35 16,36 24,40 48,56 48,52 62.5,57 65.5,56 49,53 63.5,58 66.5,40 37,47 46,39 38,46 47'),
+      props: ['sitz', 'rolle'], hl: [['P', 'Kn']], dur: 3.4 },
+    { re: /^latzug/i, m: ['lat','bizeps','schulterh','bws'], t: 'w', inc: 2.5, start: 35,
+      how: 'Stange etwas weiter als schulterbreit greifen, hinsetzen und die Oberschenkel unter dem Polster fixieren. Oberkörper leicht nach hinten neigen und die Stange zur oberen Brust ziehen. Langsam zurück, bis die Arme fast gestreckt sind.',
+      cue: 'Erst die Schulterblätter nach unten ziehen, Ellbogen Richtung Hüfte, kein Schwung.',
+      A: P('54 20,54 28,56 52,70 52,70 70,78 72,69 53,69 70,77 72,56 19,57 6,55 19,56 6'),
+      B: P('53 20,53 28,56 52,70 52,70 70,78 72,69 53,69 70,77 72,49 43,59 34.5,48 43,58 34.5'),
+      props: ['latturm', 'latstange'], hl: [['N', 'P']], dur: 3.4 },
+    { re: /^rudern sitzend/i, m: ['lat','bws','schulterh','bizeps'], t: 'w', inc: 2.5, start: 30,
+      how: 'Aufrecht hinsetzen, Füße gegen die Platte, Knie leicht gebeugt. Griff mit gestreckten Armen fassen, dann zum Bauchnabel ziehen und die Schulterblätter zusammenführen. Langsam nach vorn zurück, der Oberkörper bleibt aufrecht.',
+      cue: 'Brust raus, nicht nach hinten lehnen, Ellbogen nah am Körper.',
+      A: P('40 23,40 31,40 56,56 50,70 56,72 49,56 51,70 57,72 50,53 37,66 39,52 38,65 40'),
+      B: P('40 23,40 31,40 56,56 50,70 56,72 49,56 51,70 57,72 50,36 47,48 45,35 48,47 46'),
+      props: ['ruderbank', 'kabel'], hl: [['N', 'P']], dur: 3.2 },
+    { re: /^brustpresse/i, m: ['brust','schulter','trizeps'], t: 'w', inc: 2.5, start: 25,
+      how: 'Sitzhöhe so einstellen, dass die Griffe auf Höhe der mittleren Brust liegen. Rücken und Kopf ans Polster, Füße fest am Boden. Griffe nach vorn drücken, bis die Arme fast gestreckt sind, und langsam zurückführen.',
+      cue: 'Schultern bleiben hinten unten, Ellbogen nicht ganz durchdrücken.',
+      A: P('38 21,38 29,40 54,55 54,56 70,64 72,54 55,55 70,63 72,41 45,50 36,40 46,49 37'),
+      B: P('38 21,38 29,40 54,55 54,56 70,64 72,54 55,55 70,63 72,51 35,64 35,50 36,63 36'),
+      props: ['presssitz', 'pressgriff'], hl: [['En', 'Wn']], dur: 3.2 },
+    { re: /^rückenstrecker/i, m: ['lws','gesaess','hamstrings'], t: 'bw', inc: 1,
+      how: 'Polster so einstellen, dass die Hüfte frei beweglich bleibt, Fersen unter die Rolle. Arme vor der Brust kreuzen. Mit geradem Rücken aus der Hüfte nach vorn absenken und wieder aufrichten, bis der Körper eine Linie bildet.',
+      cue: 'Nur bis zur geraden Linie aufrichten, nicht ins Hohlkreuz, Rücken bleibt lang.',
+      A: P('75 23,70 29,52 46,41 56,30 66,25 62,42 57,31 67,26 63,63 40,69 36,62 41,68 37'),
+      B: P('80 59.5,74.5 56.5,52 46,41 56,30 66,25 62,42 57,31 67,26 63,63 58,69 61,62 59,68 62'),
+      props: ['hyper'], hl: [['N', 'P']], dur: 3.6 },
     { re: /^goblet/i, m: ['quad','adduktoren','gesaess'], t: 'w', inc: 2, start: 16,
       how: 'Hantel senkrecht vor der Brust halten, Füße etwas weiter als hüftbreit. Gesäß nach hinten unten sinken lassen, bis die Oberschenkel waagerecht sind. Über die ganze Fußsohle wieder hochdrücken.',
       cue: 'Brust bleibt oben, Knie zeigen Richtung Zehen.',
@@ -205,6 +254,12 @@
     if (pr.includes('bankr')) s.push('<rect x="46" y="48" width="58" height="6" rx="2" fill="var(--fill)"/><path d="M50 54V72M100 54V72" stroke="var(--fill)" stroke-width="3"/>');
     if (pr.includes('box')) s.push('<rect x="62" y="60" width="34" height="13" rx="2" fill="var(--fill)"/>');
     if (pr.includes('box2')) s.push('<rect x="80" y="58" width="28" height="15" rx="2" fill="var(--fill)"/>');
+    if (pr.includes('presse')) s.push('<path d="M38 67 16 43" stroke="var(--fill)" stroke-width="6" stroke-linecap="round"/><path d="M30 70H48M42 69 82 29M82 29V72" stroke="var(--fill)" stroke-width="3" stroke-linecap="round" fill="none"/>');
+    if (pr.includes('sitz')) s.push('<path d="M34 53 30 20" stroke="var(--fill)" stroke-width="6" stroke-linecap="round"/><rect x="30" y="52" width="27" height="5" rx="2" fill="var(--fill)"/><rect x="46" y="40" width="11" height="4" rx="2" fill="var(--fill)"/><path d="M44 57V72" stroke="var(--fill)" stroke-width="3"/>');
+    if (pr.includes('latturm')) s.push('<rect x="48" y="56" width="16" height="4" rx="2" fill="var(--fill)"/><rect x="62" y="44" width="12" height="4" rx="2" fill="var(--fill)"/><path d="M56 60V72M58 2H88V72" stroke="var(--fill)" stroke-width="3" stroke-linecap="round" fill="none"/>');
+    if (pr.includes('ruderbank')) s.push('<rect x="28" y="60" width="26" height="4" rx="2" fill="var(--fill)"/><path d="M33 64V72M49 64V72M75 45 72 60M94 20V72" stroke="var(--fill)" stroke-width="3" stroke-linecap="round" fill="none"/>');
+    if (pr.includes('presssitz')) s.push('<path d="M33 57 31 18" stroke="var(--fill)" stroke-width="6" stroke-linecap="round"/><rect x="31" y="58" width="22" height="4" rx="2" fill="var(--fill)"/><path d="M42 62V72" stroke="var(--fill)" stroke-width="3"/>');
+    if (pr.includes('hyper')) s.push('<path d="M47 61 58 51" stroke="var(--fill)" stroke-width="6" stroke-linecap="round"/><path d="M53 57V72M22 60 31 70M24 72H60" stroke="var(--fill)" stroke-width="3" stroke-linecap="round" fill="none"/>');
     if (pr.includes('tuer')) s.push('<rect x="34" y="4" width="5" height="69" rx="1.5" fill="var(--fill)"/>');
     return s.join('');
   }
@@ -213,12 +268,19 @@
     if (pr.includes('khv')) s.push(khAt(p.Wn[0] + 1, p.Wn[1], true));
     if (pr.includes('kh2')) { s.push(khAt(p.Wf[0], p.Wf[1] + 3)); }
     if (pr.includes('khf')) s.push(khAt(p.Wf[0], p.Wf[1] + 3));
+    if (pr.includes('platte')) s.push(`<path d="M${f(p.Tn[0] + 9.2)} ${f(p.Tn[1] + 6.8)} L${f(p.Tn[0] - 2.8)} ${f(p.Tn[1] - 5.2)}" stroke="var(--c)" stroke-width="4"/>`);
+    if (pr.includes('rolle')) { const dx = p.An[0] - p.Kn[0], dy = p.An[1] - p.Kn[1], l = Math.hypot(dx, dy) || 1, rx = p.An[0] - dx / l * 2 - dy / l * 4.5, ry = p.An[1] - dy / l * 2 + dx / l * 4.5; s.push(`<path d="M${f(p.Kn[0])} ${f(p.Kn[1] + 3)} L${f(rx)} ${f(ry)}" stroke="var(--c-d)" stroke-width="2"/><circle cx="${f(rx)}" cy="${f(ry)}" r="3.2" fill="var(--c)" stroke="none"/>`); }
+    if (pr.includes('latstange')) s.push(`<path d="M${f(p.Wn[0])} ${f(p.Wn[1])} L58 2" stroke="var(--fill)" stroke-width="1.6"/>`);
+    if (pr.includes('kabel')) s.push(`<path d="M${f(p.Wn[0])} ${f(p.Wn[1])} L94 41" stroke="var(--fill)" stroke-width="1.6"/>`);
+    if (pr.includes('pressgriff')) s.push(`<path d="M${f(p.Wn[0] + 1)} ${f(p.Wn[1])} L50 6" stroke="var(--fill)" stroke-width="2.6"/>`);
     if (pr.includes('scheibe')) s.push(`<rect x="${f(p.P[0] - 8)}" y="${f(p.P[1] - 9)}" width="16" height="6" rx="3" fill="var(--c)"/>`);
     return s.join('');
   }
   function movingFront(ex, p) {
     const pr = ex.props || [], s = [];
     if (pr.includes('kh2') || pr.includes('kh1')) s.push(khAt(p.Wn[0], p.Wn[1] + 3));
+    if (pr.includes('latstange') || pr.includes('kabel')) s.push(`<circle cx="${f(p.Wn[0])}" cy="${f(p.Wn[1])}" r="2.8" fill="var(--c)" stroke="none"/>`);
+    if (pr.includes('pressgriff')) s.push(`<rect x="${f(p.Wn[0] - 1.6)}" y="${f(p.Wn[1] - 5)}" width="3.2" height="10" rx="1.6" fill="var(--c)" stroke="none"/>`);
     if (pr.includes('kreise')) s.push(`<circle cx="${f(p.Wn[0])}" cy="${f(p.Wn[1])}" r="7" fill="none" stroke="var(--c)" stroke-width="1.6" stroke-dasharray="3 3"/><circle cx="${f(p.Wf[0])}" cy="${f(p.Wf[1])}" r="7" fill="none" stroke="var(--c)" stroke-width="1.6" stroke-dasharray="3 3"/>`);
     return s.join('');
   }
