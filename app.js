@@ -1010,9 +1010,15 @@
   }
 
   /* ---------- Ansichten ---------- */
+  /* Dienst oben rechts: Titel und Uhrzeit untereinander, damit das Datum links nicht umbricht */
+  function shiftPill(shift) {
+    if (!shift) return '';
+    const m = shift.indexOf(', ') < 0 && shift.match(/^(.*\S)\s+(\d.*)$/);
+    return m ? `<span class="shift two" title="${esc(shift)}"><b>${esc(m[1])}</b><span>${esc(m[2])}</span></span>` : `<span class="shift">${esc(shift)}</span>`;
+  }
   function header(title, date, shift) {
     const days = Math.ceil((RACE - new Date(new Date().toDateString())) / 864e5);
-    return `<header class="head"><div><div class="date">${esc(date)}</div><h1>${esc(title)}${shift ? ` <span class="shift">${esc(shift)}</span>` : ''}</h1></div><div class="side"><button class="iconbtn${state.loading ? ' spin' : ''}" data-reload aria-label="Aktualisieren" title="Aktualisieren (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="tiny head-count">Tübingen in ${days} Tagen</span></div></header>`;
+    return `<header class="head"><div><div class="date">${esc(date)}</div><h1>${esc(title)}</h1></div><div class="side"><div class="side-top">${shiftPill(shift)}<button class="iconbtn${state.loading ? ' spin' : ''}" data-reload aria-label="Aktualisieren" title="Aktualisieren (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div><span class="tiny head-count">Tübingen in ${days} Tagen</span></div></header>`;
   }
   function banner() {
     if (!state.err) return '';
