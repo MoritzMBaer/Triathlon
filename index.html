@@ -66,11 +66,18 @@ input{font:inherit}
 [hidden]{display:none!important}
 
 .app{padding:max(24px,calc(18px + env(safe-area-inset-top,0px))) max(16px,env(safe-area-inset-right,0px)) calc(110px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
-.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:0 4px}
-.head .date{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em;text-transform:uppercase;line-height:1.3;margin-bottom:2px}
-.head h1{font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.12;margin:0}
-@media (max-width:959px){.head{margin-bottom:-6px}}
-.head .side{display:flex;align-self:center;gap:6px}
+.head{display:flex;flex-direction:column;gap:2px;padding:0 4px}
+.head .date-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px}
+.head .date{min-width:0;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em;text-transform:uppercase;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.head .side{display:flex;gap:0;margin-right:-8px;flex:none}
+.head .side .iconbtn{width:40px;height:32px;border-radius:10px;background:none;color:var(--muted)}
+.head .title-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.head h1{font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.12;margin:0;min-width:0}
+.head-count{display:inline-flex;align-items:baseline;gap:4px;background:var(--card);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted);white-space:nowrap;flex:none}
+.head .date .shift{background:none;padding:0;border-radius:0;font:inherit;color:inherit}
+.head-count b{font-family:var(--round);font-size:17px;font-weight:800;color:var(--fg)}
+/* Handy: Abstand nach oben, damit die Datumszeile nicht in der weichgezeichneten iOS-Kante unter der Statusleiste liegt */
+@media (max-width:959px){.head{margin-bottom:-4px;padding-top:14px}}
 .iconbtn.net{background:none;color:var(--muted)}
 .tiny{font-size:12px;color:var(--faint)}
 .iconbtn{width:36px;height:36px;border-radius:50%;border:0;background:var(--card);display:grid;place-items:center;color:var(--fg)}
@@ -103,24 +110,8 @@ input{font:inherit}
 .exnote input{font:inherit;font-size:16px;font-weight:500;color:var(--fg);background:var(--fill-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:44px;width:100%}
 .exnote input:focus-visible{outline:2px solid var(--c-d);outline-offset:1px}
 .exnote input::placeholder{color:var(--faint)}
-.head{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:end;row-gap:0}
-.head .date-row{grid-column:1/-1}
-.head .side{justify-self:end;min-width:0}
-.head .side .head-count{text-align:right;line-height:1.2;margin-right:4px;font-size:12px;color:var(--muted);white-space:nowrap}
-.head-count b{display:block;font-family:var(--round);font-size:20px;font-weight:800;color:var(--fg)}
-.head .date-row{flex-basis:100%;display:flex;justify-content:space-between;align-items:center;gap:12px}
-.head .date-row .shift{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em;text-transform:uppercase;line-height:1.3;padding:0;border-radius:0;background:none;white-space:nowrap;margin-bottom:2px}
 .head .d-short{display:none}
-/* Handy: Datum neben dem Titel, weg von der weichen iOS-Kante oben. Die schmale erste Zeile hält den Titel knapp unter dieser Kante */
-@media (max-width:959px){
-  .head{grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:8px auto;column-gap:10px}
-  .head h1{grid-column:1;grid-row:2}
-  .head .date-row{grid-column:2;grid-row:2;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:0;align-self:end;min-width:0;padding-bottom:6px}
-  .head .side{grid-column:3;grid-row:2}
-  .head .date,.head .date-row .shift{margin-bottom:0;line-height:16px}
-  .head .d-long{display:none}
-  .head .d-short{display:inline}
-}
+@media (max-width:959px){.head .d-long{display:none}.head .d-short{display:inline}}
 @media (max-width:374px){.head h1{font-size:30px;line-height:38px}}
 .saison{gap:12px}
 .ph-top{display:flex;justify-content:space-between;align-items:baseline}
