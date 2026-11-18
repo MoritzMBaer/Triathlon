@@ -1219,11 +1219,9 @@
     const from = M.plan.length ? M.plan.reduce((a, p) => p.date < a ? p.date : a, M.plan[0].date) : iso(addDays(new Date(), -28));
     const fit0 = F.find(f => f.date >= from && f.ctl != null);
     const fitD = fit0 && last.ctl != null ? Math.round(last.ctl) - Math.round(fit0.ctl) : null;
-    const fitTxt = fitD == null ? '' : ` · ${fitD > 0 ? '+' + fitD : fitD < 0 ? '−' + -fitD : '±0'} seit Beginn`;
-    const past = M.plan.filter(p => p.date < today() && sp(p.sport).ring);
-    const done = past.filter(p => statusOf(p, M) === 'done').length;
+    const fitTxt = fitD == null ? '' : `<span>${fitD > 0 ? '+' + fitD : fitD < 0 ? '−' + -fitD : '±0'} seit Beginn</span>`;
     let h = header('Fortschritt', 'Seit dem Planstart', null, 'Seit Planstart') + banner();
-    h += `<section class="card pcard"><span class="eyebrow">Stand heute</span><div class="big3 two"><div><b>${vo2 == null ? '–' : Math.round(vo2)}</b><small>VO₂max</small></div><div><b>${last.ctl == null ? '–' : Math.round(last.ctl)}</b><small>Fitness${fitTxt}</small></div><div><b>${last.tsb == null ? '–' : (last.tsb > 0 ? '+' : '') + Math.round(last.tsb)}</b><small>Form</small></div><div><b>${past.length ? Math.round(done / past.length * 100) + ' %' : '–'}</b><small>Plan-Treue${past.length ? ` (${done}/${past.length})` : ''}</small></div></div></section>`;
+    h += `<section class="card pcard"><span class="eyebrow">Stand heute</span><div class="big3"><div><b>${vo2 == null ? '–' : Math.round(vo2)}</b><small>VO₂max</small></div><div><b>${last.ctl == null ? '–' : Math.round(last.ctl)}</b><small>Fitness${fitTxt}</small></div><div><b>${last.tsb == null ? '–' : (last.tsb > 0 ? '+' : '') + Math.round(last.tsb)}</b><small>Form</small></div></div></section>`;
     h = h.replace('<section class="card pcard"><span class="eyebrow">Stand heute', '<div class="pgrid"><div class="pcol"><section class="card pcard" style="order:1"><span class="eyebrow">Stand heute');
     h += '<!--A-->';
     h += '</div><div class="pcol">';
@@ -1364,9 +1362,17 @@
     tickRest();
     if (window.TRI_STUCK) requestAnimationFrame(window.TRI_STUCK);
     if (state.scrollEx) {
-      const pid = state.scrollEx, head = state.scrollHead; state.scrollEx = null; state.scrollHead = false;
+      const pid = state.scrollEx, check = state.scrollCheck; state.scrollEx = null; state.scrollCheck = false;
       const root = state.sheetId === pid ? $('#sheet') : app;
-      const el = (head && root.querySelector('.run-top')) || root.querySelector('.mob-ex.active') || root.querySelector('.ex-card') || root.querySelector('.run-top'); /* genau zur aktiven Übung, nicht zur Kopfzeile */
+      const stop = root.querySelector(`[data-stop="${CSS.escape(pid)}"]`), box = stop ? stop.closest('.run-top').parentElement : root; /* nur in dieser Einheit suchen */
+      const el = box.querySelector('.mob-ex.active') || box.querySelector('.ex-card') || box.querySelector('.run-top'); /* genau zur aktiven Übung, nicht zur Kopfzeile */
+      if (el && check) { /* hat sich die Seite beim Scrollen noch verschoben, einmal nachrücken; Antippen bricht das ab */
+        const run = scrollRun;
+        setTimeout(() => {
+          if (run !== scrollRun || !el.isConnected) return;
+          if (Math.abs(el.getBoundingClientRect().top - (parseFloat(getComputedStyle(el).scrollMarginTop) || 0)) > 4) el.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
+        }, 800);
+      }
       if (el) el.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
     }
   }
@@ -1725,7 +1731,7 @@
       const [pid, i] = el.dataset.start.split('|'); const p = plan(pid); if (!p) return;
       setStarted(pid, true);
       if (+i >= 0) state.active[pid] = +i; else delete state.active[pid];
-      if (sp(p.sport).fam !== 'Mobility') { state.scrollEx = pid; state.scrollHead = true; } /* Mobility bleibt beim Start an Ort und Stelle */
+      state.scrollEx = pid; state.scrollCheck = true; /* Kraft und Mobility: direkt zur ersten offenen Übung */
       render(); return;
     }
     if ((el = q('[data-stop]'))) { setStarted(el.dataset.stop, false); state.timer = null; render(); return; }
