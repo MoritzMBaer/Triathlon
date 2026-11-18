@@ -1317,7 +1317,11 @@
       return `<div class="sprow" style="${cv(k)}"><span class="ic">${ICON[k]}</span><span><b>${f}</b><small>${xs.length === 1 ? '1 Einheit' : xs.length + ' Einheiten'}</small></span><span class="spv"><b class="num">${f === 'Schwimmen' ? Math.round(km * 1000).toLocaleString('de-DE') + ' m' : Math.round(km).toLocaleString('de-DE') + ' km'}</b><small class="num">${xs.length ? fmtH(min) : '–'}</small></span></div>`;
     }).join('')}</section>`);
     h += '</div><div class="pcol pk">' + stunden + '</div></div>';
-    if (state.ver) h += `<p class="appver">Version ${state.ver}</p>`;
+    if (state.ver) {
+      /* Seite und Service Worker getrennt: weichen sie ab, läuft noch eine ältere Seite aus dem Zwischenspeicher */
+      const pm = document.querySelector('meta[name="app-version"]'), pv = pm ? +(/(\d+)$/.exec(pm.content) || [])[1] : 0;
+      h += `<p class="appver">Version ${state.ver}${pv && pv !== state.ver ? ` · Seite ${pv}` : ''}</p>`;
+    }
     return h;
   }
 
