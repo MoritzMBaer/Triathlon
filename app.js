@@ -305,6 +305,33 @@
   }
   const r5 = x => Math.round(x / 5) * 5;
   const paceAt = pct => { const sec = r5(TPACE / (pct / 100)); return Math.floor(sec / 60) + ':' + pad(sec % 60); };
+  /* Schwimmtempo aus der Schwelle (CSS, Test 400/200): nur für Hauptserien, nicht für Einschwimmen, Technik oder Tests.
+     Gleichmäßig = CSS + 4 s, zügig = CSS − 6 s, an der Schwelle = CSS (je pro 100 m) */
+  const mmss = x => Math.floor(x / 60) + ':' + pad(x % 60);
+  function swimPace(lab) {
+    const l = (lab || '').toLowerCase();
+    if (!TCSS || !l || /locker|technik|steiger|so schnell|zeit merken|test/.test(l)) return '';
+    if (/zügig|schnell/.test(l)) return mmss(TCSS - 6);
+    if (/css|schwelle/.test(l)) return mmss(TCSS);
+    if (/gleichmäßig/.test(l)) return mmss(TCSS + 4);
+    return '';
+  }
+  /* Verpflegung üben (Jeukendrup 2014): ab 90 min 30–60 g/h, ab 2,5 h und bei Koppeleinheiten 60–90 g/h */
+  const BOTTLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2h4M10.5 2v3.2c0 .5-.3 1-.7 1.3C8.7 7.3 8 8.6 8 10v10a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V10c0-1.4-.7-2.7-1.8-3.5-.4-.3-.7-.8-.7-1.3V2"/><path d="M8 13h8"/></svg>';
+  function fuelCue(p) {
+    if (!['bike', 'run'].includes(sp(p.sport).k) || !(p.dur >= 90)) return '';
+    return `<span class="fuel">${BOTTLE}${p.dur >= 150 || /koppel/i.test(p.title) ? '60–90 g Kohlenhydrate/h üben' : '30–60 g Kohlenhydrate/h'}</span>`;
+  }
+  /* Lauflänge (Frandsen et al., BJSM 2025): kein Lauf mehr als 10 % länger als der längste der letzten 30 Tage.
+     Nur anzeigen, wenn der geplante Lauf länger ist als der bisher längste. */
+  function runLen(M, p) {
+    if (sp(p.sport).k !== 'run' || !p.dur || p.done || M.match[p.id] || p.date < today()) return '';
+    const from = iso(addDays(parseISO(p.date), -30));
+    const max = M.trainings.filter(t => sp(t.sport).k === 'run' && t.date >= from && t.date < p.date && t.dur).reduce((a, t) => Math.max(a, t.dur), 0);
+    if (!max || p.dur <= max) return '';
+    const pc = Math.round((p.dur / max - 1) * 100), lim = Math.floor(max * 1.1);
+    return `<span class="runlen${p.dur > lim ? ' warn' : ''}" title="Längster Lauf der letzten 30 Tage: ${max} min">+${pc} % zum längsten Lauf seit 30 Tagen${p.dur > lim ? ` · besser max. ${lim} min` : ''}</span>`;
+  }
   function splitTarget(s, cue) {
     let m;
     cue = (cue || '').trim();
@@ -326,7 +353,7 @@
   }
   /* Bezugswerte, damit Puls-, Pace- und Wattangaben in einer Einheit vergleichbar hoch dargestellt werden */
   /* Bezugswerte für die Balkenhöhen. Vorgabe hier, maßgeblich ist das Blatt „Einstellungen“ im Sheet. */
-  let LTHR = 182, FTP = 210, TPACE = 325;
+  let LTHR = 182, FTP = 210, TPACE = 325, TCSS = 0; /* TCSS: Schwimmschwelle in s/100 m, 0 = noch kein Test */
   function setRefs(rows) {
     (rows || []).slice(1).forEach(r => {
       const k = String(r[0] || '').toLowerCase(), v = String(r[1] || '').trim();
@@ -336,6 +363,7 @@
         const d = normDate(v); if (/^\d{4}-\d{2}-\d{2}$/.test(d)) RACE = parseISO(d);
         return;
       }
+      if (/css|schwimm/.test(k)) { const m = v.match(/(\d+):(\d+)/); const sec = m ? +m[1] * 60 + +m[2] : 0; if (sec >= 60 && sec <= 240) TCSS = sec; return; }
       if (/pace/.test(k)) { const m = v.match(/(\d+):(\d+)/); const sec = m ? +m[1] * 60 + +m[2] : 0; if (sec >= 150 && sec <= 600) TPACE = sec; }
       else if (/ftp/.test(k)) { const n = num(v); if (n >= 80 && n <= 500) FTP = n; }
       else if (/puls/.test(k)) { const n = num(v); if (n >= 120 && n <= 220) LTHR = n; }
@@ -421,6 +449,8 @@
       const rows = b.steps.map((s, si) => {
         const isMain = (bi + ':' + si) === main;
         let lab = esc(s.lab || (b.rep ? '' : b.h));
+        const sw = sp(p.sport).k === 'swim' && swimPace(s.lab);
+        if (sw) lab = `<span class="pace num">${sw} /100 m</span>` + lab;
         const dr = drillsOf(s.lab);
         if (dr) {
           lab = dr.length > 1 ? `Alle ${esc(s.dur)} die nächste Übung` : 'Technik';
@@ -972,7 +1002,7 @@
     const title = cleanTitle(p);
     const top = `<div class="u-sport"><span class="dot-ico">${ICON[S.k]}</span><span>${esc(sportLabel(p))}</span></div><span class="u-right">${pill}${opts.fold ? CHEV_D : ''}</span>`;
     let h = `<section class="unit" style="${cv(S.k)}">${opts.fold ? `<button class="u-top" data-fold="${esc(p.id)}" aria-expanded="true" aria-label="${esc(p.title)} zuklappen">${top}</button>` : `<div class="u-top">${top}</div>`}
-      <div class="u-title${title.length > 18 ? ' long' : ''}">${esc(title)}</div>`;
+      <div class="u-title${title.length > 18 ? ' long' : ''}">${esc(title)}</div>${st === 'done' ? '' : fuelCue(p)}`;
     if (review) {
       h += `<p class="u-sum">${esc(mobItems(p).length + ' Übungen · ' + unitMeta(p))}</p>`;
       if (p.note) h += `<span class="note">${esc(p.note)}</span>`;
@@ -991,8 +1021,10 @@
       h += `</section><div class="ubody" style="${cv(S.k)}">${body}</div>`;
     } else {
       const bl = blocks(p);
-      h += flowBar(bl, S.k) + `<div class="steps${S.k === 'swim' ? ' swim' : ''}">${stepsHTML(p)}</div>`;
+      const css = S.k === 'swim' && TCSS && bl.some(b => b.steps.some(x => swimPace(x.lab))) ? `<div class="cssbar"><span>Deine Schwelle (CSS)</span><b class="num">${mmss(TCSS)} /100 m</b></div>` : '';
+      h += flowBar(bl, S.k) + css + `<div class="steps${S.k === 'swim' ? ' swim' : ''}">${stepsHTML(p)}</div>`;
       if (p.note) h += `<span class="note">${esc(p.note)}</span>`;
+      h += runLen(M, p);
       if (t && opts.showActual) h += actualHTML(p, t);
       /* Ohne Aufzeichnung trainiert (Uhr vergessen, Akku leer): von Hand abhaken */
       if (!t && p.date <= today() && ['bike', 'run', 'swim'].includes(S.k)) h += `<button class="link manual" data-act="${p.done ? 'undo' : 'done'}" data-id="${esc(p.id)}" ${state.busy[p.id] ? 'disabled' : ''}>${p.done ? 'Doch nicht erledigt' : 'Ohne Aufzeichnung erledigt'}</button>`;

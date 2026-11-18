@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="tri-v156">
+<meta name="app-version" content="tri-v157">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Triathlon</title>
 <script>
@@ -200,6 +200,13 @@ input{font:inherit}
 .drills b{font-size:15px;font-weight:700}
 .drills span{font-size:14px;line-height:1.45;color:var(--c-mu)}
 .note{font-size:14px;color:var(--c-mu)}
+.fuel{display:inline-flex;align-self:flex-start;gap:6px;align-items:center;background:color-mix(in srgb,var(--card) 70%,transparent);border-radius:999px;padding:5px 11px 5px 8px;font-size:13px;font-weight:600;color:var(--c-d);margin-top:-6px}
+.fuel svg{width:18px;height:18px;flex:none}
+.runlen{font-size:14px;color:var(--c-mu)}
+.runlen.warn{color:var(--fg);background:color-mix(in srgb,#ff9f0a 16%,var(--card));border-radius:14px;padding:10px 12px}
+.cssbar{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--c-mu);background:color-mix(in srgb,var(--card) 70%,transparent);border-radius:14px;padding:8px 12px}
+.cssbar b{color:var(--fg);font-family:var(--round)}
+.st .l .pace{display:block;font-family:var(--round);font-weight:800;color:var(--fg)}
 .act-h{display:flex;align-items:center;gap:10px;margin-top:4px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--c-mu)}
 .act-h::after{content:'';flex:1;height:1px;background:var(--c-sep)}
 .actual{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 8px}
