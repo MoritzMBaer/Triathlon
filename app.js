@@ -114,7 +114,7 @@
   function putCheck(d, c) {
     const rows = d.check || (d.check = [['Datum']]);
     const i = rows.findIndex(r => normDate(r[0]) === c.datum);
-    const row = [c.datum, String(c.beine), String(c.energie), String(c.motivation), c.uhrzeit || ''];
+    const row = [c.datum, String(c.beine), String(c.energie), String(c.motivation), c.uhrzeit || '', c.schlaf != null ? String(c.schlaf) : ''];
     if (i > 0) rows[i] = row; else rows.push(row);
   }
   async function load(force) {
@@ -157,7 +157,7 @@
     const klog = rows(d.kraftlog).filter(r => r[1] && r[3]).map(r => ({
       date: normDate(r[0]), pid: r[1], unit: r[2], ex: r[3], set: num(r[4]), reps: num(r[5]), secs: num(r[6]), kg: num(r[7]), target: r[8] || '', rir: (/RIR (\d)/.exec(r[8] || '') || [])[1] != null ? +/RIR (\d)/.exec(r[8])[1] : null, saved: r[9] || ''
     }));
-    const check = rows(d.check).filter(r => r[0] && r[1] !== '').map(r => ({ date: normDate(r[0]), legs: num(r[1]), energy: num(r[2]), mot: num(r[3]) }));
+    const check = rows(d.check).filter(r => r[0] && r[1] !== '').map(r => ({ date: normDate(r[0]), legs: num(r[1]), energy: num(r[2]), mot: num(r[3]), sleep: num(r[5]) != null ? num(r[5]) : (ls.get('tri:schlaf') || {})[normDate(r[0])] ?? null }));
     const shifts = {}, nights = new Set();
     (d.dienste || []).forEach(e => {
       const k = e.start.slice(0, 10), h = +e.start.slice(11, 13), he = +(e.ende || '').slice(11, 13);
@@ -234,7 +234,7 @@
       const a = mean([ck.legs, ck.energy, ck.mot].filter(x => x != null));
       if (a <= 1.5) { feelRed = true; flags.push(`Gefühl ${de1(a)} von 5`); } else if (a <= 2.5) flags.push(`Gefühl ${de1(a)} von 5`);
     }
-    if (afterNight) notes.push(ck ? 'Nach dem Nachtdienst zählen Schlaf und Puls heute nicht' : 'Schlaf und Puls zählen heute nicht, dein Gefühl entscheidet');
+    if (afterNight && ck && ck.sleep != null && ck.sleep <= 2) flags.push(`Schlaf ${ck.sleep} von 5`);
     const lvl = feelRed || flags.length >= 2 ? 'r' : flags.length === 1 ? 'y' : afterNight && !ck ? 'n' : 'g';
     return { lvl, flags, notes, last, old, range, afterNight, stale: last.date !== today() };
   }
@@ -957,10 +957,12 @@
       ${adv ? `<div class="advice ${r.lvl}">${esc(adv)}</div>` : ''}
       ${nt.length ? `<div class="hint">${esc(nt.join('. '))}.</div>` : ''}${checkCard(M, true)}</section>`;
   }
+  const afterNightToday = M => M.nights.has(iso(addDays(new Date(), -1)));
   function checkCard(M, inner) {
-    const ck = M.check.find(c => c.date === today()), d = state.checkDraft || {};
-    if (ck && !state.checkEdit) return `<div class="feel${inner ? ' in' : ''}"><span class="ft"><span class="fl">Check</span> Körper <b>${ck.legs}</b> · Energie <b>${ck.energy}</b> · Motivation <b>${ck.mot}</b></span><button class="link" data-checkedit aria-label="Kurz-Check ändern">Ändern</button></div>`;
+    const ck = M.check.find(c => c.date === today()), d = state.checkDraft || {}, night = afterNightToday(M);
+    if (ck && !state.checkEdit && !(night && ck.sleep == null)) return `<div class="feel${inner ? ' in' : ''}"><span class="ft">${night ? '' : '<span class="fl">Check</span> '}Körper <b>${ck.legs}</b> · Energie <b>${ck.energy}</b> · ${night ? 'Motiv.' : 'Motivation'} <b>${ck.mot}</b>${night ? ` · Schlaf <b>${ck.sleep}</b>` : ''}</span><button class="link" data-checkedit aria-label="Kurz-Check ändern">Ändern</button></div>`;
     const rows = [['legs', 'Körper', 'müde', 'frisch'], ['energy', 'Energie', 'leer', 'voll'], ['mot', 'Motivation', 'keine', 'hoch']];
+    if (night) rows.push(['sleep', 'Schlaf', 'schlecht', 'gut']);
     const cur = k => d[k] != null ? d[k] : ck ? ck[k] : null;
     return `<${inner ? 'div' : 'section'} class="${inner ? 'check in' : 'card check'}"><span class="ck-h"><span class="eyebrow">Kurz-Check: wie fühlst du dich?</span>${ck && state.checkEdit ? '<button class="link" data-checkdone>Fertig</button>' : ''}</span>${rows.map(([k, lab, lo, hi]) => `<div class="crow"><span class="lab">${lab}<small>${lo} – ${hi}</small></span><div class="cbt" role="radiogroup" aria-label="${lab}">${[1, 2, 3, 4, 5].map(n => `<button role="radio" aria-checked="${cur(k) === n}" data-check="${k}|${n}">${n}</button>`).join('')}</div></div>`).join('')}
       ${state.checkBusy ? '<span class="tiny">Speichere …</span>' : state.checkMsg ? `<span class="msg">${esc(state.checkMsg)}</span>` : ''}</${inner ? 'div' : 'section'}>`;
@@ -1340,7 +1342,7 @@
         const cls = state.slide > 0 ? 'slide-l' : 'slide-r';
         app.classList.remove('slide-l', 'slide-r', 'view-in'); void app.offsetWidth; app.classList.add(cls);
         setTimeout(() => app.classList.remove(cls), 300);
-      } else if (!reduceMotion()) {
+      } else if (!reduceMotion() && lastView) {
         app.classList.remove('view-in'); void app.offsetWidth; app.classList.add('view-in');
         setTimeout(() => app.classList.remove('view-in'), 400);
       }
@@ -1607,10 +1609,11 @@
     state.busy[p.id] = false; render();
   }
   async function saveCheck(M) {
-    const d = state.checkDraft; if (!d || d.legs == null || d.energy == null || d.mot == null) return;
+    const d = state.checkDraft; if (!d || d.legs == null || d.energy == null || d.mot == null || (afterNightToday(M) && d.sleep == null)) return;
     const now = new Date();
     state.checkBusy = true; state.checkMsg = ''; render();
-    const c = { datum: today(), beine: d.legs, energie: d.energy, motivation: d.mot, uhrzeit: pad(now.getHours()) + ':' + pad(now.getMinutes()) };
+    const c = { datum: today(), beine: d.legs, energie: d.energy, motivation: d.mot, schlaf: d.sleep, uhrzeit: pad(now.getHours()) + ':' + pad(now.getMinutes()) };
+    if (d.sleep != null) ls.set('tri:schlaf', { [c.datum]: d.sleep });
     const apply = () => { putCheck(state.data, c); state.data._at = Date.now(); ls.set('tri:data', state.data); state.checkDraft = null; state.checkEdit = false; };
     try {
       await api('check', c);
@@ -1764,7 +1767,7 @@
     }
     if ((el = q('[data-check]'))) {
       const [k, n] = el.dataset.check.split('|'); const ck = M.check.find(c => c.date === today());
-      state.checkDraft = Object.assign(ck ? { legs: ck.legs, energy: ck.energy, mot: ck.mot } : {}, state.checkDraft || {}, { [k]: +n });
+      state.checkDraft = Object.assign(ck ? { legs: ck.legs, energy: ck.energy, mot: ck.mot, sleep: ck.sleep } : {}, state.checkDraft || {}, { [k]: +n });
       render(); saveCheck(M); return;
     }
     if (q('[data-checkedit]')) { state.checkEdit = true; render(); return; }
