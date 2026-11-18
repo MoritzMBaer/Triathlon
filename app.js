@@ -1200,17 +1200,17 @@
     }).join('');
     const fmtLong = s => parseISO(s).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
     const SPN = { swim: 'Schwimmen', bike: 'Rad', run: 'Laufen', kraft: 'Kraft' };
-    const rowsSp = ['swim', 'bike', 'run', 'kraft'].filter(k => sel.sp[k]).map(k => {
-      const um = sel.sp[k].split(' · ')[0].replace(/\s*pro Woche,\s*(?:je |zusammen )?/, ' · ');
+    const rowsSp = P => ['swim', 'bike', 'run', 'kraft'].filter(k => P.sp[k]).map(k => {
+      const um = P.sp[k].split(' · ')[0].replace(/\s*pro Woche,\s*(?:je |zusammen )?/, ' · ').replace(/^letzte Einheit /, 'bis ');
       return `<div class="ph-sp" style="${cv(k)}"><span class="ph-sp-n"><i aria-hidden="true"></i>${SPN[k]}</span><span class="um">${esc(um).replace(/ (m|min|h)\b/g, '\u00a0$1')}</span></div>`;
     }).join('');
     return `<section class="card pcard saison" style="order:3"><div class="ph-top"><span class="eyebrow">Saison</span><span class="ph-wk">Woche ${Math.min(wk, wks)} von ${wks}</span></div>
       <div class="phs-row" role="group" aria-label="Phasen bis zum Rennen">${segs}</div>
-      <div class="ph-d">
-        <div class="ph-h"><b>${esc(sel.name)}</b>${si === ci ? '<span class="ph-now">Jetzt</span>' : ''}</div>
-        <small class="ph-meta">${si === ci ? 'Bis ' + fmtLong(sel.bis) : fmtLong(sel.von) + ' – ' + fmtLong(sel.bis)} · ${esc(sel.std)}</small>
-        ${rowsSp ? `<div class="ph-sps">${rowsSp}</div>` : ''}
-      </div></section>`;
+      <div class="ph-ds">${ph.map((P, i) => `<div class="ph-d${i === si ? ' on' : ''}">
+        <div class="ph-h"><b>${esc(P.name)}</b>${i === ci ? '<span class="ph-now">Jetzt</span>' : ''}</div>
+        <small class="ph-meta">${i === ci ? 'Bis ' + fmtLong(P.bis) : fmtLong(P.von) + ' – ' + fmtLong(P.bis)} · ${esc(P.std)}</small>
+        ${rowsSp(P) ? `<div class="ph-sps">${rowsSp(P)}</div>` : ''}
+      </div>`).join('')}</div></section>`;
   }
   function viewFortschritt(M) {
     const F = M.fitness, last = F[F.length - 1] || {};
@@ -1644,6 +1644,10 @@
     const M = model();
     const q = sel => e.target.closest(sel);
     let el;
+    /* Diagramme: Tipp zeigt den Wert genau dieser Säule, Tipp daneben schließt ihn */
+    const hit = q('svg[data-chart] .hit'), chart = hit && hit.closest('svg');
+    document.querySelectorAll('svg[data-chart]').forEach(s => { if (s !== chart) chartTip(s, null); });
+    if (hit) { chartTip(chart, hit); return; }
     /* Kurz-Check ändern: Tipp außerhalb oder auf „Fertig“ schließt ohne Änderung */
     if (state.checkEdit && (q('[data-checkdone]') || !q('.check'))) {
       state.checkEdit = false; state.checkDraft = null; render();
@@ -1667,7 +1671,7 @@
       return;
     }
     if ((el = q('.zoomable'))) { openZoom(el); return; }
-    if ((el = q('[data-phase]'))) { const i = +el.dataset.phase; state.phase = i; render(); return; }
+    if ((el = q('[data-phase]'))) { const i = +el.dataset.phase; state.phase = i; render(); const c = $('.saison'); if (c) bringIntoView(c); return; }
     if ((el = q('[data-week]'))) { state.weekOff += +el.dataset.week; render(); return; }
     if ((el = q('[data-sheet]'))) { state.sheetId = el.dataset.sheet; render(); return; }
     if ((el = q('[data-open]'))) { toggleUnit(el.dataset.open, true); return; }
@@ -1879,7 +1883,7 @@
   });
   document.addEventListener('focusin', e => {
     const svg = e.target.closest && e.target.closest('svg[data-chart]');
-    if (svg) { const hs = svg.querySelectorAll('.hit'); chartTip(svg, svg.querySelector('.hit.on') || hs[hs.length - 1]); }
+    if (svg && svg.matches(':focus-visible')) { const hs = svg.querySelectorAll('.hit'); chartTip(svg, svg.querySelector('.hit.on') || hs[hs.length - 1]); }
   });
   document.addEventListener('focusout', e => { const svg = e.target.closest && e.target.closest('svg[data-chart]'); if (svg) chartTip(svg, null); });
   document.addEventListener('keydown', e => {
