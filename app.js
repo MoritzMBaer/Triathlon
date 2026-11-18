@@ -567,7 +567,7 @@
   function suggest(lib, ex, tg, hist) {
     const k = kind(lib, ex);
     /* Obergrenze: Länger halten oder mehr Wiederholungen bringen ab hier kaum noch etwas – dann lieber eine schwerere Variante */
-    const capMsg = (cap, unit) => `Obergrenze von ${cap}${unit} erreicht. Mehr bringt hier kaum noch etwas. Nächste Stufe: ${lib && lib.next ? lib.next : 'eine schwerere Variante'}.`;
+    const capMsg = (cap, unit) => lib && lib.up ? `${cap}${unit} geschafft. Übung zu leicht?` : `${cap}${unit} geschafft, mehr bringt hier kaum noch etwas. Nächste Stufe: ${lib && lib.next ? lib.next : 'eine schwerere Variante'}.`;
     if (k === 'time') {
       if (!hist) return { s: tg.reps, why: '' };
       const cap = Math.max((lib && lib.cap) || 60, tg.reps);
@@ -620,7 +620,7 @@
     if (!lib || !lib.up) return '';
     const w = SWAPS[ex.name];
     if (w) return `<div class="swap"><span>${CHECK} Ab ${fmtDay(parseISO(w.ab))}: ${esc(w.text)}</span><button class="linkbtn" data-swap="${esc(ex.name)}|">Rückgängig</button></div>`;
-    return `<button class="btn swap-btn" data-swap="${esc(ex.name)}|${esc(upText(ex, lib))}">Nächstes Mal ${esc(lib.up.name)}</button>`;
+    return `<button class="btn swap-btn" data-swap="${esc(ex.name)}|${esc(upText(ex, lib))}">Ab nächstem Mal ${esc(lib.up.name)}</button>`;
   }
   function draft(M, p) {
     if (state.drafts[p.id]) return state.drafts[p.id];
