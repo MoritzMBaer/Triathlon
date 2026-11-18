@@ -152,7 +152,7 @@
       load: num(r[7]), hr: num(r[8]), watt: num(r[9]), np: num(r[10]), pace: r[11] || ''
     }));
     const fitness = rows(d.fitness).filter(r => r[0]).map(r => ({
-      date: normDate(r[0]), ctl: num(r[1]), atl: num(r[2]), tsb: num(r[3]), rhr: num(r[4]), hrv: num(r[5]), sleep: num(r[6]), score: num(r[8]), ready: num(r[9])
+      date: normDate(r[0]), ctl: num(r[1]), atl: num(r[2]), tsb: num(r[3]), rhr: num(r[4]), hrv: num(r[5]), sleep: num(r[6]), score: num(r[8]), ready: num(r[9]), vo2: num(r[10])
     })).sort((a, b) => a.date.localeCompare(b.date));
     const klog = rows(d.kraftlog).filter(r => r[1] && r[3]).map(r => ({
       date: normDate(r[0]), pid: r[1], unit: r[2], ex: r[3], set: num(r[4]), reps: num(r[5]), secs: num(r[6]), kg: num(r[7]), target: r[8] || '', rir: (/RIR (\d)/.exec(r[8] || '') || [])[1] != null ? +/RIR (\d)/.exec(r[8])[1] : null, saved: r[9] || ''
@@ -1214,14 +1214,16 @@
   }
   function viewFortschritt(M) {
     const F = M.fitness, last = F[F.length - 1] || {};
+    /* Garmin meldet VO2max nur an manchen Tagen: darum der letzte bekannte Wert */
+    const vo2 = F.reduce((v, f) => f.vo2 != null ? f.vo2 : v, null);
     const past = M.plan.filter(p => p.date < today() && sp(p.sport).ring);
     const done = past.filter(p => statusOf(p, M) === 'done').length;
     let h = header('Fortschritt', 'Seit dem Planstart', null, 'Seit Planstart') + banner();
-    h += `<section class="card pcard"><span class="eyebrow">Stand heute</span><div class="big3"><div><b>${last.ctl == null ? '–' : Math.round(last.ctl)}</b><small>Fitness</small></div><div><b>${last.tsb == null ? '–' : (last.tsb > 0 ? '+' : '') + Math.round(last.tsb)}</b><small>Form</small></div><div><b>${past.length ? Math.round(done / past.length * 100) + ' %' : '–'}</b><small>Plan-Treue${past.length ? ` (${done}/${past.length})` : ''}</small></div></div></section>`;
+    h += `<section class="card pcard"><span class="eyebrow">Stand heute</span><div class="big3"><div><b>${vo2 == null ? '–' : Math.round(vo2)}</b><small>VO₂max</small></div><div><b>${last.tsb == null ? '–' : (last.tsb > 0 ? '+' : '') + Math.round(last.tsb)}</b><small>Form</small></div><div><b>${past.length ? Math.round(done / past.length * 100) + ' %' : '–'}</b><small>Plan-Treue${past.length ? ` (${done}/${past.length})` : ''}</small></div></div></section>`;
     h = h.replace('<section class="card pcard"><span class="eyebrow">Stand heute', '<div class="pgrid"><div class="pcol"><section class="card pcard" style="order:1"><span class="eyebrow">Stand heute');
     h += '<!--A-->';
     h += '</div><div class="pcol">';
-    h += `<section class="card pcard chart" style="order:2"><span class="eyebrow">Fitness und Ermüdung · 12 Wochen</span>${fitChart(F.slice(-84))}<div class="clegend"><span><i style="background:var(--bike)"></i>Fitness</span><span><i style="background:var(--faint)"></i>Ermüdung</span></div></section>`;
+    h += `<section class="card pcard chart" style="order:2"><span class="eyebrow">Trainingslast und Ermüdung · 12 Wochen</span>${fitChart(F.slice(-84))}<div class="clegend"><span><i style="background:var(--bike)"></i>Trainingslast</span><span><i style="background:var(--faint)"></i>Ermüdung</span></div></section>`;
     h += saisonCard(M);
     const stunden = `<section class="card pcard chart" style="order:4"><span class="eyebrow">Stunden pro Woche</span>${weekChart(M)}<div class="clegend"><span><i style="background:var(--fill)"></i>Geplant</span><span><i style="background:var(--fg)"></i>Absolviert</span></div></section>`;
     const from = M.plan.length ? M.plan.reduce((a, p) => p.date < a ? p.date : a, M.plan[0].date) : iso(addDays(new Date(), -28)), rec = M.trainings.filter(t => t.date >= from && t.date <= today());
@@ -1247,8 +1249,8 @@
     const lbl = [0, Math.floor((F.length - 1) / 2), F.length - 1].map((i, j) => `<text x="${x(i)}" y="${H - 6}" text-anchor="${j === 0 ? 'start' : j === 2 ? 'end' : 'middle'}" font-size="11" fill="var(--muted)">${fmtShort(parseISO(F[i].date))}</text>`).join('');
     const L = F[F.length - 1];
     const cw = (W - pl - pr) / (F.length - 1);
-    const hits = F.map((f, i) => `<rect class="hit" x="${(x(i) - cw / 2).toFixed(1)}" y="${pt}" width="${cw.toFixed(1)}" height="${H - pt - pb}" fill="transparent" data-gx="${x(i).toFixed(1)}" data-gy="${f.ctl == null ? '' : y(f.ctl).toFixed(1)}" data-tip="${esc(WDS[parseISO(f.date).getDay()] + ', ' + fmtShort(parseISO(f.date)) + '|Fitness ' + (f.ctl == null ? '–' : Math.round(f.ctl)) + ' · Ermüdung ' + (f.atl == null ? '–' : Math.round(f.atl)) + ' · Form ' + (f.ctl == null || f.atl == null ? '–' : (f.ctl - f.atl > 0 ? '+' : '') + Math.round(f.ctl - f.atl)))}"/>`).join('');
-    return `<svg viewBox="0 0 ${W} ${H}" role="img" tabindex="0" data-chart aria-label="Verlauf von Fitness und Ermüdung. Mit den Pfeiltasten durch die Tage gehen.">${g}<path d="${area}" fill="var(--bike-t)"/><path d="${line('atl')}" fill="none" stroke="var(--faint)" stroke-width="1.5" stroke-dasharray="4 3"/><path d="${line('ctl')}" fill="none" stroke="var(--bike)" stroke-width="2.5"/>${L.ctl != null ? `<circle cx="${x(F.length - 1)}" cy="${y(L.ctl)}" r="4" fill="var(--bike)"/>` : ''}${lbl}<line class="guide" x1="0" x2="0" y1="${pt}" y2="${H - pb}" stroke="var(--muted)" stroke-width="1" opacity="0"/><circle class="gdot" r="4.5" fill="var(--bike)" stroke="var(--card)" stroke-width="2" opacity="0"/>${hits}</svg>`;
+    const hits = F.map((f, i) => `<rect class="hit" x="${(x(i) - cw / 2).toFixed(1)}" y="${pt}" width="${cw.toFixed(1)}" height="${H - pt - pb}" fill="transparent" data-gx="${x(i).toFixed(1)}" data-gy="${f.ctl == null ? '' : y(f.ctl).toFixed(1)}" data-tip="${esc(WDS[parseISO(f.date).getDay()] + ', ' + fmtShort(parseISO(f.date)) + '|Trainingslast ' + (f.ctl == null ? '–' : Math.round(f.ctl)) + ' · Ermüdung ' + (f.atl == null ? '–' : Math.round(f.atl)) + ' · Form ' + (f.ctl == null || f.atl == null ? '–' : (f.ctl - f.atl > 0 ? '+' : '') + Math.round(f.ctl - f.atl)))}"/>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" tabindex="0" data-chart aria-label="Verlauf von Trainingslast und Ermüdung. Mit den Pfeiltasten durch die Tage gehen.">${g}<path d="${area}" fill="var(--bike-t)"/><path d="${line('atl')}" fill="none" stroke="var(--faint)" stroke-width="1.5" stroke-dasharray="4 3"/><path d="${line('ctl')}" fill="none" stroke="var(--bike)" stroke-width="2.5"/>${L.ctl != null ? `<circle cx="${x(F.length - 1)}" cy="${y(L.ctl)}" r="4" fill="var(--bike)"/>` : ''}${lbl}<line class="guide" x1="0" x2="0" y1="${pt}" y2="${H - pb}" stroke="var(--muted)" stroke-width="1" opacity="0"/><circle class="gdot" r="4.5" fill="var(--bike)" stroke="var(--card)" stroke-width="2" opacity="0"/>${hits}</svg>`;
   }
   function weekChart(M) {
     const start = addDays(monday(new Date()), -5 * 7), weeks = [];
