@@ -84,6 +84,31 @@
       cue: 'Vorderes Knie bleibt über dem Fuß, Oberkörper aufrecht.',
       A: P(STAND), B: P('56 18,56 25,56 48,70 56,70 72,78 72,44 70,32 69,27 72,57 37,56 50,55 37,54 50'),
       props: ['kh2'] },
+    /* ---------- Zuhause ohne Geräte (in den Mobility-Einheiten) ---------- */
+    { re: /^wadenheben einbeinig/i, m: ['wade','soleus'], t: 'bw', sides: 2,
+      how: 'Auf einem Bein stehen, Knie gestreckt, eine oder beide Hände leicht an der Wand. So hoch wie möglich auf den Vorfuß drücken, oben kurz halten und in 3 Sekunden langsam absenken. Das andere Bein hängt locker nach hinten.',
+      cue: 'Ganz hoch auf den Großzehenballen, langsam runter. Die letzten Wiederholungen dürfen brennen.',
+      A: P('62 13,62 20,62 46,62 59,61 70,70 72,59 56,54 63,56 65,79 30,95 30,78 32,95 33'),
+      B: P('62 7,62 14,62 40,62 53,62 64,70 72,59 50,54 57,56 59,79 26,95 27,78 28,95 30'),
+      props: ['wand'], hl: [['Kn', 'An']], dur: 3.4 },
+    { re: /^wadenheben mit gebeugtem/i, m: ['soleus','wade'], t: 'bw', sides: 2,
+      how: 'Wie beim einbeinigen Wadenheben, aber das Standknie bleibt die ganze Zeit etwa 30–45° gebeugt. So arbeitet vor allem der tiefe Wadenmuskel (Soleus), der beim Laufen die größte Last trägt.',
+      cue: 'Kniewinkel nicht verändern, nur die Ferse hebt und senkt sich.',
+      A: P('60 16,60 23,60 48,68 58,61 70,70 72,57 58,52 64,54 66,78 32,95 31,77 34,95 34'),
+      B: P('61 10,61 17,61 42,69 52,62 64,70 72,58 52,53 58,55 60,79 27,95 27,78 29,95 30'),
+      props: ['wand'], hl: [['Kn', 'An']], dur: 3.4 },
+    { re: /^glute bridge einbeinig/i, m: ['gesaess','hamstrings'], t: 'bw', sides: 2,
+      how: 'Auf dem Rücken liegen, ein Fuß aufgestellt, das andere Bein gestreckt in Verlängerung des Oberschenkels. Über die Ferse die Hüfte hochdrücken, bis Schulter, Hüfte und Knie eine Linie bilden, 2 Sekunden halten, langsam ablegen.',
+      cue: 'Becken bleibt waagerecht, nicht zur freien Seite abkippen.',
+      A: P('20 66,27 68,50 67,64 50,72 71,80 72,64 50,77 35,76 31,38 70,48 71,38 70,48 71'),
+      B: P('20 66,27 68,49 56,68 47,72 71,80 72,68 47,86 39,87 35,38 70,48 71,38 70,48 71'),
+      hl: [['P', 'Kn']], dur: 3.4 },
+    { re: /^copenhagen/i, m: ['adduktoren','bauch','gesaess'], t: 'time', sides: 2,
+      how: 'Seitlich auf einen Unterarm stützen, das obere Bein mit dem Knie auf die Sofakante legen, das untere Bein darunter. Hüfte anheben, bis der Körper von Kopf bis Knie eine Linie bildet, und halten. Die Innenseite des oberen Beins drückt ins Polster.',
+      cue: 'Hüfte hoch und nach vorn, nicht nach hinten wegknicken. Bei Schmerz in der Leiste kürzer halten.',
+      A: P('24 40,30 45,62 58,84 47,102 47,106 45,80 66,96 70,100 72,37 72,29 72,40 36,42 26'),
+      B: P('24 38,30 43,64 46,84 47,102 47,106 45,82 57,98 60,101 60,37 72,29 72,40 34,42 24'),
+      props: ['sofa'], hl: [['P', 'Kn']], dur: 4 },
     { re: /^wadenheben/i, m: ['wade','soleus'], t: 'w', inc: 2, start: 10,
       how: 'Auf einem Bein mit dem Vorfuß auf eine Stufe stellen, eine Hand an der Wand. Ferse langsam unter Stufenhöhe senken, dann so hoch wie möglich auf die Zehen drücken.',
       cue: 'Oben kurz halten, langsam absenken (3 Sekunden).',
@@ -290,6 +315,7 @@
     if (pr.includes('presssitz')) s.push('<path d="M33 57 31 18" stroke="var(--prop)" stroke-width="6" stroke-linecap="round"/><rect x="31" y="58" width="22" height="4" rx="2" fill="var(--prop)"/><path d="M42 62V72" stroke="var(--prop)" stroke-width="3"/>');
     if (pr.includes('hyper')) s.push('<path d="M47 61 58 51" stroke="var(--prop)" stroke-width="6" stroke-linecap="round"/><path d="M53 57V72M22 60 31 70M24 72H60" stroke="var(--prop)" stroke-width="3" stroke-linecap="round" fill="none"/>');
     if (pr.includes('liege')) s.push('<rect x="22" y="52" width="52" height="5" rx="2" fill="var(--prop)"/><path d="M30 57V72M66 57V72M30 61H38" stroke="var(--prop)" stroke-width="3" stroke-linecap="round"/>');
+    if (pr.includes('sofa')) s.push('<rect x="78" y="50" width="38" height="9" rx="3" fill="var(--prop)"/><path d="M82 59V72M112 59V72" stroke="var(--prop)" stroke-width="3"/>');
     if (pr.includes('tuer')) s.push('<rect x="34" y="4" width="5" height="69" rx="1.5" fill="var(--prop)"/>');
     return s.join('');
   }
