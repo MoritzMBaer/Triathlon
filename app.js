@@ -728,6 +728,8 @@
     });
     return h + '</div>';
   }
+  /* Kleiner Knopf am Ring: nur bei angefangenem, pausiertem Timer */
+  const timerResetBtn = (T, attr) => T && !T.running && T.left < T.sec ? `<button class="rs" ${attr} aria-label="Timer zurücksetzen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>` : '';
   function timerHTML(p, i, it) {
     const T = state.timer && state.timer.pid === p.id && state.timer.i === i ? state.timer : null;
     const part = T ? T.part : 0, left = T ? Math.max(0, Math.ceil(T.left)) : it.sec;
@@ -736,7 +738,7 @@
     return `<div class="timer${state.timerSeen[k] ? ' t-free' : ''}" id="timer" data-k="${k}"><svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label="Timer: noch ${left} Sekunden">
       <circle cx="42" cy="42" r="36" fill="none" stroke="var(--c-t)" stroke-width="7"/>
       <circle id="timer-arc" cx="42" cy="42" r="36" fill="none" stroke="var(--c)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(C * frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 42 42)"/>
-      <text id="timer-txt" x="42" y="48" text-anchor="middle" font-family="ui-rounded,-apple-system,system-ui,sans-serif" font-size="20" font-weight="700" fill="var(--fg)" style="font-variant-numeric:tabular-nums">${Math.floor(left / 60)}:${pad(left % 60)}</text></svg>
+      <text id="timer-txt" x="42" y="48" text-anchor="middle" font-family="ui-rounded,-apple-system,system-ui,sans-serif" font-size="20" font-weight="700" fill="var(--fg)" style="font-variant-numeric:tabular-nums">${Math.floor(left / 60)}:${pad(left % 60)}</text></svg>${timerResetBtn(T, `data-timer="${p.id}|${i}|reset"`)}
       <div class="tx"><small><b class="now">${esc(it.parts[part] || 'Halten')}</b><br>Teil ${part + 1} von ${it.parts.length}${it.parts[part + 1] ? ' · danach: ' + esc(it.parts[part + 1]) : ''}</small>
       <div class="bts"><button data-timer="${p.id}|${i}|toggle">${T && T.running ? 'Pause' : (T && T.left < it.sec ? 'Weiter' : 'Start')}</button><button class="go" data-timer="${p.id}|${i}|next">${part + 1 < it.parts.length ? 'Nächster Teil' : 'Fertig'}</button></div></div></div>`;
   }
@@ -780,7 +782,7 @@
     return `<div class="timer kt${state.timerSeen[k] ? ' t-free' : ''}" id="timer" data-k="${k}"><svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label="Timer: noch ${left} Sekunden">
       <circle cx="42" cy="42" r="36" fill="none" stroke="var(--c-t)" stroke-width="7"/>
       <circle id="timer-arc" cx="42" cy="42" r="36" fill="none" stroke="var(--c)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(C * frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 42 42)"/>
-      <text id="timer-txt" x="42" y="48" text-anchor="middle" font-family="ui-rounded,-apple-system,system-ui,sans-serif" font-size="20" font-weight="700" fill="var(--fg)" style="font-variant-numeric:tabular-nums">${Math.floor(left / 60)}:${pad(left % 60)}</text></svg>
+      <text id="timer-txt" x="42" y="48" text-anchor="middle" font-family="ui-rounded,-apple-system,system-ui,sans-serif" font-size="20" font-weight="700" fill="var(--fg)" style="font-variant-numeric:tabular-nums">${Math.floor(left / 60)}:${pad(left % 60)}</text></svg>${timerResetBtn(T, `data-ktimer="${p.id}|${i}|${j}|reset"`)}
       <div class="tx"><small><b class="now">${info}</b><br><span id="kt-rest" class="kt-rest">${rest}</span><span class="kt-after"${rest ? ' hidden' : ''}>${after}</span></small>
       <div class="bts"><button data-ktimer="${p.id}|${i}|${j}|toggle">${T && T.running ? 'Pause' : (started ? 'Weiter' : 'Start')}</button><button class="go" data-ktimer="${p.id}|${i}|${j}|next">${side && part === 0 ? 'Rechts' : 'Satz fertig'}</button></div></div></div>`;
   }
@@ -820,7 +822,7 @@
     if (kind(U.lib(ex.name), ex) === 'time' && d.ex[i].every(x => x.ok)) { const nx = d.ex.findIndex(x => x.some(y => !y.ok)); if (nx >= 0) { state.active[p.id] = nx; state.scrollEx = p.id; } }
   }
   let audio = null;
-  /* Signal am Ende von Timer und Pause: drei Töne (laut genug fürs Gym), Vibration wo möglich */
+  /* Signal am Ende von Timer und Pause: drei aufsteigende Glockentöne, Vibration wo möglich */
   function beep() {
     try {
       /* iPhone: kurzer Hinweiston, Musik wird nur kurz leiser statt gestoppt */
@@ -828,13 +830,15 @@
       audio = audio || new (window.AudioContext || window.webkitAudioContext)();
       if (audio.state === 'suspended') audio.resume();
       const t0 = audio.currentTime + 0.02;
-      [[0, 880], [0.28, 880], [0.56, 1175]].forEach(([dt, fq]) => {
-        const o = audio.createOscillator(), g = audio.createGain();
-        o.type = 'triangle'; o.frequency.value = fq; o.connect(g); g.connect(audio.destination);
-        g.gain.setValueAtTime(0.0001, t0 + dt);
-        g.gain.exponentialRampToValueAtTime(0.5, t0 + dt + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.22);
-        o.start(t0 + dt); o.stop(t0 + dt + 0.24);
+      [[0, 784], [0.16, 1047], [0.32, 1319]].forEach(([dt, fq]) => {
+        [[1, 0.42], [2, 0.14]].forEach(([mul, vol]) => { /* Grundton plus leiser Oberton klingt wie eine kleine Glocke */
+          const o = audio.createOscillator(), g = audio.createGain();
+          o.type = 'sine'; o.frequency.value = fq * mul; o.connect(g); g.connect(audio.destination);
+          g.gain.setValueAtTime(0.0001, t0 + dt);
+          g.gain.exponentialRampToValueAtTime(vol, t0 + dt + 0.012);
+          g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.75);
+          o.start(t0 + dt); o.stop(t0 + dt + 0.78);
+        });
       });
     } catch (e) { /* kein Ton möglich */ }
     try { if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 300]); } catch (e) { /* egal */ }
@@ -1771,7 +1775,8 @@
       if (what === 'toggle') {
         if (T.running) { T.running = false; }
         else { if (T.left <= 0) T.left = T.sec; T.endLeft = T.left; T.startedAt = Date.now(); T.running = true; state.rest = null; beepInit(); }
-      } else finishKraftSet(T, true);
+      } else if (what === 'reset') { T.running = false; T.left = T.endLeft = T.sec; }
+      else finishKraftSet(T, true);
       render(); tickRest(); return;
     }
     if ((el = q('[data-timer]'))) {
@@ -1781,7 +1786,8 @@
       if (!T || T.pid !== pid || T.i !== +i) T = state.timer = { pid, i: +i, part: 0, sec: it.sec, left: it.sec, running: false };
       if (what === 'toggle') {
         if (T.running) { T.running = false; } else { if (T.left <= 0) T.left = T.sec; T.endLeft = T.left; T.startedAt = Date.now(); T.running = true; beepInit(); }
-      } else {
+      } else if (what === 'reset') { T.running = false; T.left = T.endLeft = T.sec; }
+      else {
         if (advanceTimer(T)) return;
       }
       render(); return;
