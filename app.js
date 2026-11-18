@@ -107,11 +107,11 @@
     const i = rows.findIndex((r, k) => k > 0 && r[0] === n.uebung);
     if (i > 0) rows[i][1] = n.text; else rows.push([n.uebung, n.text, '']);
   }
-  async function saveNote(name, text) {
+  async function saveNote(name, text, msg) {
     const M = model(); if (!M || (M.notes[name] || '') === text) return;
     const n = { uebung: name, text };
     putNote(state.data, n); state.data._at = Date.now(); ls.set('tri:data', state.data);
-    try { await api('notiz', n); outbox = outbox.filter(o => o.key !== 'note:' + name); ls.set('tri:outbox', outbox); toast('Einstellung gemerkt'); }
+    try { await api('notiz', n); outbox = outbox.filter(o => o.key !== 'note:' + name); ls.set('tri:outbox', outbox); toast(msg || 'Einstellung gemerkt'); }
     catch (e) { if (refused(e)) toast('Notiz konnte nicht gespeichert werden'); else { enqueue('notiz', n, 'note:' + name); toast('Gemerkt – wird übertragen, sobald du online bist'); } }
     render();
   }
@@ -208,6 +208,7 @@
       if (p) { used.add(t.id); match[p.id] = t; }
     });
     const notes = {}; rows(d.geraete).forEach(r => { if (r[0]) notes[r[0]] = r[1] || ''; });
+    readSwaps(notes);
     const sh0 = (d.saison && d.saison[0]) || [], col = n => sh0.findIndex(h => String(h).trim().toLowerCase() === n);
     const sc = { swim: col('schwimmen'), bike: col('rad'), run: col('laufen'), kraft: col('kraft') };
     const saison = rows(d.saison).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(normDate(r[1])) && /^\d{4}-\d{2}-\d{2}$/.test(normDate(r[2])))
@@ -512,7 +513,19 @@
   const backBar = (p, txt) => `<div class="run-top"><button class="link" data-stop="${esc(p.id)}">${CHEV_L}Übersicht</button><small>${txt}</small></div>`;
 
   /* ---------- Kraft ---------- */
-  const exercises = p => p.workout.split('\n').map(s => s.trim()).filter(l => /^\d+\./.test(l)).map(parseExercise);
+  /* Umstellung auf eine schwerere Variante: im Blatt „Geräte“ als „Variante: <Übung>“ → „ab JJJJ-MM-TT: <Variante> 3×30 s“.
+     Gilt für alle noch offenen Einheiten ab diesem Tag; der Plan im Sheet bleibt unverändert. */
+  let SWAPS = {};
+  const swapKey = name => 'Variante: ' + name;
+  function readSwaps(notes) {
+    SWAPS = {};
+    Object.keys(notes).forEach(k => {
+      const m = k.startsWith('Variante: ') && /^ab (\d{4}-\d{2}-\d{2}):\s*(.+)$/.exec(notes[k] || '');
+      if (m) { const ex = parseExercise('1. ' + m[2]); if (ex.sets) SWAPS[k.slice(10)] = { ab: m[1], ex, text: m[2] }; }
+    });
+  }
+  const swapped = (p, ex) => { const w = SWAPS[ex.name]; return w && !p.done && p.date >= w.ab ? Object.assign({}, w.ex, { side: w.ex.side || ex.side }) : ex; };
+  const exercises = p => p.workout.split('\n').map(s => s.trim()).filter(l => /^\d+\./.test(l)).map(parseExercise).map(ex => swapped(p, ex));
   function parseExercise(line) {
     const s = line.replace(/^\d+\.\s*/, '');
     const m = s.match(/^(.+?)\s+(\d+)×(\d+)(\s*s)?(\s+je Seite)?\s*$/);
@@ -598,6 +611,17 @@
     if (hist.sets.length >= need && hist.sets.every(s => (s.reps || 0) >= tg.reps)) return { r: tg.reps, kg: roundKg(lastKg + lib.inc), why: `Letztes Mal alle Sätze geschafft, also ${String(lib.inc).replace('.', ',')} kg mehr.` };
     return { r: tg.reps, kg: lastKg, why: hist.sets.some(s => (s.reps || 0) < tg.reps - 2) ? 'Letztes Mal deutlich unter dem Ziel: Gewicht halten und sauber ausführen.' : 'Gewicht halten, bis alle Sätze sitzen.' };
   }
+  /* Knopf unter dem Obergrenzen-Hinweis: ab dem nächsten Training die schwerere Variante */
+  function upText(ex, lib) {
+    const up = lib.up, ul = U.lib(up.name), t = ul && ul.t === 'time';
+    return `${up.name} ${ex.sets || 3}×${up.reps}${t ? ' s' : ''}${ex.side ? ' je Seite' : ''}`;
+  }
+  function swapHTML(ex, lib) {
+    if (!lib || !lib.up) return '';
+    const w = SWAPS[ex.name];
+    if (w) return `<div class="swap"><span>${CHECK} Ab ${fmtDay(parseISO(w.ab))}: ${esc(w.text)}</span><button class="linkbtn" data-swap="${esc(ex.name)}|">Rückgängig</button></div>`;
+    return `<button class="btn swap-btn" data-swap="${esc(ex.name)}|${esc(upText(ex, lib))}">Nächstes Mal ${esc(lib.up.name)}</button>`;
+  }
   function draft(M, p) {
     if (state.drafts[p.id]) return state.drafts[p.id];
     let d = ls.get('tri:draft:' + p.id, null);
@@ -682,7 +706,7 @@
     /* Eigene Notiz je Übung, z. B. Sitz- und Polstereinstellung am Gerät: bleibt für jedes weitere Training stehen */
     h += `<label class="exnote" for="note-${esc(p.id)}-${act}"><span>Meine Einstellung</span><input type="text" id="note-${esc(p.id)}-${act}" data-note="${esc(ex.name)}" value="${esc(M.notes[ex.name] || '')}" placeholder="z. B. Sitz 4, Lehne 2" maxlength="120" autocomplete="off" enterkeyhint="done"></label>`;
     h += '</div><div class="ex-r">';
-    if (!done && sg.why) h += `<div class="sugg">${k === 'w' && sg.kg != null ? `<b>Heute ${fmtKg(sg.kg)}${lib && lib.per ? ' ' + lib.per : ''}.</b> ` : ''}${esc(sg.why)}</div>`;
+    if (!done && sg.why) h += `<div class="sugg">${k === 'w' && sg.kg != null ? `<b>Heute ${fmtKg(sg.kg)}${lib && lib.per ? ' ' + lib.per : ''}.</b> ` : ''}${esc(sg.why)}${sg.cap ? swapHTML(ex, lib) : ''}</div>`;
     if (!done && k === 'w' && firstOpen === 0) h += rampHTML(exs, act, lib, sets[0].kg);
     h += `<div class="sets" role="group" aria-label="Sätze ${esc(ex.name)}"><div class="set head"><span>SATZ</span><span>${k === 'time' ? 'SEKUNDEN' : 'WDH'}</span><span>${k === 'w' ? 'KG' : ''}</span><span></span></div>`;
     sets.forEach((s, j) => {
@@ -1815,6 +1839,11 @@
       if (t.length === items.length && !p.done) setDone(p, today());
       else if (t.length < items.length && p.done) setDone(p, '');
       else render();
+      return;
+    }
+    if ((el = q('[data-swap]'))) {
+      const i = el.dataset.swap.indexOf('|'), name = el.dataset.swap.slice(0, i), text = el.dataset.swap.slice(i + 1);
+      saveNote(swapKey(name), text ? 'ab ' + iso(addDays(new Date(), 1)) + ': ' + text : '', text ? 'Ab dem nächsten Mal: ' + text : 'Variante zurückgenommen');
       return;
     }
     if ((el = q('[data-warm]'))) {

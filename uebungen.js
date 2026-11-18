@@ -62,7 +62,7 @@
       A: P('38 21,38 29,40 54,55 54,56 70,64 72,54 55,55 70,63 72,41 45,50 36,40 46,49 37'),
       B: P('38 21,38 29,40 54,55 54,56 70,64 72,54 55,55 70,63 72,51 35,64 35,50 36,63 36'),
       props: ['presssitz', 'pressgriff'], hl: [['En', 'Wn']], dur: 3.2 },
-    { re: /^rückenstrecker/i, m: ['lws','gesaess','hamstrings'], t: 'bw', inc: 1, cap: 15, next: 'Rückenstrecker mit einer Hantelscheibe vor der Brust (5–10 kg), wieder ab 3×10',
+    { re: /^rückenstrecker/i, m: ['lws','gesaess','hamstrings'], t: 'bw', inc: 1, cap: 15, next: 'Rückenstrecker mit einer Hantelscheibe vor der Brust (5–10 kg), wieder ab 3×10', up: { name: 'Rückenstrecker mit Hantelscheibe', reps: 10 },
       how: 'Polster so einstellen, dass die Hüfte frei beweglich bleibt, Fersen unter die Rolle. Arme vor der Brust kreuzen. Mit geradem Rücken aus der Hüfte nach vorn absenken und wieder aufrichten, bis der Körper eine Linie bildet.',
       cue: 'Nur bis zur geraden Linie aufrichten, nicht ins Hohlkreuz, Rücken bleibt lang.',
       A: P('75 23,70 29,52 46,41 56,30 66,25 62,42 57,31 67,26 63,63 40,69 36,62 41,68 37'),
@@ -90,12 +90,12 @@
       A: P('62 12,62 19,62 40,62 51,60 64,70 62,58 50,54 57,56 59,79 26,95 27,63 30,64 41'),
       B: P('62 7,62 14,62 35,62 46,63 56,70 62,58 45,54 52,56 54,79 22,95 26,63 25,64 36'),
       props: ['stufe', 'wand', 'khf'], hl: [['Kn', 'An']] },
-    { re: /^unterarmstütz/i, m: ['bauch','schulter'], t: 'time', inc: 5, cap: 60, next: 'Body Saw (im Unterarmstütz langsam vor und zurück schieben) oder Unterarmstütz mit abwechselndem Beinheben, wieder ab 3×30 s',
+    { re: /^unterarmstütz/i, m: ['bauch','schulter'], t: 'time', inc: 5, cap: 60, next: 'Body Saw (im Unterarmstütz langsam vor und zurück schieben) oder Unterarmstütz mit abwechselndem Beinheben, wieder ab 3×30 s', up: { name: 'Body Saw', reps: 30 },
       how: 'Auf Unterarme und Zehenspitzen stützen, Ellbogen unter den Schultern. Der Körper bildet eine gerade Linie von Kopf bis Ferse.',
       cue: 'Bauch und Gesäß fest, die Hüfte hängt nicht durch.',
       A: P('20 50,27 53,66 59,85 62,102 66,104 72,85 62,101 66,103 72,34 72,19 72,36 72,21 72'),
       B: P('20 49,27 52,66 57,85 61,102 66,104 72,85 61,101 66,103 72,34 72,19 72,36 72,21 72'), dur: 4 },
-    { re: /^seitstütz/i, m: ['bauch','schulter','gesaess'], t: 'time', inc: 5, cap: 45, next: 'Seitstütz mit gehobenem oberen Bein, wieder ab 2×20 s je Seite',
+    { re: /^seitstütz/i, m: ['bauch','schulter','gesaess'], t: 'time', inc: 5, cap: 45, next: 'Seitstütz mit gehobenem oberen Bein, wieder ab 2×20 s je Seite', up: { name: 'Seitstütz mit gehobenem Bein', reps: 20 },
       how: 'Seitlich auf einen Unterarm stützen, Ellbogen unter der Schulter, Beine gestreckt übereinander. Hüfte anheben, bis der Körper eine Linie bildet.',
       cue: 'Hüfte hoch, nicht nach vorn kippen.',
       A: P('24 40,30 45,66 62,84 66,102 70,106 72,84 65,102 69,106 71,37 72,29 72,40 36,42 26'),
@@ -124,12 +124,12 @@
       A: P('38 32,46 36,80 37,82 48,96 48,98 46,88 54,92 72,99 72,56 46,56 58,52 37,54 48'),
       B: P('38 32,46 36,80 37,82 48,96 48,98 46,88 54,92 72,99 72,66 30,60 41,52 37,54 48'),
       props: ['bankr', 'kh1'] },
-    { re: /^liegestütz/i, m: ['brust','schulter','trizeps'], t: 'bw', inc: 1, cap: 15, next: 'Liegestütz mit den Füßen auf einer Bank, wieder ab 3×8',
+    { re: /^liegestütz/i, m: ['brust','schulter','trizeps'], t: 'bw', inc: 1, cap: 15, next: 'Liegestütz mit den Füßen auf einer Bank, wieder ab 3×8', up: { name: 'Liegestütz mit den Füßen auf einer Bank', reps: 8 },
       how: 'Hände etwas weiter als schulterbreit, Körper gerade. Brust kontrolliert bis knapp über den Boden senken und wieder hochdrücken. Zu schwer? Knie aufsetzen.',
       cue: 'Ellbogen etwa 45° vom Körper, Bauch fest.',
       A: P('20 44,27 48,66 57,85 61,102 66,104 72,85 61,101 66,103 72,33 61,33 72,35 61,35 72'),
       B: P('20 58,27 62,66 64,85 66,102 67,104 72,85 66,101 67,103 72,43 65,33 72,45 65,35 72') },
-    { re: /^dead bug/i, m: ['bauch','hueftbeuger'], t: 'bw', inc: 1, cap: 12, next: 'Dead Bug mit einer leichten Kurzhantel (2–4 kg) in den gestreckten Händen, wieder ab 3×8 je Seite',
+    { re: /^dead bug/i, m: ['bauch','hueftbeuger'], t: 'bw', inc: 1, cap: 12, next: 'Dead Bug mit einer leichten Kurzhantel (2–4 kg) in den gestreckten Händen, wieder ab 3×8 je Seite', up: { name: 'Dead Bug mit Kurzhantel', reps: 8 },
       how: 'Auf dem Rücken liegen, Arme senkrecht nach oben, Hüfte und Knie 90° gebeugt. Gegengleich einen Arm nach hinten und das andere Bein nach vorn strecken, zurück, Seite wechseln.',
       cue: 'Der untere Rücken bleibt die ganze Zeit am Boden.',
       A: P('22 64,29 66,68 66,68 48,84 48,87 46,66 48,82 48,85 46,36 52,36 40,34 52,34 40'),
@@ -247,7 +247,7 @@
   ];
   VARIANTEN.slice().reverse().forEach(([base, v]) => {
     const b = LIB.find(e => e.re.source === base.source);
-    if (b) LIB.unshift(Object.assign({}, b, { cap: undefined, next: undefined }, v));
+    if (b) LIB.unshift(Object.assign({}, b, { cap: undefined, next: undefined, up: undefined }, v));
   });
   function lib(name) { return LIB.find(e => e.re.test(name)) || null; }
 
