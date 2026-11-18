@@ -1230,6 +1230,7 @@
       return `<div class="sprow" style="${cv(k)}"><span class="ic">${ICON[k]}</span><span><b>${f}</b><small>${xs.length === 1 ? '1 Einheit' : xs.length + ' Einheiten'}</small></span><span class="spv"><b class="num">${f === 'Schwimmen' ? Math.round(km * 1000).toLocaleString('de-DE') + ' m' : Math.round(km).toLocaleString('de-DE') + ' km'}</b><small class="num">${xs.length ? fmtH(min) : '–'}</small></span></div>`;
     }).join('')}</section>`);
     h += '</div><div class="pcol pk">' + stunden + '</div></div>';
+    if (state.ver) h += `<p class="appver">Version ${state.ver}</p>`;
     return h;
   }
 
@@ -1908,6 +1909,16 @@
 
   /* ---------- Start ---------- */
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  /* Angezeigte Version: die neueste tatsächlich installierte App-Fassung */
+  const readVer = () => {
+    if (!window.caches) return;
+    caches.keys().then(ks => {
+      const v = Math.max(0, ...ks.map(k => +(/^tri-v(\d+)$/.exec(k) || [])[1] || 0));
+      if (v && v !== state.ver) { state.ver = v; render(); }
+    }).catch(() => {});
+  };
+  if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('controllerchange', readVer);
+  readVer();
   render();
   load(true);
   window.__tri = { state, model, render };
