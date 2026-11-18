@@ -1216,17 +1216,21 @@
     const F = M.fitness, last = F[F.length - 1] || {};
     /* Garmin meldet VO2max nur an manchen Tagen: darum der letzte bekannte Wert */
     const vo2 = F.reduce((v, f) => f.vo2 != null ? f.vo2 : v, null);
+    const from = M.plan.length ? M.plan.reduce((a, p) => p.date < a ? p.date : a, M.plan[0].date) : iso(addDays(new Date(), -28));
+    const fit0 = F.find(f => f.date >= from && f.ctl != null);
+    const fitD = fit0 && last.ctl != null ? Math.round(last.ctl) - Math.round(fit0.ctl) : null;
+    const fitTxt = fitD == null ? '' : ` · ${fitD > 0 ? '+' + fitD : fitD < 0 ? '−' + -fitD : '±0'} seit Beginn`;
     const past = M.plan.filter(p => p.date < today() && sp(p.sport).ring);
     const done = past.filter(p => statusOf(p, M) === 'done').length;
     let h = header('Fortschritt', 'Seit dem Planstart', null, 'Seit Planstart') + banner();
-    h += `<section class="card pcard"><span class="eyebrow">Stand heute</span><div class="big3"><div><b>${vo2 == null ? '–' : Math.round(vo2)}</b><small>VO₂max</small></div><div><b>${last.tsb == null ? '–' : (last.tsb > 0 ? '+' : '') + Math.round(last.tsb)}</b><small>Form</small></div><div><b>${past.length ? Math.round(done / past.length * 100) + ' %' : '–'}</b><small>Plan-Treue${past.length ? ` (${done}/${past.length})` : ''}</small></div></div></section>`;
+    h += `<section class="card pcard"><span class="eyebrow">Stand heute</span><div class="big3 two"><div><b>${vo2 == null ? '–' : Math.round(vo2)}</b><small>VO₂max</small></div><div><b>${last.ctl == null ? '–' : Math.round(last.ctl)}</b><small>Fitness${fitTxt}</small></div><div><b>${last.tsb == null ? '–' : (last.tsb > 0 ? '+' : '') + Math.round(last.tsb)}</b><small>Form</small></div><div><b>${past.length ? Math.round(done / past.length * 100) + ' %' : '–'}</b><small>Plan-Treue${past.length ? ` (${done}/${past.length})` : ''}</small></div></div></section>`;
     h = h.replace('<section class="card pcard"><span class="eyebrow">Stand heute', '<div class="pgrid"><div class="pcol"><section class="card pcard" style="order:1"><span class="eyebrow">Stand heute');
     h += '<!--A-->';
     h += '</div><div class="pcol">';
     h += `<section class="card pcard chart" style="order:2"><span class="eyebrow">Trainingslast und Ermüdung · 12 Wochen</span>${fitChart(F.slice(-84))}<div class="clegend"><span><i style="background:var(--bike)"></i>Trainingslast</span><span><i style="background:var(--faint)"></i>Ermüdung</span></div></section>`;
     h += saisonCard(M);
     const stunden = `<section class="card pcard chart" style="order:4"><span class="eyebrow">Stunden pro Woche</span>${weekChart(M)}<div class="clegend"><span><i style="background:var(--fill)"></i>Geplant</span><span><i style="background:var(--fg)"></i>Absolviert</span></div></section>`;
-    const from = M.plan.length ? M.plan.reduce((a, p) => p.date < a ? p.date : a, M.plan[0].date) : iso(addDays(new Date(), -28)), rec = M.trainings.filter(t => t.date >= from && t.date <= today());
+    const rec = M.trainings.filter(t => t.date >= from && t.date <= today());
     h = h.replace('<!--A-->', `<section class="card pcard" style="order:5"><span class="eyebrow">Seit Planstart · ${fmtShort(parseISO(from))}</span>${[['Schwimmen', 'swim'], ['Rad', 'bike'], ['Laufen', 'run']].map(([f, k]) => {
       const xs = rec.filter(t => sp(t.sport).fam === f), km = xs.reduce((a, t) => a + (t.km || 0), 0), min = xs.reduce((a, t) => a + (t.dur || 0), 0);
       return `<div class="sprow" style="${cv(k)}"><span class="ic">${ICON[k]}</span><span><b>${f}</b><small>${xs.length === 1 ? '1 Einheit' : xs.length + ' Einheiten'}</small></span><span class="spv"><b class="num">${f === 'Schwimmen' ? Math.round(km * 1000).toLocaleString('de-DE') + ' m' : Math.round(km).toLocaleString('de-DE') + ' km'}</b><small class="num">${xs.length ? fmtH(min) : '–'}</small></span></div>`;
@@ -1250,7 +1254,7 @@
     const L = F[F.length - 1];
     const cw = (W - pl - pr) / (F.length - 1);
     const hits = F.map((f, i) => `<rect class="hit" x="${(x(i) - cw / 2).toFixed(1)}" y="${pt}" width="${cw.toFixed(1)}" height="${H - pt - pb}" fill="transparent" data-gx="${x(i).toFixed(1)}" data-gy="${f.ctl == null ? '' : y(f.ctl).toFixed(1)}" data-tip="${esc(WDS[parseISO(f.date).getDay()] + ', ' + fmtShort(parseISO(f.date)) + '|Trainingslast ' + (f.ctl == null ? '–' : Math.round(f.ctl)) + ' · Ermüdung ' + (f.atl == null ? '–' : Math.round(f.atl)) + ' · Form ' + (f.ctl == null || f.atl == null ? '–' : (f.ctl - f.atl > 0 ? '+' : '') + Math.round(f.ctl - f.atl)))}"/>`).join('');
-    return `<svg viewBox="0 0 ${W} ${H}" role="img" tabindex="0" data-chart aria-label="Verlauf von Trainingslast und Ermüdung. Mit den Pfeiltasten durch die Tage gehen.">${g}<path d="${area}" fill="var(--bike-t)"/><path d="${line('atl')}" fill="none" stroke="var(--faint)" stroke-width="1.5" stroke-dasharray="4 3"/><path d="${line('ctl')}" fill="none" stroke="var(--bike)" stroke-width="2.5"/>${L.ctl != null ? `<circle cx="${x(F.length - 1)}" cy="${y(L.ctl)}" r="4" fill="var(--bike)"/>` : ''}${lbl}<line class="guide" x1="0" x2="0" y1="${pt}" y2="${H - pb}" stroke="var(--muted)" stroke-width="1" opacity="0"/><circle class="gdot" r="4.5" fill="var(--bike)" stroke="var(--card)" stroke-width="2" opacity="0"/>${hits}</svg>`;
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" tabindex="0" data-chart data-scrub aria-label="Verlauf von Trainingslast und Ermüdung. Mit den Pfeiltasten durch die Tage gehen.">${g}<path d="${area}" fill="var(--bike-t)"/><path d="${line('atl')}" fill="none" stroke="var(--faint)" stroke-width="1.5" stroke-dasharray="4 3"/><path d="${line('ctl')}" fill="none" stroke="var(--bike)" stroke-width="2.5"/>${L.ctl != null ? `<circle cx="${x(F.length - 1)}" cy="${y(L.ctl)}" r="4" fill="var(--bike)"/>` : ''}${lbl}<line class="guide" x1="0" x2="0" y1="${pt}" y2="${H - pb}" stroke="var(--muted)" stroke-width="1" opacity="0"/><circle class="gdot" r="4.5" fill="var(--bike)" stroke="var(--card)" stroke-width="2" opacity="0"/>${hits}</svg>`;
   }
   function weekChart(M) {
     const start = addDays(monday(new Date()), -5 * 7), weeks = [];
@@ -1517,7 +1521,7 @@
   (function swipeTabs() {
     const app = $('#app');
     let x0 = 0, y0 = 0, t0 = 0, dx = 0, mode = null;
-    const blocked = t => t.closest('input,textarea,select,.cbt,[data-step],.sets,.timer,.nosw') || !$('#sheet').hidden;
+    const blocked = t => t.closest('input,textarea,select,.cbt,[data-step],.sets,.timer,.nosw,svg[data-scrub]') || !$('#sheet').hidden;
     app.addEventListener('touchstart', e => {
       mode = null;
       if (e.touches.length !== 1 || blocked(e.target) || !TABS.includes(current()) || !(state.cfg && state.cfg.key)) { mode = 'off'; return; }
@@ -1647,10 +1651,14 @@
     const M = model();
     const q = sel => e.target.closest(sel);
     let el;
-    /* Diagramme: Tipp zeigt den Wert genau dieser Säule, Tipp daneben schließt ihn */
+    /* Diagramme: Tipp zeigt den Wert genau dieser Säule, zweiter Tipp oder Tipp daneben schließt ihn */
     const hit = q('svg[data-chart] .hit'), chart = hit && hit.closest('svg');
     document.querySelectorAll('svg[data-chart]').forEach(s => { if (s !== chart) chartTip(s, null); });
-    if (hit) { chartTip(chart, hit); return; }
+    if (hit) {
+      if (Date.now() - scrubEnd < 350) return;
+      chartTip(chart, chartPointer !== 'mouse' && hit.classList.contains('on') ? null : hit);
+      return;
+    }
     /* Kurz-Check ändern: Tipp außerhalb oder auf „Fertig“ schließt ohne Änderung */
     if (state.checkEdit && (q('[data-checkdone]') || !q('.check'))) {
       state.checkEdit = false; state.checkDraft = null; render();
@@ -1865,7 +1873,8 @@
     hit.classList.add('on');
     if (!tip) { tip = document.createElement('div'); tip.className = 'ctip'; tip.setAttribute('role', 'status'); box.appendChild(tip); }
     const [a, b] = hit.dataset.tip.split('|');
-    tip.innerHTML = '<b></b><span></span>'; tip.querySelector('b').textContent = a; tip.querySelector('span').textContent = b;
+    if (!tip.firstChild) tip.innerHTML = '<b></b><span></span>';
+    tip.firstChild.textContent = a; tip.lastChild.textContent = b;
     tip.hidden = false;
     const gx = +hit.dataset.gx;
     if (guide) { guide.setAttribute('x1', gx); guide.setAttribute('x2', gx); guide.setAttribute('opacity', .5); }
@@ -1873,9 +1882,45 @@
     const sr = svg.getBoundingClientRect(), br = box.getBoundingClientRect(), vb = svg.viewBox.baseVal;
     const px = sr.left - br.left + gx * sr.width / vb.width;
     const w = tip.offsetWidth;
-    tip.style.left = Math.max(8, Math.min(br.width - w - 8, px - w / 2)) + 'px';
-    tip.style.top = (sr.top - br.top - tip.offsetHeight - 6 + 10) + 'px';
+    const tx = Math.round(Math.max(8, Math.min(br.width - w - 8, px - w / 2))), ty = Math.round(sr.top - br.top - tip.offsetHeight + 4);
+    tip.style.transform = `translate3d(${tx}px,${ty}px,0)`;
   }
+  let chartPointer = '', scrubEnd = 0;
+  document.addEventListener('pointerdown', e => { chartPointer = e.pointerType; }, true);
+  /* Fitness-Diagramm: mit dem Finger waagerecht durch die Tage fahren, senkrecht scrollt weiter die Seite */
+  (function chartScrub() {
+    const app = $('#app');
+    let svg = null, hits = [], x0 = 0, y0 = 0, mode = null, box = null, shown = -1, want = -1, raf = 0;
+    const paint = () => { raf = 0; if (svg && svg.isConnected && want !== shown && hits[want]) { shown = want; chartTip(svg, hits[want]); } };
+    const moveTo = cx => {
+      const vb = svg.viewBox.baseVal, k = Math.min(box.width / vb.width, box.height / vb.height);
+      const vx = (cx - box.left - (box.width - vb.width * k) / 2) / k, a = +hits[0].dataset.gx, b = +hits[hits.length - 1].dataset.gx;
+      want = Math.max(0, Math.min(hits.length - 1, Math.round((vx - a) / (b - a) * (hits.length - 1))));
+      if (!raf) raf = requestAnimationFrame(paint);
+    };
+    app.addEventListener('touchstart', e => {
+      svg = e.touches.length === 1 && e.target.closest ? e.target.closest('svg[data-scrub]') : null;
+      mode = null; if (!svg) return;
+      hits = [...svg.querySelectorAll('.hit')]; box = svg.getBoundingClientRect();
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; shown = want = -1;
+      if (hits.length < 2) svg = null;
+    }, { passive: true });
+    app.addEventListener('touchmove', e => {
+      if (!svg || mode === 'off') return;
+      const t = e.touches[0], mx = Math.abs(t.clientX - x0), my = Math.abs(t.clientY - y0);
+      if (!mode) {
+        if (mx < 5 && my < 5) return;
+        mode = mx > my ? 'x' : 'off';
+        if (mode === 'off') return;
+        document.querySelectorAll('svg[data-chart]').forEach(s => { if (s !== svg) chartTip(s, null); });
+      }
+      if (e.cancelable) e.preventDefault();
+      moveTo(t.clientX);
+    }, { passive: false });
+    const end = () => { if (mode === 'x') { if (raf) { cancelAnimationFrame(raf); paint(); } scrubEnd = Date.now(); } svg = null; mode = null; };
+    app.addEventListener('touchend', end);
+    app.addEventListener('touchcancel', end);
+  })();
   document.addEventListener('pointermove', e => {
     if (e.pointerType === 'touch') return;
     const svg = e.target.closest && e.target.closest('svg[data-chart]');

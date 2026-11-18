@@ -329,6 +329,7 @@ button.dsd:active{background:var(--fill)}
 .pcard{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
 .pcard .eyebrow{font-size:12px;font-weight:600;color:var(--muted)}
 .big3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.big3.two{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:12px}
 .big3 div{display:flex;flex-direction:column}
 .big3 b{font-family:var(--round);font-size:30px;font-weight:800;line-height:1.05}
 .big3 small{font-size:12px;color:var(--muted)}
@@ -782,9 +783,10 @@ kbd{font-family:var(--round);font-size:11px;font-weight:700;line-height:1;min-wi
 .side-nav kbd,.side-keys,.side-count{display:none}
 .chart{position:relative}
 .chart svg[data-chart]{cursor:crosshair;border-radius:12px}
+.chart svg[data-scrub]{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .chart .hit{fill:transparent}
 .chart .hit.bar.on{fill:var(--fg);fill-opacity:.06}
-.ctip{position:absolute;z-index:5;pointer-events:none;display:flex;flex-direction:column;gap:1px;background:var(--ink);color:var(--on-ink);border-radius:10px;padding:7px 10px;font-size:12px;white-space:nowrap;box-shadow:var(--shadow)}
+.ctip{position:absolute;left:0;top:0;will-change:transform;z-index:5;pointer-events:none;display:flex;flex-direction:column;gap:1px;background:var(--ink);color:var(--on-ink);border-radius:10px;padding:7px 10px;font-size:12px;white-space:nowrap;box-shadow:var(--shadow)}
 .ctip b{font-size:12px}
 .ctip span{font-family:var(--round);font-variant-numeric:tabular-nums;opacity:.85}
 .ex-body{display:flex;flex-direction:column;gap:12px}
