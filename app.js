@@ -2086,12 +2086,5 @@
   readVer();
   render();
   load(true);
-  /* iOS-Homescreen-App: Direkt nach dem Start zeichnet iOS die Kante unter der Statusleiste weich, bis einmal gescrollt wurde.
-     Ein unsichtbarer Mini-Scroll nach dem ersten Zeichnen löst das aus, wie wenn man selbst kurz scrollt. */
-  if (navigator.standalone && !window.scrollY) setTimeout(() => {
-    if (window.scrollY) return;
-    window.scrollTo(0, 1);
-    requestAnimationFrame(() => requestAnimationFrame(() => { if (window.scrollY <= 1) window.scrollTo(0, 0); }));
-  }, 400);
   window.__tri = { state, model, render };
 })();
