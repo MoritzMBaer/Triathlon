@@ -226,6 +226,29 @@
       dur: 3.4 }
   ];
 
+  /* Schwerere Varianten (nächste Stufe nach der Obergrenze): Skizze und Muskeln vom Grundmuster, eigene Erklärung und Steigerung.
+     Sie stehen vor dem Grundmuster, weil der erste Treffer zählt. */
+  const VARIANTEN = [
+    [/^unterarmstütz/i, { re: /^body saw|^unterarmstütz mit/i, t: 'time', inc: 5, cap: 60, next: 'mit Zusatzgewicht, z. B. Gewichtsweste oder Hantelscheibe auf dem Rücken',
+      how: 'Body Saw: Im Unterarmstütz den ganzen Körper langsam ein paar Zentimeter nach vorn und zurück schieben, Füße auf Socken oder Gleitpads. Alternativ: im Unterarmstütz abwechselnd ein gestrecktes Bein eine Handbreit anheben und 2 s halten.',
+      cue: 'Je weiter die Ellbogen vor den Schultern, desto schwerer. Die Hüfte bleibt in Linie und kippt nicht.' }],
+    [/^seitstütz/i, { re: /^seitstütz mit/i, t: 'time', inc: 5, cap: 45, next: 'Copenhagen-Seitstütz: das obere Bein liegt auf einer Bank, das untere hängt frei. Stärkt zusätzlich die Adduktoren',
+      how: 'Seitstütz wie gewohnt. Wenn die Hüfte oben ist, das obere Bein gestreckt eine Handbreit anheben und dort halten.',
+      cue: 'Hüfte hoch und nach vorn gestreckt, das gehobene Bein bleibt in Linie mit dem Körper.' }],
+    [/^liegestütz/i, { re: /^liegestütz mit (den )?füßen|^liegestütz.*erhöht/i, t: 'bw', inc: 1, cap: 15, next: 'Liegestütz mit Gewichtsweste oder einer Hantelscheibe auf dem Rücken',
+      how: 'Füße auf eine Bank oder Stufe, Hände etwas weiter als schulterbreit am Boden. Brust kontrolliert bis knapp über den Boden senken und wieder hochdrücken.',
+      cue: 'Körper bleibt gerade, die Hüfte hängt nicht durch. Ellbogen etwa 45° vom Körper.' }],
+    [/^dead bug/i, { re: /^dead bug mit/i, t: 'w', inc: 1, start: 3, noHeavy: true, per: 'in den Händen',
+      how: 'Wie der normale Dead Bug, die Arme halten dabei eine leichte Kurzhantel senkrecht über der Brust. Gegengleich Arm mit Hantel nach hinten und das andere Bein nach vorn strecken, zurück, Seite wechseln.',
+      cue: 'Der untere Rücken bleibt die ganze Zeit am Boden. Lieber leichter und langsam.' }],
+    [/^rückenstrecker/i, { re: /^rückenstrecker mit/i, t: 'w', inc: 2.5, start: 5, noHeavy: true, per: 'vor der Brust',
+      how: 'Wie der normale Rückenstrecker, dabei eine Hantelscheibe mit beiden Armen vor der Brust halten. Mit geradem Rücken aus der Hüfte absenken und wieder aufrichten, bis der Körper eine Linie bildet.',
+      cue: 'Nur bis zur geraden Linie aufrichten, nicht ins Hohlkreuz.' }]
+  ];
+  VARIANTEN.slice().reverse().forEach(([base, v]) => {
+    const b = LIB.find(e => e.re.source === base.source);
+    if (b) LIB.unshift(Object.assign({}, b, { cap: undefined, next: undefined }, v));
+  });
   function lib(name) { return LIB.find(e => e.re.test(name)) || null; }
 
   /* ---------- Zeichnen ---------- */
