@@ -1022,8 +1022,8 @@
     const at = state.data && state.data._at ? new Date(state.data._at) : null;
     return 'Keine Verbindung' + (at ? ` · Stand ${at.toLocaleString('de-DE', { weekday: 'short', hour: '2-digit', minute: '2-digit' })} Uhr` : '');
   }
-  function header(title, date, shift) {
-    return `<header class="head"><div class="date-row"><div class="date">${esc(date)}</div>${shiftPill(shift)}</div><h1>${esc(title)}</h1><div class="side">${offline() ? `<button class="iconbtn net" data-netinfo aria-label="Keine Verbindung, Datenstand anzeigen" title="Keine Verbindung"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.5h.01"/><path d="M8.8 15.9a4.6 4.6 0 0 1 5.2-.8"/><path d="M5.3 12.4a9.6 9.6 0 0 1 4-2.4"/><path d="M14 9.8a9.6 9.6 0 0 1 4.7 2.6"/><path d="M2 8.8a14.6 14.6 0 0 1 3.9-2.7"/><path d="M10.3 4.6A14.6 14.6 0 0 1 22 8.8"/><path d="M3 3l18 18"/></svg></button>` : ''}<button class="iconbtn${state.loading ? ' spin' : ''}" data-reload aria-label="Aktualisieren" title="Aktualisieren (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div></header>`;
+  function header(title, date, shift, short) {
+    return `<header class="head"><div class="date-row"><div class="date"><span class="d-long">${esc(date)}</span><span class="d-short">${esc(short || date)}</span></div>${shiftPill(shift)}</div><h1>${esc(title)}</h1><div class="side">${offline() ? `<button class="iconbtn net" data-netinfo aria-label="Keine Verbindung, Datenstand anzeigen" title="Keine Verbindung"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.5h.01"/><path d="M8.8 15.9a4.6 4.6 0 0 1 5.2-.8"/><path d="M5.3 12.4a9.6 9.6 0 0 1 4-2.4"/><path d="M14 9.8a9.6 9.6 0 0 1 4.7 2.6"/><path d="M2 8.8a14.6 14.6 0 0 1 3.9-2.7"/><path d="M10.3 4.6A14.6 14.6 0 0 1 22 8.8"/><path d="M3 3l18 18"/></svg></button>` : ''}<button class="iconbtn${state.loading ? ' spin' : ''}" data-reload aria-label="Aktualisieren" title="Aktualisieren (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div></header>`;
   }
   function banner() {
     if (!state.err || offline()) return '';
@@ -1084,7 +1084,7 @@
     else {
       right += weekCard(M, monday(now), true, true, true);
     }
-    return header('Heute', WDL[now.getDay()] + ', ' + fmtDay(now), M.shifts[tk]) + banner() + `<div class="grid2"><div class="col">${left}</div><div class="col">${right}</div></div>`;
+    return header('Heute', WDL[now.getDay()] + ', ' + fmtDay(now), M.shifts[tk], WDS[now.getDay()] + ', ' + now.getDate() + '. ' + MON[now.getMonth()].slice(0, 3)) + banner() + `<div class="grid2"><div class="col">${left}</div><div class="col">${right}</div></div>`;
   }
   /* Erledigte Einheit: Werte statt Plan, mit Haken */
   function doneRow(M, p, cls) {
@@ -1216,7 +1216,7 @@
     const F = M.fitness, last = F[F.length - 1] || {};
     const past = M.plan.filter(p => p.date < today() && sp(p.sport).ring);
     const done = past.filter(p => statusOf(p, M) === 'done').length;
-    let h = header('Fortschritt', 'Seit dem Planstart') + banner();
+    let h = header('Fortschritt', 'Seit dem Planstart', null, 'Seit Planstart') + banner();
     h += `<section class="card pcard"><span class="eyebrow">Stand heute</span><div class="big3"><div><b>${last.ctl == null ? '–' : Math.round(last.ctl)}</b><small>Fitness</small></div><div><b>${last.tsb == null ? '–' : (last.tsb > 0 ? '+' : '') + Math.round(last.tsb)}</b><small>Form</small></div><div><b>${past.length ? Math.round(done / past.length * 100) + ' %' : '–'}</b><small>Plan-Treue${past.length ? ` (${done}/${past.length})` : ''}</small></div></div></section>`;
     h = h.replace('<section class="card pcard"><span class="eyebrow">Stand heute', '<div class="pgrid"><div class="pcol"><section class="card pcard" style="order:1"><span class="eyebrow">Stand heute');
     h += '<!--A-->';
@@ -1334,7 +1334,7 @@
     const M = model();
     syncWake(M);
     if (v === 'einrichtung') html = viewSetup();
-    else if (!M) html = header('Heute', 'Lade deine Daten …') + banner() + '<div class="skel"></div>';
+    else if (!M) html = header('Heute', 'Lade deine Daten …', null, 'Lädt …') + banner() + '<div class="skel"></div>';
     else html = v === 'woche' ? viewWoche(M) : v === 'fortschritt' ? viewFortschritt(M) : viewHeute(M);
     if (v !== lastView) {
       app.innerHTML = html; lastRender = html;
