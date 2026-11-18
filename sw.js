@@ -1,6 +1,6 @@
 /* Offline-Fähigkeit: App-Dateien aus dem Netz, nach 3 s ohne Antwort oder ohne Netz aus dem Zwischenspeicher.
    Eine verspätete Antwort aus dem Netz landet trotzdem im Zwischenspeicher. Daten laufen nie über den Cache. */
-const CACHE = 'tri-v138';
+const CACHE = 'tri-v139';
 const FILES = ['./', './index.html', './app.js', './uebungen.js', './morphdom.min.js', './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png'];
 const WAIT = 3000;
 
