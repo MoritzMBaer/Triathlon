@@ -1320,7 +1320,7 @@
     if (state.ver) {
       /* Seite und Service Worker getrennt: weichen sie ab, läuft noch eine ältere Seite aus dem Zwischenspeicher */
       const pm = document.querySelector('meta[name="app-version"]'), pv = pm ? +(/(\d+)$/.exec(pm.content) || [])[1] : 0;
-      h += `<p class="appver">Version ${state.ver}${pv && pv !== state.ver ? ` · Seite ${pv}` : ''}</p>`;
+      h += `<p class="appver">Version ${state.ver}${pv !== state.ver ? ` · Seite ${pv || 'alt'}` : ''}</p>`;
     }
     return h;
   }
