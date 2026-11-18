@@ -1014,11 +1014,17 @@
   function shiftPill(shift) {
     return shift ? `<span class="shift" title="${esc(shift)}">${esc(shift.replace(/ Uhr/g, ''))}</span>` : '';
   }
+  /* Ohne Netz, aber mit gespeicherten Daten: nur das kleine Symbol im Kopf statt eines Hinweiskastens */
+  const offline = () => !!(state.err && state.data && !/Kein Zugriff/.test(state.err));
+  function netInfo() {
+    const at = state.data && state.data._at ? new Date(state.data._at) : null;
+    return 'Keine Verbindung' + (at ? ` · Stand ${at.toLocaleString('de-DE', { weekday: 'short', hour: '2-digit', minute: '2-digit' })} Uhr` : '');
+  }
   function header(title, date, shift) {
-    return `<header class="head"><div class="date-row"><div class="date">${esc(date)}</div>${shiftPill(shift)}</div><h1>${esc(title)}</h1><div class="side"><button class="iconbtn${state.loading ? ' spin' : ''}" data-reload aria-label="Aktualisieren" title="Aktualisieren (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div></header>`;
+    return `<header class="head"><div class="date-row"><div class="date">${esc(date)}</div>${shiftPill(shift)}</div><h1>${esc(title)}</h1><div class="side">${offline() ? `<button class="iconbtn net" data-netinfo aria-label="Keine Verbindung, Datenstand anzeigen" title="Keine Verbindung"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.5h.01"/><path d="M8.8 15.9a4.6 4.6 0 0 1 5.2-.8"/><path d="M5.3 12.4a9.6 9.6 0 0 1 4-2.4"/><path d="M14 9.8a9.6 9.6 0 0 1 4.7 2.6"/><path d="M2 8.8a14.6 14.6 0 0 1 3.9-2.7"/><path d="M10.3 4.6A14.6 14.6 0 0 1 22 8.8"/><path d="M3 3l18 18"/></svg></button>` : ''}<button class="iconbtn${state.loading ? ' spin' : ''}" data-reload aria-label="Aktualisieren" title="Aktualisieren (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div></header>`;
   }
   function banner() {
-    if (!state.err) return '';
+    if (!state.err || offline()) return '';
     const noKey = /Kein Zugriff/.test(state.err);
     const at = state.data && state.data._at ? new Date(state.data._at) : null;
     return `<div class="banner err"><b>${noKey ? 'Kein Zugriff auf deine Daten' : 'Gerade keine Verbindung'}</b><span>${noKey ? 'Der App-Schlüssel passt nicht. Prüfe ihn in der Einrichtung.' : at ? `Du siehst den Stand von ${at.toLocaleString('de-DE', { weekday: 'short', hour: '2-digit', minute: '2-digit' })} Uhr. ` + 'Sobald du wieder online bist, aktualisiert sich die App.' : 'Prüfe die Internetverbindung und versuche es noch einmal.'}</span>${noKey ? '<a class="link" href="#einrichtung">Zur Einrichtung</a>' : ''}</div>`;
@@ -1183,26 +1189,24 @@
     const ci = Math.max(0, ph.findIndex(p => tk >= p.von && tk <= p.bis) >= 0 ? ph.findIndex(p => tk >= p.von && tk <= p.bis) : (tk < ph[0].von ? 0 : ph.length - 1));
     const si = state.phase != null && ph[state.phase] ? state.phase : ci, sel = ph[si];
     const wk = Math.max(1, Math.floor((parseISO(tk) - start) / 864e5 / 7) + 1), wks = Math.round(total / 7);
-    const short = n => n.replace(/^Grundlage/, 'Grundl.').replace(/^Spitze und Taper$/, 'Taper');
+    const short = n => n.replace(/^Grundlage/, 'Grund').replace(/^Spitze und Taper$/, 'Taper');
     const segs = ph.map((p, i) => {
       const len = days(p), cur = i === ci, past = p.bis < tk;
       const fill = cur ? Math.min(100, Math.max(4, ((parseISO(tk) - parseISO(p.von)) / 864e5 + 1) / len * 100)) : past ? 100 : 0;
-      return `<button class="phs${i === si ? ' on' : ''}${cur ? ' cur' : ''}" style="flex:${len} 1 0" data-phase="${i}" aria-pressed="${i === si}" aria-label="${esc(p.name)}, ${fmtShort(parseISO(p.von))} bis ${fmtShort(parseISO(p.bis))}${cur ? ', aktuell' : ''}">
+      return `<button class="phs${i === si ? ' on' : ''}${cur ? ' cur' : ''}" style="flex:1 1 0" data-phase="${i}" aria-pressed="${i === si}" aria-label="${esc(p.name)}, ${fmtShort(parseISO(p.von))} bis ${fmtShort(parseISO(p.bis))}${cur ? ', aktuell' : ''}">
         <span class="phs-bar">${fill ? `<i style="width:max(8px,${fill.toFixed(0)}%)"></i>` : ''}</span><span class="phs-n">${esc(short(p.name))}</span></button>`;
     }).join('');
     const SPN = { swim: 'Schwimmen', bike: 'Rad', run: 'Laufen', kraft: 'Kraft' };
-    const tiles = ['swim', 'bike', 'run', 'kraft'].filter(k => sel.sp[k]).map(k => {
-      const [um, ...zi] = sel.sp[k].split(' · ');
-      return `<div class="ph-sp" style="${cv(k)}"><div class="ph-sp-h"><span class="ic">${ICON[k]}</span><b>${SPN[k]}</b></div><span class="um">${esc(um).replace(/ (m|min|h)\b/g, '\u00a0$1')}</span>${zi.length ? `<small>${esc(zi.join(' · '))}</small>` : ''}</div>`;
+    const rowsSp = ['swim', 'bike', 'run', 'kraft'].filter(k => sel.sp[k]).map(k => {
+      const um = sel.sp[k].split(' · ')[0].replace(/\s*pro Woche,\s*(?:je |zusammen )?/, ' · ');
+      return `<div class="ph-sp" style="${cv(k)}"><span class="ph-sp-n"><i aria-hidden="true"></i>${SPN[k]}</span><span class="um">${esc(um).replace(/ (m|min|h)\b/g, '\u00a0$1')}</span></div>`;
     }).join('');
-    const wSel = Math.round(days(sel) / 7);
     return `<section class="card pcard saison" style="order:3"><div class="ph-top"><span class="eyebrow">Saison</span><span class="ph-wk">Woche ${Math.min(wk, wks)} von ${wks}</span></div>
       <div class="phs-row" role="group" aria-label="Phasen bis zum Rennen">${segs}</div>
       <div class="ph-d">
         <div class="ph-h"><b>${esc(sel.name)}</b>${si === ci ? '<span class="ph-now">Jetzt</span>' : ''}</div>
-        <small class="ph-meta">${fmtShort(parseISO(sel.von))} – ${fmtShort(parseISO(sel.bis))} · ${wSel} Wochen · ${esc(sel.std)}</small>
-        <p class="ph-x">${esc(sel.fokus)}</p>
-        ${tiles ? `<div class="ph-sps">${tiles}</div>` : ''}
+        <small class="ph-meta">${si === ci ? 'Bis ' + fmtShort(parseISO(sel.bis)) : fmtShort(parseISO(sel.von)) + ' – ' + fmtShort(parseISO(sel.bis))} · ${esc(sel.std)}</small>
+        ${rowsSp ? `<div class="ph-sps">${rowsSp}</div>` : ''}
       </div></section>`;
   }
   function viewFortschritt(M) {
@@ -1642,6 +1646,7 @@
       if (q('[data-checkdone]') || !q('button,a,input,[data-jump]')) return;
     }
     if (q('a.skip')) { e.preventDefault(); const m = $('#app'); m.focus({ preventScroll: true }); const f = m.querySelector('button,[href],input,[tabindex="0"]'); if (f) f.focus(); return; }
+    if (q('[data-netinfo]')) { toast(netInfo()); return; }
     if (q('[data-reload]')) { load(true); return; }
     if ((el = q('[data-drill]'))) {
       e.stopPropagation(); const k = el.dataset.drill, opening = !state.drillOpen[k];
