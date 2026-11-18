@@ -96,6 +96,7 @@
       if (o.action === 'erledigt') { const r = (d.plan || []).find(r => r[0] === o.payload.id); if (r) { while (r.length < 12) r.push(''); r[11] = o.payload.wert; } }
       if (o.action === 'check') putCheck(d, o.payload);
       if (o.action === 'notiz') putNote(d, o.payload);
+      if (o.action === 'kraft') putKraft(d, o.payload);
     });
   }
   function putNote(d, n) {
@@ -1606,6 +1607,12 @@
     while (r.length < 12) r.push('');
     r[11] = val; state.data._at = Date.now(); ls.set('tri:data', state.data);
   }
+  /* Kraftsätze in die geladenen Daten legen – doppelte (gleiche Einheit, gleicher Speicherzeitpunkt) überspringen */
+  function putKraft(d, k) {
+    const rows = d.kraftlog || (d.kraftlog = [['Datum']]);
+    if (!k.zeilen.length || rows.some(r => r[1] === k.id && r[9] === k.zeilen[0].gespeichert)) return;
+    k.zeilen.forEach(z => rows.push([z.datum, k.id, z.einheit, z.uebung, String(z.satz), String(z.wdh), String(z.sek), String(z.kg), z.ziel, z.gespeichert]));
+  }
   async function saveKraft(M, p) {
     const d = draft(M, p), exs = exercises(p);
     const stamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -1616,13 +1623,19 @@
     });
     if (!zeilen.length) { state.msgs[p.id] = 'Hake mindestens einen Satz ab, bevor du speicherst.'; render(); return; }
     state.busy[p.id] = true; delete state.msgs[p.id]; render();
-    try {
-      await api('kraft', { id: p.id, zeilen });
-      zeilen.forEach(z => state.data.kraftlog.push([z.datum, p.id, z.einheit, z.uebung, String(z.satz), String(z.wdh), String(z.sek), String(z.kg), z.ziel, z.gespeichert]));
+    const k = { id: p.id, zeilen };
+    const apply = () => {
+      putKraft(state.data, k);
       patchPlan(p.id, today()); ls.del('tri:draft:' + p.id); delete state.drafts[p.id]; state.rest = null; delete state.active[p.id]; setStarted(p.id, false);
       if (state.open.heute) delete state.open.heute[p.id];
-      toast('Training gespeichert');
-    } catch (e) { state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e) + '. Deine Sätze bleiben erhalten.'; }
+    };
+    try {
+      await api('kraft', k);
+      apply(); toast('Training gespeichert');
+    } catch (e) {
+      if (e.server) state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e) + '. Deine Sätze bleiben erhalten.';
+      else { enqueue('kraft', k, 'kraft:' + p.id + ':' + stamp); apply(); toast('Gemerkt – wird übertragen, sobald du online bist'); }
+    }
     state.busy[p.id] = false; render();
   }
   async function saveCheck(M) {
@@ -1630,7 +1643,7 @@
     const now = new Date();
     state.checkBusy = true; state.checkMsg = ''; render();
     const c = { datum: today(), beine: d.legs, energie: d.energy, motivation: d.mot, schlaf: d.sleep, uhrzeit: pad(now.getHours()) + ':' + pad(now.getMinutes()) };
-    if (d.sleep != null) ls.set('tri:schlaf', { [c.datum]: d.sleep });
+    if (d.sleep != null) ls.set('tri:schlaf', { ...(ls.get('tri:schlaf') || {}), [c.datum]: d.sleep });
     const apply = () => { putCheck(state.data, c); state.data._at = Date.now(); ls.set('tri:data', state.data); state.checkDraft = null; state.checkEdit = false; };
     try {
       await api('check', c);
