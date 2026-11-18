@@ -1196,6 +1196,7 @@
       return `<button class="phs${i === si ? ' on' : ''}${cur ? ' cur' : ''}" style="flex:1 1 0" data-phase="${i}" aria-pressed="${i === si}" aria-label="${esc(p.name)}, ${fmtShort(parseISO(p.von))} bis ${fmtShort(parseISO(p.bis))}${cur ? ', aktuell' : ''}">
         <span class="phs-bar">${fill ? `<i style="width:max(8px,${fill.toFixed(0)}%)"></i>` : ''}</span><span class="phs-n">${esc(short(p.name))}</span></button>`;
     }).join('');
+    const fmtLong = s => parseISO(s).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
     const SPN = { swim: 'Schwimmen', bike: 'Rad', run: 'Laufen', kraft: 'Kraft' };
     const rowsSp = ['swim', 'bike', 'run', 'kraft'].filter(k => sel.sp[k]).map(k => {
       const um = sel.sp[k].split(' · ')[0].replace(/\s*pro Woche,\s*(?:je |zusammen )?/, ' · ');
@@ -1205,7 +1206,7 @@
       <div class="phs-row" role="group" aria-label="Phasen bis zum Rennen">${segs}</div>
       <div class="ph-d">
         <div class="ph-h"><b>${esc(sel.name)}</b>${si === ci ? '<span class="ph-now">Jetzt</span>' : ''}</div>
-        <small class="ph-meta">${si === ci ? 'Bis ' + fmtShort(parseISO(sel.bis)) : fmtShort(parseISO(sel.von)) + ' – ' + fmtShort(parseISO(sel.bis))} · ${esc(sel.std)}</small>
+        <small class="ph-meta">${si === ci ? 'Bis ' + fmtLong(sel.bis) : fmtLong(sel.von) + ' – ' + fmtLong(sel.bis)} · ${esc(sel.std)}</small>
         ${rowsSp ? `<div class="ph-sps">${rowsSp}</div>` : ''}
       </div></section>`;
   }
