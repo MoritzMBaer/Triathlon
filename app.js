@@ -238,15 +238,19 @@
     if (prev && prev.date === iso(addDays(parseISO(raw.date), -1))) ['sleep', 'score', 'hrv', 'rhr'].forEach(k => { if (last[k] == null && prev[k] != null) { last[k] = prev[k]; old.push(k); } });
     const flags = [], notes = [];
     const afterNight = M.nights.has(iso(addDays(new Date(), -1)));
-    const from60 = iso(addDays(parseISO(last.date), -60));
-    const base = before.filter(f => f.date >= from60 && f.hrv != null).map(f => f.hrv);
+    /* HRV nach Plews/HRV4Training: 7-Tage-Schnitt der logarithmierten Werte gegen den Normalbereich der letzten
+       60 Tage (Mittel ± 0,5 SD). Ein einzelner Tag schwankt zu stark; Werte nach dem Nachtdienst zählen nicht mit. */
+    const from60 = iso(addDays(parseISO(last.date), -60)), from7 = iso(addDays(parseISO(last.date), -7));
+    const okH = f => f.hrv > 0 && !M.nights.has(iso(addDays(parseISO(f.date), -1)));
+    const base = before.filter(f => f.date >= from60 && okH(f)).map(f => Math.log(f.hrv));
     let range = null;
     if (base.length >= 14) {
-      const m = mean(base), s = sdev(base); range = [Math.round(m - s), Math.round(m + s)];
-      const two = F.filter(f => f.hrv != null).slice(-2);
+      const m = mean(base), s = sdev(base), lo = m - s / 2;
+      range = [Math.round(Math.exp(lo)), Math.round(Math.exp(m + s / 2))];
+      const wk = F.filter(f => f.date > from7 && okH(f)).map(f => Math.log(f.hrv));
       if (afterNight) { /* Nach dem Nachtdienst zählt die HRV nicht */ }
-      else if (two.length === 2 && two.every(f => f.hrv < m - s)) flags.push(`HRV seit 2 Tagen unter deinem Normalbereich (${range[0]}–${range[1]})`);
-      else if (raw.hrv != null && raw.hrv < m - s) notes.push('HRV heute niedrig, noch kein Trend');
+      else if (wk.length >= 4 && mean(wk) < lo) flags.push(`HRV-Wochenschnitt ${Math.round(Math.exp(mean(wk)))}, Normalbereich ${range[0]}–${range[1]}`);
+      else if (raw.hrv > 0 && Math.log(raw.hrv) < m - s) notes.push('HRV heute niedrig, im Wochenschnitt aber normal');
     }
     const rh = before.slice(-7).map(f => f.rhr).filter(x => x != null);
     if (!afterNight && last.rhr != null && rh.length >= 3 && last.rhr > mean(rh) + 5) flags.push(`Ruhepuls ${last.rhr}, Schnitt ${Math.round(mean(rh))}`);
@@ -254,7 +258,9 @@
     const sl = afterNight ? null : last.sleep, sc = afterNight ? null : last.score;
     if (sl != null && sl < 6) flags.push(`Schlaf ${de1(sl)} h`);
     if (sc != null && sc < 60) flags.push(`Schlafscore ${Math.round(sc)}`);
-    if (last.tsb != null && last.tsb < -25) flags.push(`Form ${de1(last.tsb)}`);
+    /* Form relativ zur Fitness (wie intervals.icu): unter −30 % der Fitness ist „hohes Risiko“. Ein fester Wert
+       passt bei steigender Fitness immer schlechter. Bei sehr kleiner Fitness schwankt der Anteil zu stark. */
+    if (last.tsb != null && last.ctl >= 15 && last.tsb / last.ctl < -0.3) flags.push(`Form ${de1(last.tsb)} (${Math.round(100 * last.tsb / last.ctl)} % der Fitness)`);
     const ck = M.check.find(c => c.date === today());
     let feelRed = false;
     if (ck) {
@@ -893,7 +899,7 @@
   function afterSet(p, d, i, heavy) {
     const cn = circuitNext(p, d, i);
     if (cn != null) { state.rest = { end: Date.now() + CIRCUIT_REST }; state.active[p.id] = cn; state.scrollEx = p.id; return; }
-    state.rest = { end: Date.now() + (heavy ? 150000 : 90000) };
+    state.rest = { end: Date.now() + (heavy ? 180000 : 90000) }; /* Maximalkraft: 3 min (Grgic et al. 2017) */
     const ex = exercises(p)[i];
     if (kind(U.lib(ex.name), ex) === 'time' && d.ex[i].every(x => x.ok)) { const nx = d.ex.findIndex(x => x.some(y => !y.ok)); if (nx >= 0) { state.active[p.id] = nx; state.scrollEx = p.id; } }
   }
