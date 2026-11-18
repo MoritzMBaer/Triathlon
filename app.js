@@ -553,19 +553,27 @@
   const startKg = (lib, reps) => lib && lib.start ? stepKg(lib.start * e1(10, 3) / e1(reps, rir()), lib.inc) : null;
   function suggest(lib, ex, tg, hist) {
     const k = kind(lib, ex);
+    /* Obergrenze: Länger halten oder mehr Wiederholungen bringen ab hier kaum noch etwas – dann lieber eine schwerere Variante */
+    const capMsg = (cap, unit) => `Obergrenze von ${cap}${unit} erreicht. Mehr bringt hier kaum noch etwas. Nächste Stufe: ${lib && lib.next ? lib.next : 'eine schwerere Variante'}.`;
     if (k === 'time') {
       if (!hist) return { s: tg.reps, why: '' };
+      const cap = Math.max((lib && lib.cap) || 60, tg.reps);
       const best = Math.max(...hist.sets.map(s => s.secs || 0));
-      return hist.sets.every(s => (s.secs || 0) >= tg.reps) ? { s: best + 5, why: `Letztes Mal ${best} s gehalten: heute 5 s länger.` } : { s: tg.reps, why: '' };
+      if (!hist.sets.every(s => (s.secs || 0) >= tg.reps)) return { s: tg.reps, why: '' };
+      if (best >= cap) return { s: cap, why: capMsg(cap, ' s'), cap: true };
+      const s = Math.min(cap, best + 5);
+      return { s, why: `Letztes Mal ${best} s gehalten: heute ${s - best} s länger.` };
     }
     if (k === 'bw') {
       if (!hist) return { r: tg.reps, why: '' };
+      const cap = Math.max((lib && lib.cap) || 15, tg.reps);
       const best = Math.max(...hist.sets.map(s => s.reps || 0));
       const rr = hist.sets.map(s => s.rir).filter(x => x != null), ar = rr.length ? mean(rr) : null;
       if (!hist.sets.every(s => (s.reps || 0) >= tg.reps)) return { r: tg.reps, why: '' };
-      if (ar != null && ar >= 4) return { r: Math.max(tg.reps, best + 2), why: `Letztes Mal noch ${fmtR(ar)} in Reserve: zwei Wiederholungen mehr pro Satz.` };
+      if (best >= cap) return { r: cap, why: capMsg(cap, ' Wdh.'), cap: true };
+      if (ar != null && ar >= 4) { const r = Math.min(cap, Math.max(tg.reps, best + 2)); return { r, why: `Letztes Mal noch ${fmtR(ar)} in Reserve: ${r - best > 1 ? 'zwei Wiederholungen' : 'eine Wiederholung'} mehr pro Satz.` }; }
       if (ar != null && ar < 1.5) return { r: Math.max(tg.reps, best), why: 'Letztes Mal fast am Limit: Wiederholungen halten.' };
-      return { r: Math.max(tg.reps, best + 1), why: 'Letztes Mal alles geschafft: eine Wiederholung mehr pro Satz.' };
+      return { r: Math.min(cap, Math.max(tg.reps, best + 1)), why: 'Letztes Mal alles geschafft: eine Wiederholung mehr pro Satz.' };
     }
     if (!hist) { const kg = startKg(lib, tg.reps); return { r: tg.reps, kg, first: true, why: kg != null ? `Geschätztes Startgewicht für ${tg.reps} Wdh. mit ${rir()} in Reserve. Zu leicht oder zu schwer? Einfach anpassen, ab dann rechnet die App mit deinem Wert.` : `Gewicht wählen, bei dem noch ${rir()} Wiederholungen gehen würden.` }; }
     const kgs = hist.sets.map(s => s.kg).filter(x => x != null);
