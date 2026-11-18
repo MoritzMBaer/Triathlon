@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="tri-v150">
+<meta name="app-version" content="tri-v151">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Triathlon</title>
 <script>
@@ -78,8 +78,8 @@ input{font:inherit}
 .head .date .shift{background:none;padding:0;border-radius:0;font:inherit;color:inherit}
 .head-count b{font-family:var(--round);font-size:17px;font-weight:800;color:var(--fg)}
 /* Handy: Abstand unter der Statusleiste. Auf dem iPhone (Homescreen-App) getestet: 18 px + safe-area scharf,
-   14 px und 10 px schon leicht in der weichgezeichneten iOS-Kante. 16 px ist die Grenze, nicht verkleinern. */
-@media (max-width:959px){.head{margin-bottom:-4px;padding-top:0}.app{padding-top:max(16px,calc(16px + env(safe-area-inset-top,0px)))}}
+   16, 14 und 10 px schon leicht in der weichgezeichneten iOS-Kante. 18 px ist die Grenze, nicht verkleinern. */
+@media (max-width:959px){.head{margin-bottom:-4px;padding-top:0}.app{padding-top:max(16px,calc(18px + env(safe-area-inset-top,0px)))}}
 .iconbtn.net{background:none;color:var(--muted)}
 .tiny{font-size:12px;color:var(--faint)}
 .iconbtn{width:36px;height:36px;border-radius:50%;border:0;background:var(--card);display:grid;place-items:center;color:var(--fg)}
