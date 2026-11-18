@@ -2105,7 +2105,19 @@
     if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' });
   }));
   window.addEventListener('online', () => { load(true); });
-  window.addEventListener('hashchange', () => { if (state.sheetId) { state.sheetId = null; closeSheetNow(); } render(); if (state.pendingJump) { const k = state.pendingJump; state.pendingJump = null; requestAnimationFrame(() => setTimeout(() => jumpTo(k), 60)); } });
+  /* Seitenwechsel: aufgeklappte Einheiten der verlassenen Seite zuklappen (beim Zurückkommen gilt wieder die Vorgabe).
+     Laufende Kraft-/Mobility-Ansichten gehen zurück auf den Startbildschirm, außer ein Timer oder eine Pause läuft gerade. */
+  let viewNow = current();
+  function collapseView(v) {
+    Object.keys(state.open[v] || {}).forEach(id => {
+      const busy = (state.timer && state.timer.pid === id) || (state.rest && state.active[id] != null);
+      if (!busy && isStarted({ id })) { setStarted(id, false); delete state.active[id]; }
+    });
+    const keep = state.timer ? state.timer.pid : null;
+    state.open[v] = keep && state.open[v] && state.open[v][keep] ? { [keep]: true } : {};
+    state.lastOpen = null;
+  }
+  window.addEventListener('hashchange', () => { const left = viewNow; viewNow = current(); if (left !== viewNow) collapseView(left); if (state.sheetId) { state.sheetId = null; closeSheetNow(); } render(); if (state.pendingJump) { const k = state.pendingJump; state.pendingJump = null; requestAnimationFrame(() => setTimeout(() => jumpTo(k), 60)); } });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { cache = { at: -1 }; load(false); render(); } });
   let lastW = window.innerWidth;
   window.addEventListener('resize', () => { if ((lastW >= 960) !== (window.innerWidth >= 960)) { lastW = window.innerWidth; lastRender = ''; render(); } placeIndicator(); });
