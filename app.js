@@ -2,7 +2,8 @@
 (function () {
   'use strict';
   const U = window.UEBUNGEN;
-  const RACE = new Date(2027, 6, 18);
+  /* Wettkampf: Vorgabe hier, maßgeblich sind die Zeilen „Wettkampf …“ im Blatt „Einstellungen“ */
+  let RACE = new Date(2027, 6, 18), RACE_NAME = 'Mey Triathlon Tübingen';
   const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxk0WWmaVVCV35hJURxHAzAiwMnXU2E5ki5ZC622Aj_rdhHVkBJBAxeXa3kCGsYp8uC/exec';
 
   /* ---------- Hilfen ---------- */
@@ -263,12 +264,25 @@
     const lvl = feelRed || flags.length >= 2 ? 'r' : flags.length === 1 ? 'y' : afterNight && !ck ? 'n' : 'g';
     return { lvl, flags, notes, last, old, range, afterNight, stale: last.date !== today() };
   }
-  const INTENSE = /tempo|sweet|schwelle|steigerung|rampe|test|intervall/i;
+  /* Harte Einheit: Tests und Intervalle am Titel, sonst mindestens 10 min im Tempo- oder Schwellenbereich.
+     Ab 76 % FTP am Rad, ab 89 % Schwellenpuls oder 90 % der Schwellengeschwindigkeit beim Laufen. Kurze Steigerungen zählen nicht. */
+  const INTENSE = /test|rampe|vo2|intervall|schwelle|renntempo|wettkampftempo/i;
+  function isHard(p) {
+    if (p.sport === 'Kraft') return /Schwerer/.test(p.note);
+    if (INTENSE.test(p.title)) return true;
+    let min = 0;
+    blocks(p).forEach(b => b.steps.forEach(st => {
+      if (st.pause || !st.v || /mtr$/.test(st.raw)) return;
+      const lim = /^HF/.test(st.tgt) ? 0.89 : /\/km/.test(st.tgt) ? 0.9 : / W$/.test(st.tgt) ? 0.76 : 9;
+      if (st.v >= lim) min += amount(st.raw) * (b.rep || 1);
+    }));
+    return min >= 10;
+  }
   function advice(r, units) {
     if (r.lvl === 'g' || r.lvl === 'n') return '';
     const train = units.filter(p => sp(p.sport).fam !== 'Mobility');
     if (r.lvl === 'r') return train.length ? 'Lass die Einheiten heute aus. Mobility tut trotzdem gut.' : 'Heute ist ohnehin frei. Gönn dir die Pause.';
-    const hard = train.filter(p => INTENSE.test(p.title) || /Schwerer/.test(p.note));
+    const hard = train.filter(isHard);
     if (hard.length) return hard.map(p => p.sport === 'Kraft' ? `${p.title}: mit dem Gewicht vom letzten Mal, ohne Steigerung.` : `Statt „${p.title}“: gleiche Dauer ganz locker im Grundlagenbereich.`).join(' ');
     return train.length ? 'Lockere Einheiten wie geplant, eher kürzer und nicht ausreizen.' : '';
   }
@@ -310,6 +324,11 @@
     (rows || []).slice(1).forEach(r => {
       const k = String(r[0] || '').toLowerCase(), v = String(r[1] || '').trim();
       if (!v) return;
+      if (/wettkampf|rennen/.test(k)) {
+        if (/name/.test(k)) { RACE_NAME = v; return; }
+        const d = normDate(v); if (/^\d{4}-\d{2}-\d{2}$/.test(d)) RACE = parseISO(d);
+        return;
+      }
       if (/pace/.test(k)) { const m = v.match(/(\d+):(\d+)/); const sec = m ? +m[1] * 60 + +m[2] : 0; if (sec >= 150 && sec <= 600) TPACE = sec; }
       else if (/ftp/.test(k)) { const n = num(v); if (n >= 80 && n <= 500) FTP = n; }
       else if (/puls/.test(k)) { const n = num(v); if (n >= 120 && n <= 220) LTHR = n; }
@@ -1353,7 +1372,7 @@
   function sideCount() {
     const el = $('#side-count'); if (!el) return;
     const days = Math.ceil((RACE - new Date(new Date().toDateString())) / 864e5);
-    const html = `<small>Mey Triathlon Tübingen</small><b class="num">${days}</b><span>Tage · ${fmtDay(RACE)} ${RACE.getFullYear()}</span>`;
+    const html = `<small>${esc(RACE_NAME)}</small><b class="num">${days}</b><span>Tage · ${fmtDay(RACE)} ${RACE.getFullYear()}</span>`;
     if (el.innerHTML !== html) el.innerHTML = html;
   }
   function render() {
