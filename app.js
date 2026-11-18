@@ -76,6 +76,8 @@
     if (!j.ok) { const err = new Error(j.fehler || 'Fehler'); err.server = true; throw err; }
     return j.data;
   }
+  /* Endgültig abgelehnt (falscher Schlüssel, Einheit fehlt …) – anders als kein Netz oder ein gerade beschäftigtes Sheet */
+  const refused = e => e.server && !/Beschäftigt|Lock|Sperre|timeout|Zeitüberschreitung/i.test(e.message || '');
   /* ---------- Ausgang: was ohne Netz nicht gespeichert werden konnte, wird später nachgereicht ---------- */
   let outbox = ls.get('tri:outbox', []), flushing = false;
   function enqueue(action, payload, key) { outbox = outbox.filter(o => o.key !== key).concat({ action, payload, key }); ls.set('tri:outbox', outbox); }
@@ -85,7 +87,7 @@
     while (outbox.length) {
       const o = outbox[0];
       try { await api(o.action, o.payload); }
-      catch (e) { if (!e.server || /Kein Zugriff/.test(e.message)) break; /* vom Server abgelehnt: nicht endlos wiederholen */ }
+      catch (e) { if (!refused(e) || /Kein Zugriff/.test(e.message)) break; /* vom Server abgelehnt: nicht endlos wiederholen */ }
       outbox = outbox.filter(x => x !== o); ls.set('tri:outbox', outbox);
     }
     flushing = false;
@@ -109,7 +111,7 @@
     const n = { uebung: name, text };
     putNote(state.data, n); state.data._at = Date.now(); ls.set('tri:data', state.data);
     try { await api('notiz', n); outbox = outbox.filter(o => o.key !== 'note:' + name); ls.set('tri:outbox', outbox); toast('Einstellung gemerkt'); }
-    catch (e) { if (e.server) toast('Notiz konnte nicht gespeichert werden'); else { enqueue('notiz', n, 'note:' + name); toast('Gemerkt – wird übertragen, sobald du online bist'); } }
+    catch (e) { if (refused(e)) toast('Notiz konnte nicht gespeichert werden'); else { enqueue('notiz', n, 'note:' + name); toast('Gemerkt – wird übertragen, sobald du online bist'); } }
     render();
   }
   function putCheck(d, c) {
@@ -1618,7 +1620,7 @@
       outbox = outbox.filter(o => o.key !== 'erl:' + p.id); ls.set('tri:outbox', outbox);
       apply(); if (val) toast(p.title + ' erledigt');
     } catch (e) {
-      if (e.server) state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e);
+      if (refused(e)) state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e);
       else { enqueue('erledigt', { id: p.id, wert: val }, 'erl:' + p.id); apply(); toast('Gemerkt – wird übertragen, sobald du online bist'); }
     }
     state.busy[p.id] = false; render();
@@ -1655,7 +1657,7 @@
       await api('kraft', k);
       apply(); toast('Training gespeichert');
     } catch (e) {
-      if (e.server) state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e) + '. Deine Sätze bleiben erhalten.';
+      if (refused(e)) state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e) + '. Deine Sätze bleiben erhalten.';
       else { enqueue('kraft', k, 'kraft:' + p.id + ':' + stamp); apply(); toast('Gemerkt – wird übertragen, sobald du online bist'); }
     }
     state.busy[p.id] = false; render();
@@ -1672,7 +1674,7 @@
       outbox = outbox.filter(o => o.key !== 'check:' + c.datum); ls.set('tri:outbox', outbox);
       apply(); toast('Kurz-Check gespeichert');
     } catch (e) {
-      if (e.server) state.checkMsg = 'Speichern hat nicht geklappt: ' + (e.message || e);
+      if (refused(e)) state.checkMsg = 'Speichern hat nicht geklappt: ' + (e.message || e);
       else { enqueue('check', c, 'check:' + c.datum); apply(); toast('Gemerkt – wird übertragen, sobald du online bist'); }
     }
     state.checkBusy = false; render();
