@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="tri-v153">
+<meta name="app-version" content="tri-v154">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Triathlon</title>
 <script>
@@ -77,9 +77,10 @@ input{font:inherit}
 .head-count{display:inline-flex;align-items:baseline;gap:4px;background:var(--card);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted);white-space:nowrap;flex:none}
 .head .date .shift{background:none;padding:0;border-radius:0;font:inherit;color:inherit}
 .head-count b{font-family:var(--round);font-size:17px;font-weight:800;color:var(--fg)}
-/* Handy: Abstand unter der Statusleiste. Auf dem iPhone (Homescreen-App) getestet: 18 px + safe-area scharf,
-   16, 14 und 10 px schon leicht in der weichgezeichneten iOS-Kante. 18 px ist die Grenze, nicht verkleinern. */
-@media (max-width:959px){.head{margin-bottom:-4px;padding-top:0}.app{padding-top:max(16px,calc(18px + env(safe-area-inset-top,0px)))}}
+/* Handy: Abstand unter der Statusleiste. iOS zeichnet die Kante darunter weich, direkt nach dem Start breiter
+   (bis zum ersten Scrollen). Getestet: 18 px + safe-area nach dem Scrollen scharf, beim Start nicht.
+   Test: 6 px, ganz oben, Unschärfe bewusst in Kauf genommen. */
+@media (max-width:959px){.head{margin-bottom:-4px;padding-top:0}.app{padding-top:max(16px,calc(6px + env(safe-area-inset-top,0px)))}}
 .iconbtn.net{background:none;color:var(--muted)}
 .tiny{font-size:12px;color:var(--faint)}
 .iconbtn{width:36px;height:36px;border-radius:50%;border:0;background:var(--card);display:grid;place-items:center;color:var(--fg)}
