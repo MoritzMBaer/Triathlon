@@ -118,6 +118,21 @@
     const row = [c.datum, String(c.beine), String(c.energie), String(c.motivation), c.uhrzeit || '', c.schlaf != null ? String(c.schlaf) : ''];
     if (i > 0) rows[i] = row; else rows.push(row);
   }
+  /* Aufräumen: Zwischenstände zu Einheiten, die älter als 14 Tage oder aus dem Plan verschwunden sind, und alte Schlafwerte */
+  function tidy(d) {
+    if (!d.plan || d.plan.length < 2) return;
+    const cut = iso(addDays(new Date(), -14)), keep = new Set();
+    d.plan.slice(1).forEach(r => { if (r[0] && normDate(r[1]) >= cut) keep.add(String(r[0])); });
+    const pending = new Set(outbox.filter(o => o.action === 'kraft').map(o => String(o.payload.id)));
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const m = /^tri:(draft|start|mob|warm):(.+)$/.exec(localStorage.key(i) || '');
+        if (m && !keep.has(m[2]) && !pending.has(m[2])) localStorage.removeItem(m[0]);
+      }
+    } catch (e) { /* Speicher gesperrt */ }
+    const sl = ls.get('tri:schlaf', null), scut = iso(addDays(new Date(), -120));
+    if (sl) { const n = {}; Object.keys(sl).forEach(k => { if (k >= scut) n[k] = sl[k]; }); ls.set('tri:schlaf', n); }
+  }
   async function load(force) {
     if (!state.cfg || state.loading) return;
     if (!force && state.data && Date.now() - (state.data._at || 0) < 60000) return;
@@ -129,6 +144,7 @@
       d._at = Date.now();
       state.data = d; state.err = null;
       ls.set('tri:data', d);
+      tidy(d);
     } catch (e) {
       state.err = String(e.message || e);
     }
@@ -155,7 +171,13 @@
     const fitness = rows(d.fitness).filter(r => r[0]).map(r => ({
       date: normDate(r[0]), ctl: num(r[1]), atl: num(r[2]), tsb: num(r[3]), rhr: num(r[4]), hrv: num(r[5]), sleep: num(r[6]), score: num(r[8]), ready: num(r[9]), vo2: num(r[10])
     })).sort((a, b) => a.date.localeCompare(b.date));
-    const klog = rows(d.kraftlog).filter(r => r[1] && r[3]).map(r => ({
+    const seen = new Set();
+    const klog = rows(d.kraftlog).filter(r => {
+      if (!r[1] || !r[3]) return false;
+      const k = [r[1], r[3], r[4], r[9]].join('|'); /* Einheit, Übung, Satz, Speicherzeit – doppelt übertragene Sätze nur einmal zählen */
+      if (r[9] && seen.has(k)) return false;
+      seen.add(k); return true;
+    }).map(r => ({
       date: normDate(r[0]), pid: r[1], unit: r[2], ex: r[3], set: num(r[4]), reps: num(r[5]), secs: num(r[6]), kg: num(r[7]), target: r[8] || '', rir: (/RIR (\d)/.exec(r[8] || '') || [])[1] != null ? +/RIR (\d)/.exec(r[8])[1] : null, saved: r[9] || ''
     }));
     const check = rows(d.check).filter(r => r[0] && r[1] !== '').map(r => ({ date: normDate(r[0]), legs: num(r[1]), energy: num(r[2]), mot: num(r[3]), sleep: num(r[5]) != null ? num(r[5]) : (ls.get('tri:schlaf') || {})[normDate(r[0])] ?? null }));
