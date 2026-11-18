@@ -1573,6 +1573,9 @@
     /* Laptop-Woche: Einheit groß im Fenster statt in der schmalen Tagesspalte */
     if (open && v === 'woche' && wide()) { state.sheetId = id; render(); return; }
     const h0 = heightOf(id);
+    /* Zuklappen beendet die laufende Kraft-/Mobility-Ansicht: beim nächsten Aufklappen kommt wieder der Startbildschirm
+       („Weitermachen“, sobald etwas abgehakt ist). Abgehakte Übungen und Sätze bleiben erhalten. */
+    if (!open && isStarted({ id })) { setStarted(id, false); if (state.timer && state.timer.pid === id) state.timer = null; delete state.active[id]; }
     (state.open[v] = state.open[v] || {})[id] = open;
     state.lastOpen = open ? id : null;
     render();
