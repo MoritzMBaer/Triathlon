@@ -328,11 +328,10 @@ button.dsd:active{background:var(--fill)}
 /* Fortschritt */
 .pcard{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
 .pcard .eyebrow{font-size:12px;font-weight:600;color:var(--muted)}
-.big3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.big3{display:flex;justify-content:space-between;gap:8px}
 .big3 div{display:flex;flex-direction:column}
 .big3 b{font-family:var(--round);font-size:30px;font-weight:800;line-height:1.05}
-.big3 small{font-size:12px;color:var(--muted)}
-.big3 small span{display:block}
+.big3 small{font-size:12px;color:var(--muted);white-space:nowrap}
 .chart svg{width:100%;height:auto;display:block}
 .clegend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
 .clegend i{display:inline-block;width:12px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}

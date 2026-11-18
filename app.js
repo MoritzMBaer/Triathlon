@@ -1219,7 +1219,7 @@
     const from = M.plan.length ? M.plan.reduce((a, p) => p.date < a ? p.date : a, M.plan[0].date) : iso(addDays(new Date(), -28));
     const fit0 = F.find(f => f.date >= from && f.ctl != null);
     const fitD = fit0 && last.ctl != null ? Math.round(last.ctl) - Math.round(fit0.ctl) : null;
-    const fitTxt = fitD == null ? '' : `<span>${fitD > 0 ? '+' + fitD : fitD < 0 ? '−' + -fitD : '±0'} seit Beginn</span>`;
+    const fitTxt = fitD == null ? '' : ` ${fitD > 0 ? '+' + fitD : fitD < 0 ? '−' + -fitD : '±0'}`;
     let h = header('Fortschritt', 'Seit dem Planstart', null, 'Seit Planstart') + banner();
     h += `<section class="card pcard"><span class="eyebrow">Stand heute</span><div class="big3"><div><b>${vo2 == null ? '–' : Math.round(vo2)}</b><small>VO₂max</small></div><div><b>${last.ctl == null ? '–' : Math.round(last.ctl)}</b><small>Fitness${fitTxt}</small></div><div><b>${last.tsb == null ? '–' : (last.tsb > 0 ? '+' : '') + Math.round(last.tsb)}</b><small>Form</small></div></div></section>`;
     h = h.replace('<section class="card pcard"><span class="eyebrow">Stand heute', '<div class="pgrid"><div class="pcol"><section class="card pcard" style="order:1"><span class="eyebrow">Stand heute');
