@@ -1103,7 +1103,7 @@
     return 'Keine Verbindung' + (at ? ` · Stand ${at.toLocaleString('de-DE', { weekday: 'short', hour: '2-digit', minute: '2-digit' })} Uhr` : '');
   }
   function header(title, date, shift, short) {
-    return `<header class="head"><div class="date-row"><div class="date"><span class="d-long">${esc(date)}</span><span class="d-short">${esc(short || date)}</span></div>${shiftPill(shift)}</div><h1>${esc(title)}</h1><div class="side">${offline() ? `<button class="iconbtn net" data-netinfo aria-label="Keine Verbindung, Datenstand anzeigen" title="Keine Verbindung"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.5h.01"/><path d="M8.8 15.9a4.6 4.6 0 0 1 5.2-.8"/><path d="M5.3 12.4a9.6 9.6 0 0 1 4-2.4"/><path d="M14 9.8a9.6 9.6 0 0 1 4.7 2.6"/><path d="M2 8.8a14.6 14.6 0 0 1 3.9-2.7"/><path d="M10.3 4.6A14.6 14.6 0 0 1 22 8.8"/><path d="M3 3l18 18"/></svg></button>` : ''}<button class="iconbtn${state.loading ? ' spin' : ''}" data-reload aria-label="Aktualisieren" title="Aktualisieren (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div></header>`;
+    return `<header class="head"><div class="date-row"><div class="date"><span class="d-long">${esc(date)}</span><span class="d-short">${esc(short || date)}</span></div>${shiftPill(shift)}</div><h1>${esc(title)}</h1><div class="side">${title === 'Heute' ? headCount() : ''}${offline() ? `<button class="iconbtn net" data-netinfo aria-label="Keine Verbindung, Datenstand anzeigen" title="Keine Verbindung"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19.5h.01"/><path d="M8.8 15.9a4.6 4.6 0 0 1 5.2-.8"/><path d="M5.3 12.4a9.6 9.6 0 0 1 4-2.4"/><path d="M14 9.8a9.6 9.6 0 0 1 4.7 2.6"/><path d="M2 8.8a14.6 14.6 0 0 1 3.9-2.7"/><path d="M10.3 4.6A14.6 14.6 0 0 1 22 8.8"/><path d="M3 3l18 18"/></svg></button>` : ''}<button class="iconbtn${state.loading ? ' spin' : ''}" data-reload aria-label="Aktualisieren" title="Aktualisieren (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div></header>`;
   }
   function banner() {
     if (!state.err || offline()) return '';
@@ -1401,9 +1401,12 @@
     ind.style.width = a.offsetWidth + 'px';
     ind.style.transform = `translateX(${a.offsetLeft}px)`;
   }
+  const raceDays = () => Math.ceil((RACE - new Date(new Date().toDateString())) / 864e5);
+  /* Countdown im Kopf von Heute (Handy); am Desktop steht er in der Seitenleiste */
+  const headCount = () => raceDays() > 0 ? `<div class="head-count" title="${esc(RACE_NAME)} · ${fmtDay(RACE)} ${RACE.getFullYear()}"><b class="num">${raceDays()}</b>Tage bis Rennen</div>` : '';
   function sideCount() {
     const el = $('#side-count'); if (!el) return;
-    const days = Math.ceil((RACE - new Date(new Date().toDateString())) / 864e5);
+    const days = raceDays();
     const html = `<small>${esc(RACE_NAME)}</small><b class="num">${days}</b><span>Tage · ${fmtDay(RACE)} ${RACE.getFullYear()}</span>`;
     if (el.innerHTML !== html) el.innerHTML = html;
   }
