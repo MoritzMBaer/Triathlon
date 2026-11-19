@@ -517,7 +517,7 @@
         const okS = s2.filter(x => x.ok), allOk = s2.length && s2.every(x => x.ok);
         if (allOk) doneN++;
         setsOk += okS.length; setsAll += s2.length;
-        let sub = `${t2.sets} × ${t2.reps}${k2 === 'time' ? ' s' : ''}${twoSided(e, lb, t2, k2) || t2.side ? ' je Seite' : ''}`;
+        let sub = `${t2.sets} × ${t2.reps}${k2 === 'time' ? ' s' : ''}${twoSided(e, lb, t2, k2) || t2.side ? ' je Seite' : t2.alt ? ' im Wechsel' : ''}`;
         if (p.done && okS.length) { const kgs = okS.map(x => x.kg).filter(x => x != null); sub = `${okS.length} Sätze${k2 === 'w' && kgs.length ? ' · ' + fmtKg(Math.max(...kgs)) : ''}`; }
         else if (!p.done) { const sg = suggest(lb, e, t2, lastFor(M, e.name, p.id)); if (k2 === 'w' && sg.kg != null) sub += ' · ' + fmtKg(sg.kg); }
         return { name: e.name, sub, on: !!allOk || !!p.done, part: !allOk && okS.length > 0, lib: lb };
@@ -574,6 +574,8 @@
   }
   function target(p, ex, lib) {
     const t = { sets: ex.sets || 1, reps: ex.reps || 10, secs: ex.secs, side: ex.side };
+    /* Seiten im Wechsel (z. B. Dead Bug): „3×10 je Seite“ wird als 3×20 gezählt, ein Haken pro Satz */
+    if (t.side && lib && lib.alt && !t.secs) { t.reps *= 2; t.side = false; t.alt = true; }
     const h = (p.note || '').match(/Schwerer:\s*(\d+)×(\d+)/);
     if (h && lib && lib.t === 'w' && !lib.noHeavy) { t.sets = +h[1]; t.reps = +h[2]; t.heavy = true; }
     return t;
@@ -622,30 +624,31 @@
     }
     if (k === 'bw') {
       if (!hist) return { r: tg.reps, why: '' };
-      const cap = Math.max((lib && lib.cap) || 15, tg.reps);
+      const st = tg.alt ? 2 : 1, cap = Math.max(((lib && lib.cap) || 15) * st, tg.reps); /* im Wechsel: Gesamtzahl, eine Wdh. mehr je Seite = 2 */
       const best = Math.max(...hist.sets.map(s => s.reps || 0));
       const rr = hist.sets.map(s => s.rir).filter(x => x != null), ar = rr.length ? mean(rr) : null;
       if (!hist.sets.every(s => (s.reps || 0) >= tg.reps)) return { r: tg.reps, why: '' };
       if (best >= cap) return { r: cap, why: capMsg(cap, ' Wdh.'), cap: true };
-      if (ar != null && ar >= 4) { const r = Math.min(cap, Math.max(tg.reps, best + 2)); return { r, why: `Letztes Mal noch ${fmtR(ar)} in Reserve: ${r - best > 1 ? 'zwei Wiederholungen' : 'eine Wiederholung'} mehr pro Satz.` }; }
+      if (ar != null && ar >= 4) { const r = Math.min(cap, Math.max(tg.reps, best + 2 * st)); return { r, why: `Letztes Mal noch ${fmtR(ar)} in Reserve: ${(r - best) / st > 1 ? 'zwei Wiederholungen' : 'eine Wiederholung'} mehr ${tg.alt ? 'je Seite' : 'pro Satz'}.` }; }
       if (ar != null && ar < 1.5) return { r: Math.max(tg.reps, best), why: 'Letztes Mal fast am Limit: Wiederholungen halten.' };
-      return { r: Math.min(cap, Math.max(tg.reps, best + 1)), why: 'Letztes Mal alles geschafft: eine Wiederholung mehr pro Satz.' };
+      return { r: Math.min(cap, Math.max(tg.reps, best + st)), why: `Letztes Mal alles geschafft: eine Wiederholung mehr ${tg.alt ? 'je Seite' : 'pro Satz'}.` };
     }
-    if (!hist) { const kg = startKg(lib, tg.reps); return { r: tg.reps, kg, first: true, why: kg != null ? `Geschätztes Startgewicht für ${tg.reps} Wdh. mit ${rir()} in Reserve. Zu leicht oder zu schwer? Einfach anpassen, ab dann rechnet die App mit deinem Wert.` : `Gewicht wählen, bei dem noch ${rir()} Wiederholungen gehen würden.` }; }
+    const ps = r => tg.alt ? r / 2 : r; /* Gewicht schätzen nach Wiederholungen je Seite */
+    if (!hist) { const kg = startKg(lib, ps(tg.reps)); return { r: tg.reps, kg, first: true, why: kg != null ? `Geschätztes Startgewicht für ${tg.reps} Wdh. mit ${rir()} in Reserve. Zu leicht oder zu schwer? Einfach anpassen, ab dann rechnet die App mit deinem Wert.` : `Gewicht wählen, bei dem noch ${rir()} Wiederholungen gehen würden.` }; }
     const kgs = hist.sets.map(s => s.kg).filter(x => x != null);
     const lastKg = kgs.length ? Math.max(...kgs) : null;
     if (lastKg == null) return { r: tg.reps, kg: null, why: '' };
     const lt = (hist.target.match(/×(\d+)/) || [])[1];
     if (lt && +lt !== tg.reps) {
       const avg = mean(hist.sets.map(s => s.reps || 0));
-      return { r: tg.reps, kg: roundKg(lastKg * e1(avg, rir()) / e1(tg.reps, rir())), why: `Umgerechnet von ${hist.target} mit ${fmtKg(lastKg)} auf ${tg.reps} Wiederholungen mit ${rir()} in Reserve.` };
+      return { r: tg.reps, kg: roundKg(lastKg * e1(ps(avg), rir()) / e1(ps(tg.reps), rir())), why: `Umgerechnet von ${hist.target} mit ${fmtKg(lastKg)} auf ${tg.reps} Wiederholungen mit ${rir()} in Reserve.` };
     }
     const need = +(hist.target.match(/^(\d+)/) || [])[1] || 1;
     /* Reserve gemeldet: daraus die Leistung schätzen und das Gewicht anpassen */
     const rs = hist.sets.filter(s => s.rir != null && s.kg != null && s.reps);
     if (rs.length) {
       const ar = mean(rs.map(s => s.rir)), allReps = hist.sets.length >= need && hist.sets.every(s => (s.reps || 0) >= tg.reps);
-      const est = Math.min(...rs.map(s => s.kg * e1(s.reps, s.rir))), fit = stepKg(est / e1(tg.reps, rir()), lib.inc);
+      const est = Math.min(...rs.map(s => s.kg * e1(ps(s.reps), s.rir))), fit = stepKg(est / e1(ps(tg.reps), rir()), lib.inc);
       if (allReps && ar >= 4) { const lo = lastKg + lib.inc, hi = Math.max(lo, stepKg(lastKg * 1.15, lib.inc)), kg = Math.min(hi, Math.max(lo, fit)); /* höchstens ca. 15 % Sprung */ return { r: tg.reps, kg, why: `Letztes Mal noch ${fmtR(ar)} Wdh. in Reserve, das war zu leicht: ${fmtKg(kg)}.` }; }
       if (allReps && ar >= 2) return { r: tg.reps, kg: roundKg(lastKg + lib.inc), why: `Letztes Mal alle Sätze mit ${fmtR(ar)} in Reserve, also ${String(lib.inc).replace('.', ',')} kg mehr.` };
       if (ar < 1 || hist.sets.some(s => (s.reps || 0) < tg.reps - 2)) { const kg = Math.min(lastKg, Math.max(lib.inc, fit)); return { r: tg.reps, kg, why: kg < lastKg ? `Letztes Mal am Limit: etwas leichter, damit wieder ${rir()} Wdh. Reserve bleiben.` : 'Letztes Mal am Limit: Gewicht halten.' }; }
@@ -716,7 +719,7 @@
       const allOk = s2.length && s2.every(x => x.ok);
       const sg2 = suggest(lb, e, t2, lastFor(M, e.name, p.id));
       const today2 = k2 === 'w' && sg2.kg != null ? ' · heute ' + fmtKg(sg2.kg) : k2 === 'time' && sg2.s ? ' · heute ' + sg2.s + ' s' : '';
-      return `<button class="exrow${allOk ? ' done' : ''}" data-ex="${p.id}|${i}"><span class="thumb">${lb ? U.svg(lb, { t: 0.75 }) : ''}</span><span class="tx"><b>${esc(e.name)}</b><small>${t2.sets} × ${t2.reps}${k2 === 'time' ? ' s' : ''}${twoSided(e, lb, t2, k2) || t2.side ? ' je Seite' : ''}${today2}</small>${lb ? `<span>${esc(lb.cue)}</span>` : ''}</span>${allOk ? `<span class="pill">✓ ${s2.length}</span>` : CHEV_R}</button>`;
+      return `<button class="exrow${allOk ? ' done' : ''}" data-ex="${p.id}|${i}"><span class="thumb">${lb ? U.svg(lb, { t: 0.75 }) : ''}</span><span class="tx"><b>${esc(e.name)}</b><small>${t2.sets} × ${t2.reps}${k2 === 'time' ? ' s' : ''}${twoSided(e, lb, t2, k2) || t2.side ? ' je Seite' : t2.alt ? ' im Wechsel' : ''}${today2}</small>${lb ? `<span>${esc(lb.cue)}</span>` : ''}</span>${allOk ? `<span class="pill">✓ ${s2.length}</span>` : CHEV_R}</button>`;
     };
     const tail = () => {
       let t = '';
@@ -740,7 +743,7 @@
     const hist = lastFor(M, ex.name, p.id), sg = suggest(lib, ex, tg, hist);
     const sets = d.ex[act] || [];
     const two = twoSided(ex, lib, tg, k);
-    const goal = `${tg.sets} × ${tg.reps}${k === 'time' ? ' s' : ''}${tg.side || two ? ' je Seite' : ''}`;
+    const goal = `${tg.sets} × ${tg.reps}${k === 'time' ? ' s' : ''}${tg.side || two ? ' je Seite' : tg.alt ? ` im Wechsel (${tg.reps / 2} je Seite)` : ''}`;
     const firstOpen = sets.findIndex(s => !s.ok);
     let h = backBar(p, `Übung ${act + 1} von ${exs.length}`) + (done ? '' : warmupHTML(p, exs, d));
     if (act > 0) h += '<div class="exlist">' + exs.slice(0, act).map(exRow).join('') + '</div>';
@@ -754,7 +757,7 @@
     if (!done && k === 'w' && firstOpen === 0) h += rampHTML(exs, act, lib, sets[0].kg);
     h += `<div class="sets" role="group" aria-label="Sätze ${esc(ex.name)}"><div class="set head${two ? ' two' : ''}"><span>SATZ</span><span>${k === 'time' ? 'SEKUNDEN' : 'WDH'}</span><span>${k === 'w' ? 'KG' : ''}</span><span>${two ? 'L · R' : ''}</span></div>`;
     sets.forEach((s, j) => {
-      const f = k === 'time' ? 's' : 'r', v = (k === 'time' ? s.s : s.r) || 0, step = k === 'time' ? 5 : 1, key = `${p.id}|${act}|${j}`;
+      const f = k === 'time' ? 's' : 'r', v = (k === 'time' ? s.s : s.r) || 0, step = k === 'time' ? 5 : tg.alt ? 2 : 1, key = `${p.id}|${act}|${j}`;
       h += `<div class="set${two ? ' two' : ''}${s.ok ? ' ok' : ''}${j === firstOpen && !done ? ' cur' : ''}"><span class="n">${j + 1}</span>
         <span class="stp"><button data-step="${key}|${f}|-${step}" aria-label="weniger" ${done ? 'disabled' : ''}>−</button><b>${v}</b><button data-step="${key}|${f}|${step}" aria-label="mehr" ${done ? 'disabled' : ''}>+</button></span>
         ${k === 'w' ? `<input type="number" inputmode="decimal" step="0.5" min="0" id="kg-${esc(p.id)}-${act}-${j}" data-kg="${key}" value="${s.kg == null ? '' : s.kg}" placeholder="kg" aria-label="Gewicht Satz ${j + 1}" ${done ? 'disabled' : ''}>` : '<span class="dash">–</span>'}
