@@ -11,4 +11,5 @@
 - Termine am Tag beachten: Schwimmen nur an Tagen, an denen Zeit fürs Bad ist. Ist ein Tag knapp, dort lieber eine kurze Runde Laufen oder Rad statt Schwimmen.
 - Beim Verschieben auch den Zieltag gegen beide Kalender prüfen, nicht nur den Ausgangstag.
 - Gibt es in der Woche keinen passenden freien Tag, die Einheit streichen (Status „löschen“ mit kurzer Notiz) statt die Folgewoche zu überladen.
+- Kurze oder lockere Läufe an Tagen mit 12-Stunden-Tagdienst sind in Ordnung.
 - Keine privaten Termindetails ins Repo schreiben (es ist öffentlich), nur allgemeine Regeln.
