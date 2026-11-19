@@ -237,6 +237,8 @@
     const last = Object.assign({}, raw);
     if (prev && prev.date === iso(addDays(parseISO(raw.date), -1))) ['sleep', 'score', 'hrv', 'rhr'].forEach(k => { if (last[k] == null && prev[k] != null) { last[k] = prev[k]; old.push(k); } });
     const flags = [], notes = [];
+    /* Nur Werte von heute zählen für die Ampel; übernommene Vortageswerte werden nur grau angezeigt */
+    const stale = last.date !== today(), fresh = k => !stale && !old.includes(k);
     const afterNight = M.nights.has(iso(addDays(new Date(), -1)));
     /* HRV nach Plews/HRV4Training: 7-Tage-Schnitt der logarithmierten Werte gegen den Normalbereich der letzten
        60 Tage (Mittel ± 0,5 SD). Ein einzelner Tag schwankt zu stark; Werte nach dem Nachtdienst zählen nicht mit. */
@@ -253,9 +255,9 @@
       else if (raw.hrv > 0 && Math.log(raw.hrv) < m - s) notes.push('HRV heute niedrig, im Wochenschnitt aber normal');
     }
     const rh = before.slice(-7).map(f => f.rhr).filter(x => x != null);
-    if (!afterNight && last.rhr != null && rh.length >= 3 && last.rhr > mean(rh) + 5) flags.push(`Ruhepuls ${last.rhr}, Schnitt ${Math.round(mean(rh))}`);
+    if (!afterNight && fresh('rhr') && last.rhr != null && rh.length >= 3 && last.rhr > mean(rh) + 5) flags.push(`Ruhepuls ${last.rhr}, Schnitt ${Math.round(mean(rh))}`);
     if (old.length && !afterNight) { const nm = { sleep: 'Schlaf', score: 'Score', hrv: 'HRV', rhr: 'Ruhepuls' }, ns = old.map(k => nm[k]); notes.push(`${ns.length > 1 ? ns.slice(0, -1).join(', ') + ' und ' + ns[ns.length - 1] : ns[0]} von heute ${ns.length > 1 ? 'fehlen' : 'fehlt'} noch`); }
-    const sl = afterNight ? null : last.sleep, sc = afterNight ? null : last.score;
+    const sl = afterNight || !fresh('sleep') ? null : last.sleep, sc = afterNight || !fresh('score') ? null : last.score;
     if (sl != null && sl < 6) flags.push(`Schlaf ${de1(sl)} h`);
     if (sc != null && sc < 60) flags.push(`Schlafscore ${Math.round(sc)}`);
     /* Form relativ zur Fitness (wie intervals.icu): unter −30 % der Fitness ist „hohes Risiko“. Ein fester Wert
@@ -269,7 +271,7 @@
     }
     if (afterNight && ck && ck.sleep != null && ck.sleep <= 2) flags.push(`Schlaf ${ck.sleep} von 5`);
     const lvl = feelRed || flags.length >= 2 ? 'r' : flags.length === 1 ? 'y' : afterNight && !ck ? 'n' : 'g';
-    return { lvl, flags, notes, last, old, range, afterNight, stale: last.date !== today() };
+    return { lvl, flags, notes, last, old, range, afterNight, stale };
   }
   /* Harte Einheit: Tests und Intervalle am Titel, sonst mindestens 10 min im Tempo- oder Schwellenbereich.
      Ab 76 % FTP am Rad, ab 89 % Schwellenpuls oder 90 % der Schwellengeschwindigkeit beim Laufen. Kurze Steigerungen zählen nicht. */
@@ -845,7 +847,7 @@
   function timerHTML(p, i, it) {
     const T = state.timer && state.timer.pid === p.id && state.timer.i === i ? state.timer : null;
     const part = T ? T.part : 0, left = T ? Math.max(0, Math.ceil(T.left)) : it.sec;
-    const C = 2 * Math.PI * 36, frac = left / it.sec;
+    const C = 2 * Math.PI * 36, frac = (T ? Math.max(0, T.left) : left) / it.sec;
     const k = p.id + '|' + i;
     return `<div class="timer${state.timerSeen[k] ? ' t-free' : ''}" id="timer" data-k="${k}"><svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label="Timer: noch ${left} Sekunden">
       <circle cx="42" cy="42" r="36" fill="none" stroke="var(--c-t)" stroke-width="7"/>
@@ -884,7 +886,7 @@
     if (T && !T.running && T.part === 0 && T.left >= T.sec && T.sec !== sec) { T.sec = T.left = T.endLeft = sec; }
     const parts = side ? ['Links', 'Rechts'] : ['Halten'];
     const part = T ? T.part : 0, tsec = T ? T.sec : sec, left = T ? Math.max(0, Math.ceil(T.left)) : sec;
-    const C = 2 * Math.PI * 36, frac = left / tsec;
+    const C = 2 * Math.PI * 36, frac = (T ? Math.max(0, T.left) : left) / tsec;
     const k = 'kr|' + p.id + '|' + i;
     const restLeft = state.rest ? Math.ceil((state.rest.end - Date.now()) / 1000) : 0;
     const rest = state.rest ? (restLeft > 0 ? 'Pause ' + Math.floor(restLeft / 60) + ':' + pad(restLeft % 60) : 'Pause vorbei') : '';
@@ -985,8 +987,17 @@
     }
     const txt = document.getElementById('timer-txt'), arc = document.getElementById('timer-arc');
     if (txt) { const l = Math.ceil(T.left); txt.textContent = Math.floor(l / 60) + ':' + pad(l % 60); }
-    if (arc) { const C = 2 * Math.PI * 36; arc.setAttribute('stroke-dasharray', (C * T.left / T.sec).toFixed(1) + ' ' + C.toFixed(1)); }
   }, 250);
+  /* Ring flüssig nachführen: jedes Bild statt nur viermal pro Sekunde */
+  let ringLoop = false;
+  function ringFrame() {
+    const T = state.timer;
+    if (!T || !T.running) { ringLoop = false; return; }
+    const arc = document.getElementById('timer-arc');
+    if (arc) { const C = 2 * Math.PI * 36, l = Math.max(0, T.endLeft - (Date.now() - T.startedAt) / 1000); arc.setAttribute('stroke-dasharray', (C * l / T.sec).toFixed(2) + ' ' + C.toFixed(1)); }
+    requestAnimationFrame(ringFrame);
+  }
+  function startRing() { if (!ringLoop) { ringLoop = true; requestAnimationFrame(ringFrame); } }
 
   /* ---------- Bausteine ---------- */
   function unitExpanded(M, p, opts) {
@@ -1062,7 +1073,7 @@
     const head = r.lvl === 'n' ? 'Nach dem Nachtdienst' : r.lvl === 'g' ? 'Bereit für das Training' : r.lvl === 'y' ? 'Heute lieber locker' : 'Heute Pause';
     const adv = advice(r, units);
     const k = [];
-    const o = key => r.old.includes(key) ? ' class="old"' : '';
+    const o = key => r.stale || r.old.includes(key) ? ' class="old"' : '';
     if (L.sleep != null) k.push([`Schlaf <b>${de1(L.sleep)} h</b>`, o('sleep')]);
     if (L.score != null) k.push([`Score <b>${Math.round(L.score)}</b>`, o('score')]);
     if (L.hrv != null) k.push([`HRV <b>${Math.round(L.hrv)}</b>`, o('hrv')]);
@@ -1918,7 +1929,7 @@
       if (!T || !T.kr || T.pid !== pid || T.i !== +i || T.j !== +j) T = state.timer = { kr: true, pid, i: +i, j: +j, part: 0, sec, left: sec, endLeft: sec, running: false };
       if (what === 'toggle') {
         if (T.running) { T.running = false; }
-        else { if (T.left <= 0) T.left = T.sec; T.endLeft = T.left; T.startedAt = Date.now(); T.running = true; state.rest = null; beepInit(); }
+        else { if (T.left <= 0) T.left = T.sec; T.endLeft = T.left; T.startedAt = Date.now(); T.running = true; state.rest = null; beepInit(); startRing(); }
       } else if (what === 'reset') { T.running = false; T.left = T.endLeft = T.sec; }
       else finishKraftSet(T, true);
       render(); tickRest(); return;
@@ -1929,7 +1940,7 @@
       let T = state.timer;
       if (!T || T.pid !== pid || T.i !== +i) T = state.timer = { pid, i: +i, part: 0, sec: it.sec, left: it.sec, running: false };
       if (what === 'toggle') {
-        if (T.running) { T.running = false; } else { if (T.left <= 0) T.left = T.sec; T.endLeft = T.left; T.startedAt = Date.now(); T.running = true; beepInit(); }
+        if (T.running) { T.running = false; } else { if (T.left <= 0) T.left = T.sec; T.endLeft = T.left; T.startedAt = Date.now(); T.running = true; beepInit(); startRing(); }
       } else if (what === 'reset') { T.running = false; T.left = T.endLeft = T.sec; }
       else {
         if (advanceTimer(T)) return;
