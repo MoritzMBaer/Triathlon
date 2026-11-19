@@ -12,4 +12,9 @@
 - Beim Verschieben auch den Zieltag gegen beide Kalender prüfen, nicht nur den Ausgangstag.
 - Gibt es in der Woche keinen passenden freien Tag, die Einheit streichen (Status „löschen“ mit kurzer Notiz) statt die Folgewoche zu überladen.
 - Kurze oder lockere Läufe an Tagen mit 12-Stunden-Tagdienst sind in Ordnung.
+- Nachtdienste (Beginn ab 17 Uhr) schützen:
+  - Am Tag nach einem Nachtdienst keine harte Einheit (Intervalle, Tests, Sweet Spot/Tempo, Kraft mit Steigerung). Nur Mobility oder ganz locker.
+  - Zwischen zwei Nachtdiensten höchstens kurz und locker, ausdrücklich optional.
+  - Nach zwei oder mehr Nächten am Stück ist auch der erste freie Tag nur locker; harte Einheiten frühestens am zweiten Tag.
+  - Am Tag des ersten Nachtdienstes ist eine harte Einheit möglich, dann mit Notiz „vormittags“.
 - Keine privaten Termindetails ins Repo schreiben (es ist öffentlich), nur allgemeine Regeln.
