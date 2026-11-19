@@ -979,7 +979,7 @@
     ls.set('tri:mob:' + T.pid, nt);
     state.active[T.pid] = items.findIndex((_, k) => !nt.includes(k));
     state.scrollEx = T.pid; /* nächste Übung nach oben holen, damit Bild, Text und Timer zusammen im Blick sind */
-    if (nt.length === items.length && !p.done) { setDone(p, today()); return true; }
+    if (nt.length === items.length && !isDone(p)) { setDone(p, today()); return true; }
     return false;
   }
   setInterval(() => {
@@ -1729,19 +1729,33 @@
   }
 
   /* ---------- Speichern ---------- */
-  async function setDone(p, val) {
+  /* Erledigt-Stand nacheinander speichern: wird während des Speicherns zurückgenommen (z. B. letzte Übung
+     versehentlich abgehakt und gleich wieder weg), gilt der neuere Wunsch, nicht die Antwort auf den alten */
+  const doneWant = {}, doneChain = {};
+  const isDone = p => p.id in doneWant ? !!doneWant[p.id] : !!p.done;
+  function setDone(p, val) {
+    doneWant[p.id] = val;
+    const run = () => saveDone(p, val);
+    return (doneChain[p.id] = (doneChain[p.id] || Promise.resolve()).then(run, run));
+  }
+  async function saveDone(p, val) {
+    if (doneWant[p.id] !== val) return; /* längst überholt: gar nicht erst senden */
     state.busy[p.id] = true; delete state.msgs[p.id]; render();
     const apply = () => {
+      if (doneWant[p.id] !== val) return; /* inzwischen umentschieden: der nächste Aufruf setzt den richtigen Stand */
+      delete doneWant[p.id];
       p.done = val; patchPlan(p.id, val); if (val) setStarted(p.id, false);
+      if (val && state.timer && state.timer.pid === p.id) state.timer = null; /* kein Timer, der unsichtbar weiterläuft */
       if (val && state.open.heute) delete state.open.heute[p.id];
+      return true;
     };
     try {
       await api('erledigt', { id: p.id, wert: val });
       outbox = outbox.filter(o => o.key !== 'erl:' + p.id); ls.set('tri:outbox', outbox);
-      apply(); if (val) toast(p.title + ' erledigt');
+      if (apply() && val) toast(p.title + ' erledigt');
     } catch (e) {
-      if (refused(e)) state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e);
-      else { enqueue('erledigt', { id: p.id, wert: val }, 'erl:' + p.id); apply(); toast('Gemerkt – wird übertragen, sobald du online bist'); }
+      if (refused(e)) { state.msgs[p.id] = 'Speichern hat nicht geklappt: ' + (e.message || e); if (doneWant[p.id] === val) delete doneWant[p.id]; }
+      else { enqueue('erledigt', { id: p.id, wert: val }, 'erl:' + p.id); if (apply()) toast('Gemerkt – wird übertragen, sobald du online bist'); }
     }
     state.busy[p.id] = false; render();
   }
@@ -1909,8 +1923,9 @@
       t = t.includes(+i) ? t.filter(x => x !== +i) : t.concat(+i);
       ls.set('tri:mob:' + pid, t);
       if (t.includes(+i)) { const nx = items.findIndex((_, k) => !t.includes(k)); state.active[pid] = nx; }
-      if (t.length === items.length && !p.done) setDone(p, today());
-      else if (t.length < items.length && p.done) setDone(p, '');
+      if (state.timer && state.timer.pid === pid && state.timer.i === +i && t.includes(+i)) state.timer = null; /* von Hand abgehakt: Timer dieser Übung stoppen */
+      if (t.length === items.length && !isDone(p)) setDone(p, today());
+      else if (t.length < items.length && isDone(p)) setDone(p, '');
       else render();
       return;
     }
