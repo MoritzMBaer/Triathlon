@@ -937,8 +937,8 @@
   /* Satz abgehakt: Pause starten und ggf. zur nächsten Übung (im Wechsel oder wenn alle Sätze fertig) */
   function afterSet(p, d, i, heavy) {
     const cn = circuitNext(p, d, i);
-    if (cn != null) { state.rest = { end: Date.now() + CIRCUIT_REST }; state.active[p.id] = cn; state.scrollEx = p.id; return; }
-    state.rest = { end: Date.now() + (heavy ? 180000 : 90000) }; /* Maximalkraft: 3 min (Grgic et al. 2017) */
+    if (cn != null) { state.rest = { at: Date.now(), end: Date.now() + CIRCUIT_REST }; state.active[p.id] = cn; state.scrollEx = p.id; return; }
+    state.rest = { at: Date.now(), end: Date.now() + (heavy ? 180000 : 90000) }; /* Maximalkraft: 3 min (Grgic et al. 2017) */
     const ex = exercises(p)[i];
     if (kind(U.lib(ex.name), ex) === 'time' && d.ex[i].every(x => x.ok)) { const nx = d.ex.findIndex(x => x.some(y => !y.ok)); if (nx >= 0) { state.active[p.id] = nx; state.scrollEx = p.id; } }
   }
@@ -1621,7 +1621,10 @@
     }
     const sb = $('.statusbg'), top = (sb ? sb.offsetHeight : 0) + 16;
     const nav = $('nav.tabs'), nr = nav && nav.getBoundingClientRect();
-    const bottom = nr && nr.height ? nr.top - 16 : window.innerHeight - 16;
+    let bottom = nr && nr.height ? nr.top - 16 : window.innerHeight - 16;
+    /* Die schwebende Pausenleiste liegt über der Leiste unten: was darunter verschwinden würde, darüber holen */
+    const rb = $('#restbar'), rr = rb && !rb.hidden && rb.getBoundingClientRect();
+    if (rr && rr.height) bottom = Math.min(bottom, rr.top - 12);
     const room = bottom - top;
     let dy = 0;
     if (r.top < top) dy = r.top - top;
@@ -1855,7 +1858,8 @@
     if ((el = q('[data-open]'))) { toggleUnit(el.dataset.open, true); return; }
     if ((el = q('[data-fold]'))) { toggleUnit(el.dataset.fold, false); return; }
     if (q('[data-close]') && (e.target.matches('[data-close]') || e.target.closest('button[data-close]'))) { closeSheet(); return; }
-    if (q('[data-skiprest]')) { state.rest = null; tickRest(); return; }
+    /* Tipp direkt nach dem Erscheinen der Leiste galt dem, was vorher darunter lag: nicht als „Weiter“ werten */
+    if (q('[data-skiprest]')) { if (state.rest && Date.now() - state.rest.at < 1200) return; state.rest = null; tickRest(); return; }
     if (!M) return;
     const plan = id => M.plan.find(p => p.id === id);
     if ((el = q('[data-act]'))) {
@@ -1881,7 +1885,10 @@
         afterSet(p, d, +i, target(p, ex, U.lib(ex.name)).heavy);
         beepInit();
       }
-      render(); return;
+      render();
+      /* Frage nach der Reserve nicht unter der Pausenleiste verstecken, sonst trifft der Tipp auf „Weiter“ */
+      if (s.ok && !was) { const t = document.querySelector(`[data-tick^="${CSS.escape([pid, i, j].join('|'))}"]`), row = t && t.closest('.set'), x = row && row.nextElementSibling; if (x && x.classList.contains('rirq')) bringIntoView(row, x); }
+      return;
     }
     if ((el = q('[data-addset]'))) {
       const [pid, i] = el.dataset.addset.split('|'); const p = plan(pid); if (!p) return;
