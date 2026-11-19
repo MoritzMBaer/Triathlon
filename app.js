@@ -270,7 +270,9 @@
       if (a <= 1.5) { feelRed = true; flags.push(`Gefühl ${de1(a)} von 5`); } else if (a <= 2.5) flags.push(`Gefühl ${de1(a)} von 5`);
     }
     if (afterNight && ck && ck.sleep != null && ck.sleep <= 2) flags.push(`Schlaf ${ck.sleep} von 5`);
-    const lvl = feelRed || flags.length >= 2 ? 'r' : flags.length === 1 ? 'y' : afterNight && !ck ? 'n' : 'g';
+    /* Uhr hat die Nacht noch nicht geliefert: ohne Warnung kein Grün, sondern neutral warten */
+    const waiting = !afterNight && (stale || old.length > 0);
+    const lvl = feelRed || flags.length >= 2 ? 'r' : flags.length === 1 ? 'y' : afterNight && !ck ? 'n' : waiting ? 'w' : 'g';
     return { lvl, flags, notes, last, old, range, afterNight, stale };
   }
   /* Harte Einheit: Tests und Intervalle am Titel, sonst mindestens 10 min im Tempo- oder Schwellenbereich.
@@ -288,7 +290,7 @@
     return min >= 10;
   }
   function advice(r, units) {
-    if (r.lvl === 'g' || r.lvl === 'n') return '';
+    if (r.lvl === 'g' || r.lvl === 'n' || r.lvl === 'w') return '';
     const train = units.filter(p => sp(p.sport).fam !== 'Mobility');
     if (r.lvl === 'r') return train.length ? 'Lass die Einheiten heute aus. Mobility tut trotzdem gut.' : 'Heute ist ohnehin frei. Gönn dir die Pause.';
     const hard = train.filter(isHard);
@@ -1070,7 +1072,7 @@
     const r = readiness(M);
     if (!r) return checkCard(M);
     const L = r.last;
-    const head = r.lvl === 'n' ? 'Nach dem Nachtdienst' : r.lvl === 'g' ? 'Bereit für das Training' : r.lvl === 'y' ? 'Heute lieber locker' : 'Heute Pause';
+    const head = r.lvl === 'n' ? 'Nach dem Nachtdienst' : r.lvl === 'w' ? 'Warte auf die Uhr' : r.lvl === 'g' ? 'Bereit für das Training' : r.lvl === 'y' ? 'Heute lieber locker' : 'Heute Pause';
     const adv = advice(r, units);
     const k = [];
     const o = key => r.stale || r.old.includes(key) ? ' class="old"' : '';
