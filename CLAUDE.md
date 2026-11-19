@@ -10,6 +10,7 @@
 - Vorher immer beide Kalender prüfen: den Dienstkalender und den privaten Hauptkalender. Ganztägige private Termine (Ausflüge, Lehrgänge, Reisen) sind keine Trainingstage, höchstens Mobility.
 - Termine am Tag beachten: Schwimmen nur an Tagen, an denen Zeit fürs Bad ist. Ist ein Tag knapp, dort lieber eine kurze Runde Laufen oder Rad statt Schwimmen.
 - Beim Verschieben auch den Zieltag gegen beide Kalender prüfen, nicht nur den Ausgangstag.
+- Jede Änderung im Blatt „Plan“ auch im Google-Kalender „Sport“ nachziehen (ganztägige Einträge Laufen, Rad, Schwimmen, Kraft; Mobility steht dort nicht).
 - Bei Unsicherheit nachfragen statt selbst entscheiden: wenn unklar ist, wie lange ein privater Termin dauert, oder ob an dem Tag trotzdem trainiert werden soll.
 - Gibt es in der Woche keinen passenden freien Tag, die Einheit streichen (Status „löschen“ mit kurzer Notiz) statt die Folgewoche zu überladen.
 - Kurze oder lockere Läufe an Tagen mit 12-Stunden-Tagdienst sind in Ordnung.
