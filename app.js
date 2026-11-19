@@ -829,6 +829,8 @@
       h += '</div>';
     });
     h += '</div>';
+    /* Versehentlich fertig: zurück in die laufende Einheit, die zuletzt abgehakte Übung wieder offen */
+    if (review) h += `<button class="link manual" data-act="mobundo" data-id="${esc(p.id)}" ${state.busy[p.id] ? 'disabled' : ''}>Doch nicht fertig</button>`;
     if (state.msgs[p.id]) h += `<div class="msg">${esc(state.msgs[p.id])}</div>`;
     return { html: h, progress: [ticks.length, items.length] };
   }
@@ -1876,6 +1878,13 @@
       const p = plan(el.dataset.id); if (!p) return;
       if (el.dataset.act === 'kraft') saveKraft(M, p);
       if (el.dataset.act === 'undo') setDone(p, '');
+      if (el.dataset.act === 'mobundo') {
+        const items = mobItems(p); let t = ls.get('tri:mob:' + p.id, []);
+        if (!t.length) t = items.map((_, k) => k); /* auf anderem Gerät abgehakt: alle bis auf die letzte gelten als geschafft */
+        const back = t[t.length - 1]; t = t.slice(0, -1);
+        ls.set('tri:mob:' + p.id, t); state.active[p.id] = back; state.scrollEx = p.id;
+        setDone(p, '').then(() => { if (!p.done) { setStarted(p.id, true); render(); } });
+      }
       if (el.dataset.act === 'done') setDone(p, today());
       return;
     }
