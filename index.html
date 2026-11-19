@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="tri-v162">
+<meta name="app-version" content="tri-v163">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Triathlon</title>
 <script>
@@ -424,7 +424,12 @@ button.dsd:active{background:var(--fill)}
 .set .dash{text-align:center;color:var(--faint)}
 .tick{width:44px;height:44px;border-radius:12px;border:1.5px solid var(--chev);background:var(--card);color:var(--chev);display:grid;place-items:center}
 .tick svg{width:20px;height:20px}
-.set.ok .tick{background:var(--c-d);border-color:var(--c-d);color:var(--card)}
+.set.ok .tick,.tick.on{background:var(--c-d);border-color:var(--c-d);color:var(--card)}
+.set.two{grid-template-columns:30px minmax(0,1fr) 70px 90px}
+.set.head.two span:nth-child(4){text-align:center}
+.ticks{display:flex;gap:6px}
+.ticks .tick{width:42px}
+.tick i{font-style:normal;font-family:var(--round);font-weight:700;font-size:15px}
 .rirq{display:flex;flex-direction:column;gap:6px;padding:2px 6px 6px 44px}
 .rirq span{font-size:13px;color:var(--muted)}
 .rchips{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
@@ -856,7 +861,7 @@ kbd{font-family:var(--round);font-size:12px;font-weight:700;line-height:1;min-wi
   .btn.ghost:hover:not([disabled]){filter:none;background:var(--fill)}
   .link:hover{text-decoration:underline;text-underline-offset:3px}
   .tick:hover:not([disabled]),.mcheck:hover{border-color:var(--c,var(--fg));color:var(--c,var(--fg))}
-  .set.ok .tick:hover{color:var(--card)}
+  .set.ok .tick:hover,.tick.on:hover{color:var(--card)}
   .side-nav a:hover:not([aria-current="page"]){background:var(--fill)}
   .set input:hover:not([disabled]){box-shadow:inset 0 0 0 1px var(--chev)}
   button:not([disabled]):active,.tile:active,.row:active,.exrow:active,nav a:active{transform:scale(.99)}

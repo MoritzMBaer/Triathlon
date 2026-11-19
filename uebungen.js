@@ -14,7 +14,7 @@
 
   const LIB = [
     /* ---------- Geräte (bevorzugt): geführte Bewegung, wenig Technik nötig ---------- */
-    { re: /^beinpresse.*einbeinig/i, m: ['quad','gesaess'], t: 'w', inc: 5, start: 30, per: 'aufgelegt',
+    { re: /^beinpresse.*einbeinig/i, m: ['quad','gesaess'], t: 'w', sides: 2, inc: 5, start: 30, per: 'aufgelegt',
       how: 'Wie die Beinpresse, aber nur ein Fuß steht mittig auf der Platte, der andere bleibt locker unten. Langsam absenken, bis das Knie etwa 90° gebeugt ist, dann über die ganze Fußsohle hochdrücken. Erst alle Wiederholungen mit einem Bein, dann wechseln.',
       cue: 'Knie zeigt über die Zehen und fällt nicht nach innen, oben nicht ganz durchstrecken.',
       A: P('17 34,22 40,40 60,47 47,60 39,55.5 34.5,50 58,56 68,62 69,28 55,38 62,27 56,37 63'),
@@ -143,7 +143,7 @@
       cue: 'Hüfte hoch, nicht nach vorn kippen.',
       A: P('24 40,30 45,66 62,84 66,102 70,106 72,84 65,102 69,106 71,37 72,29 72,40 36,42 26'),
       B: P('24 38,30 43,66 54,84 60,102 68,106 72,84 59,102 67,106 71,37 72,29 72,40 34,42 24') },
-    { re: /^bulgarian|split squat/i, m: ['quad','gesaess'], t: 'w', inc: 2, start: 8, per: 'je Hand',
+    { re: /^bulgarian|split squat/i, m: ['quad','gesaess'], t: 'w', sides: 2, inc: 2, start: 8, per: 'je Hand',
       how: 'Mit dem Rücken zu einer Bank, hinteren Fuß mit dem Spann darauf ablegen. Senkrecht nach unten sinken, bis der vordere Oberschenkel waagerecht ist, dann über die vordere Ferse hochdrücken.',
       cue: 'Etwa 70 % des Gewichts auf dem vorderen Bein.',
       A: P('54 12,54 19,54 42,44 56,40 72,48 72,64 58,80 52,86 50,55 30,54 44,53 30,52 44'),
@@ -155,7 +155,7 @@
       A: P('20 36,26 41,46 58,66 50,70 72,78 72,64 50,68 72,76 72,36 52,44 56,34 52,42 56'),
       B: P('20 36,26 41,50 42,68 44,70 72,78 72,66 44,68 72,76 72,38 46,48 41,36 46,46 41'),
       props: ['bankl', 'scheibe'] },
-    { re: /^step-?ups?/i, m: ['quad','gesaess'], t: 'w', inc: 2, start: 8, per: 'je Hand',
+    { re: /^step-?ups?/i, m: ['quad','gesaess'], t: 'w', sides: 2, inc: 2, start: 8, per: 'je Hand',
       how: 'Einen Fuß komplett auf eine stabile Bank oder Stufe setzen. Über dieses Bein hochdrücken, bis du oben stehst, dann kontrolliert zurück. Das untere Bein hilft möglichst wenig.',
       cue: 'Druck über die Ferse des oberen Beins.',
       A: P('54 12,54 19,54 42,68 48,70 60,78 60,50 57,48 72,55 72,55 31,54 45,53 31,52 45'),

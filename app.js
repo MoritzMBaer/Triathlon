@@ -517,7 +517,7 @@
         const okS = s2.filter(x => x.ok), allOk = s2.length && s2.every(x => x.ok);
         if (allOk) doneN++;
         setsOk += okS.length; setsAll += s2.length;
-        let sub = `${t2.sets} × ${t2.reps}${k2 === 'time' ? ' s' : ''}${t2.side ? ' je Seite' : ''}`;
+        let sub = `${t2.sets} × ${t2.reps}${k2 === 'time' ? ' s' : ''}${twoSided(e, lb, t2, k2) || t2.side ? ' je Seite' : ''}`;
         if (p.done && okS.length) { const kgs = okS.map(x => x.kg).filter(x => x != null); sub = `${okS.length} Sätze${k2 === 'w' && kgs.length ? ' · ' + fmtKg(Math.max(...kgs)) : ''}`; }
         else if (!p.done) { const sg = suggest(lb, e, t2, lastFor(M, e.name, p.id)); if (k2 === 'w' && sg.kg != null) sub += ' · ' + fmtKg(sg.kg); }
         return { name: e.name, sub, on: !!allOk || !!p.done, part: !allOk && okS.length > 0, lib: lb };
@@ -595,6 +595,9 @@
     }
     return null;
   }
+  /* Einseitige Übungen mit Wiederholungen (einbeinig, einarmig, „je Seite“): pro Satz links und rechts einzeln abhaken */
+  const twoSided = (ex, lib, tg, k) => k !== 'time' && !!(tg.side || (lib && lib.sides === 2) || /einbeinig|einarmig/i.test(ex.name));
+  const sideOn = (s, x) => !!(s.ok || (s.sd && s.sd[x]));
   const kind = (lib, ex) => lib ? (lib.t === 'time' ? 'time' : lib.t === 'bw' ? 'bw' : 'w') : (ex.secs ? 'time' : 'bw');
   const roundKg = x => Math.max(0, Math.round(x * 2) / 2);
   /* Wiederholungen in Reserve (RIR): wie viele saubere Wiederholungen am Satzende noch gehen sollen */
@@ -713,7 +716,7 @@
       const allOk = s2.length && s2.every(x => x.ok);
       const sg2 = suggest(lb, e, t2, lastFor(M, e.name, p.id));
       const today2 = k2 === 'w' && sg2.kg != null ? ' · heute ' + fmtKg(sg2.kg) : k2 === 'time' && sg2.s ? ' · heute ' + sg2.s + ' s' : '';
-      return `<button class="exrow${allOk ? ' done' : ''}" data-ex="${p.id}|${i}"><span class="thumb">${lb ? U.svg(lb, { t: 0.75 }) : ''}</span><span class="tx"><b>${esc(e.name)}</b><small>${t2.sets} × ${t2.reps}${k2 === 'time' ? ' s' : ''}${t2.side ? ' je Seite' : ''}${today2}</small>${lb ? `<span>${esc(lb.cue)}</span>` : ''}</span>${allOk ? `<span class="pill">✓ ${s2.length}</span>` : CHEV_R}</button>`;
+      return `<button class="exrow${allOk ? ' done' : ''}" data-ex="${p.id}|${i}"><span class="thumb">${lb ? U.svg(lb, { t: 0.75 }) : ''}</span><span class="tx"><b>${esc(e.name)}</b><small>${t2.sets} × ${t2.reps}${k2 === 'time' ? ' s' : ''}${twoSided(e, lb, t2, k2) || t2.side ? ' je Seite' : ''}${today2}</small>${lb ? `<span>${esc(lb.cue)}</span>` : ''}</span>${allOk ? `<span class="pill">✓ ${s2.length}</span>` : CHEV_R}</button>`;
     };
     const tail = () => {
       let t = '';
@@ -736,7 +739,8 @@
     const ex = exs[act], lib = U.lib(ex.name), tg = target(p, ex, lib), k = kind(lib, ex);
     const hist = lastFor(M, ex.name, p.id), sg = suggest(lib, ex, tg, hist);
     const sets = d.ex[act] || [];
-    const goal = `${tg.sets} × ${tg.reps}${k === 'time' ? ' s' : ''}${tg.side ? ' je Seite' : ''}`;
+    const two = twoSided(ex, lib, tg, k);
+    const goal = `${tg.sets} × ${tg.reps}${k === 'time' ? ' s' : ''}${tg.side || two ? ' je Seite' : ''}`;
     const firstOpen = sets.findIndex(s => !s.ok);
     let h = backBar(p, `Übung ${act + 1} von ${exs.length}`) + (done ? '' : warmupHTML(p, exs, d));
     if (act > 0) h += '<div class="exlist">' + exs.slice(0, act).map(exRow).join('') + '</div>';
@@ -748,13 +752,14 @@
     h += '</div><div class="ex-r">';
     if (!done && sg.why) h += `<div class="sugg">${k === 'w' && sg.kg != null ? `<b>Heute ${fmtKg(sg.kg)}${lib && lib.per ? ' ' + lib.per : ''}.</b> ` : ''}${esc(sg.why)}${sg.cap ? swapHTML(ex, lib) : ''}</div>`;
     if (!done && k === 'w' && firstOpen === 0) h += rampHTML(exs, act, lib, sets[0].kg);
-    h += `<div class="sets" role="group" aria-label="Sätze ${esc(ex.name)}"><div class="set head"><span>SATZ</span><span>${k === 'time' ? 'SEKUNDEN' : 'WDH'}</span><span>${k === 'w' ? 'KG' : ''}</span><span></span></div>`;
+    h += `<div class="sets" role="group" aria-label="Sätze ${esc(ex.name)}"><div class="set head${two ? ' two' : ''}"><span>SATZ</span><span>${k === 'time' ? 'SEKUNDEN' : 'WDH'}</span><span>${k === 'w' ? 'KG' : ''}</span><span>${two ? 'L · R' : ''}</span></div>`;
     sets.forEach((s, j) => {
       const f = k === 'time' ? 's' : 'r', v = (k === 'time' ? s.s : s.r) || 0, step = k === 'time' ? 5 : 1, key = `${p.id}|${act}|${j}`;
-      h += `<div class="set${s.ok ? ' ok' : ''}${j === firstOpen && !done ? ' cur' : ''}"><span class="n">${j + 1}</span>
+      h += `<div class="set${two ? ' two' : ''}${s.ok ? ' ok' : ''}${j === firstOpen && !done ? ' cur' : ''}"><span class="n">${j + 1}</span>
         <span class="stp"><button data-step="${key}|${f}|-${step}" aria-label="weniger" ${done ? 'disabled' : ''}>−</button><b>${v}</b><button data-step="${key}|${f}|${step}" aria-label="mehr" ${done ? 'disabled' : ''}>+</button></span>
         ${k === 'w' ? `<input type="number" inputmode="decimal" step="0.5" min="0" id="kg-${esc(p.id)}-${act}-${j}" data-kg="${key}" value="${s.kg == null ? '' : s.kg}" placeholder="kg" aria-label="Gewicht Satz ${j + 1}" ${done ? 'disabled' : ''}>` : '<span class="dash">–</span>'}
-        <button class="tick" data-tick="${key}" aria-pressed="${!!s.ok}" aria-label="Satz ${j + 1} erledigt" ${done ? 'disabled' : ''}>${CHECK}</button></div>`;
+        ${two ? `<span class="ticks">${['Links', 'Rechts'].map((sd, x) => `<button class="tick${sideOn(s, x) ? ' on' : ''}" data-tick="${key}|${x}" aria-pressed="${sideOn(s, x)}" aria-label="Satz ${j + 1} ${sd} erledigt" ${done ? 'disabled' : ''}>${sideOn(s, x) ? CHECK : `<i>${sd[0]}</i>`}</button>`).join('')}</span>`
+          : `<button class="tick" data-tick="${key}" aria-pressed="${!!s.ok}" aria-label="Satz ${j + 1} erledigt" ${done ? 'disabled' : ''}>${CHECK}</button>`}</div>`;
       if (k !== 'time' && s.ok) {
         const ask = !done && (s.rir == null || state.rirEdit === key);
         h += ask
@@ -1862,10 +1867,14 @@
     }
     if ((el = q('[data-step]'))) { if (holdUsed) { holdUsed = false; return; } doStep(el); return; }
     if ((el = q('[data-tick]'))) {
-      const [pid, i, j] = el.dataset.tick.split('|'); const p = plan(pid); if (!p) return;
-      const d = draft(M, p), s = d.ex[+i][+j]; s.ok = !s.ok; if (!s.ok) s.rir = null; putDraft(pid, d); state.active[pid] = +i;
+      const [pid, i, j, x] = el.dataset.tick.split('|'); const p = plan(pid); if (!p) return;
+      const d = draft(M, p), s = d.ex[+i][+j], was = !!s.ok;
+      if (x != null) { /* eine Seite: der Satz gilt erst als erledigt, wenn links und rechts abgehakt sind */
+        const sd = s.sd || (s.sd = [was, was]); sd[+x] = !sd[+x]; s.ok = sd[0] && sd[1];
+      } else { s.ok = !s.ok; delete s.sd; }
+      if (!s.ok) s.rir = null; putDraft(pid, d); state.active[pid] = +i;
       if (state.timer && state.timer.kr && state.timer.pid === pid) state.timer = null;
-      if (s.ok) {
+      if (s.ok && !was) {
         /* Halteübungen springen gleich weiter; sonst erst, wenn die Reserve des letzten Satzes eingetragen ist */
         const ex = exercises(p)[+i];
         /* schwere Sätze (4×6) brauchen längere Pausen als die 90 s der Technikphase */
