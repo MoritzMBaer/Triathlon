@@ -7,15 +7,17 @@
 
 ## Trainingsplan planen oder ändern (Blatt „Plan“)
 
-- Vorher immer beide Kalender prüfen: den Dienstkalender und den privaten Hauptkalender. Ganztägige private Termine (Ausflüge, Lehrgänge, Reisen) sind keine Trainingstage, höchstens Mobility.
+- Sportart „Stabi“ (früher „Mobility“): Dehnen, Mobilisieren und Kräftigen ohne Geräte für zu Hause. Die App blendet davor einen freiwilligen Blackroll-Block ein (nicht im Plan, ohne Abhaken), damit die Einheit auch ohne Material geht.
+
+- Vorher immer beide Kalender prüfen: den Dienstkalender und den privaten Hauptkalender. Ganztägige private Termine (Ausflüge, Lehrgänge, Reisen) sind keine Trainingstage, höchstens Stabi.
 - Termine am Tag beachten: Schwimmen nur an Tagen, an denen Zeit fürs Bad ist. Ist ein Tag knapp, dort lieber eine kurze Runde Laufen oder Rad statt Schwimmen.
 - Beim Verschieben auch den Zieltag gegen beide Kalender prüfen, nicht nur den Ausgangstag.
-- Jede Änderung im Blatt „Plan“ auch im Google-Kalender „Sport“ nachziehen (ganztägige Einträge Laufen, Rad, Schwimmen, Kraft; Mobility steht dort nicht).
+- Jede Änderung im Blatt „Plan“ auch im Google-Kalender „Sport“ nachziehen (ganztägige Einträge Laufen, Rad, Schwimmen, Kraft; Stabi steht dort nicht).
 - Bei Unsicherheit nachfragen statt selbst entscheiden: wenn unklar ist, wie lange ein privater Termin dauert, oder ob an dem Tag trotzdem trainiert werden soll.
 - Gibt es in der Woche keinen passenden freien Tag, die Einheit streichen (Status „löschen“ mit kurzer Notiz) statt die Folgewoche zu überladen.
 - Kurze oder lockere Läufe an Tagen mit 12-Stunden-Tagdienst sind in Ordnung.
 - Nachtdienste (Beginn ab 17 Uhr) schützen:
-  - Am Tag nach einem Nachtdienst keine harte Einheit (Intervalle, Tests, Sweet Spot/Tempo, Kraft mit Steigerung). Nur Mobility oder ganz locker.
+  - Am Tag nach einem Nachtdienst keine harte Einheit (Intervalle, Tests, Sweet Spot/Tempo, Kraft mit Steigerung). Nur ganz locker oder Stabi ohne Kraftteil (Kräftigungsübungen wie Copenhagen, Glute Bridge, Wadenheben, Pogo dann streichen oder per Notiz weglassen; Dehnen und Blackroll sind in Ordnung).
   - Zwischen zwei Nachtdiensten höchstens kurz und locker, ausdrücklich optional.
   - Nach zwei oder mehr Nächten am Stück ist auch der erste freie Tag nur locker; harte Einheiten frühestens am zweiten Tag.
   - Am Tag des ersten Nachtdienstes ist eine harte Einheit möglich, dann mit Notiz „vormittags“.
