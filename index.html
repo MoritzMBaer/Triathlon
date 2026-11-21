@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="tri-v165">
+<meta name="app-version" content="tri-v166">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Triathlon</title>
 <script>
@@ -475,7 +475,18 @@ button.dsd:active{background:var(--fill)}
 .exrow .pill{font-family:var(--round);font-size:12px;font-weight:700;color:var(--c-d);background:var(--c-t);border-radius:999px;padding:3px 8px;white-space:nowrap}
 .exrow.done .tx b{color:var(--faint);text-decoration:line-through}
 
-/* Mobility */
+/* Stabi */
+.br-box{margin-bottom:12px}
+.br-box .br-note{margin:0;font-size:14px;line-height:1.45;color:var(--c-mu)}
+.br-box .mob-row{padding:8px 0}
+.br-box .mob-detail{padding:0 0 12px;background:none}
+.br-box .mob-ex.active .mob-row{background:none}
+.br-box .mob-ex:last-child{border-bottom:0}
+.musc-leg{display:flex;justify-content:center;gap:16px;margin:0;font-size:13px;color:var(--muted)}
+.musc-leg span{display:inline-flex;align-items:center;gap:6px}
+.musc-leg i{width:12px;height:12px;border-radius:4px;display:inline-block}
+.musc-leg .sw-mob{background:var(--mob-mm)}
+.musc-leg .sw-kraft{background:var(--kraft-mm)}
 .mob-ex{border-bottom:.5px solid var(--line)}
 .mob-ex:last-child{border-bottom:0}
 .mob-row{display:flex;align-items:center;gap:12px;padding:10px 16px;min-height:64px}

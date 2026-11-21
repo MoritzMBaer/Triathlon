@@ -52,7 +52,9 @@
     'Rad (Zwift)': { k: 'bike', fam: 'Rad', ring: true, o: 1 },
     'Laufen': { k: 'run', fam: 'Laufen', ring: true, o: 2 },
     'Kraft': { k: 'kraft', fam: 'Kraft', ring: true, o: 3 },
-    'Mobility': { k: 'mob', fam: 'Mobility', ring: false, o: 9 }
+    'Stabi': { k: 'mob', fam: 'Stabi', ring: false, o: 9 },
+    /* alter Name, bis alle Zeilen im Sheet umbenannt sind */
+    'Mobility': { k: 'mob', fam: 'Stabi', ring: false, o: 9 }
   };
   const sp = s => SPORT[s] || { k: 'mob', fam: s, ring: false, o: 8 };
   const cv = k => `--c:var(--${k});--c-t:var(--${k}-t);--c-d:var(--${k}-d);--c-l:var(--${k}-l);--c-hl:var(--${k}-hl);--c-sep:var(--${k}-sep);--c-mu:var(--${k}-mu);--c-s:var(--${k}-s);--c-mm:var(--${k}-mm,var(--mm-act))`;
@@ -64,7 +66,7 @@
     data: ls.get('tri:data', null),
     loading: false, err: null, busy: {}, msgs: {},
     weekOff: 0, sheetId: null, active: {}, drafts: {}, open: {}, slide: 0, started: {},
-    drillOpen: {}, warmOpen: {}, rirEdit: null, rest: null, timer: null, timerSeen: {}, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
+    drillOpen: {}, warmOpen: {}, brOpen: {}, brAct: {}, rirEdit: null, rest: null, timer: null, timerSeen: {}, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
   };
 
   /* ---------- Schnittstelle ---------- */
@@ -163,7 +165,7 @@
     setRefs(d.einstellungen);
     const rows = v => (v || []).slice(1);
     const plan = rows(d.plan).map((r, i) => ({
-      id: r[0], date: normDate(r[1]), sport: r[2] || '', title: r[3] || '', workout: r[4] || '', dur: num(r[5]) || 0,
+      id: r[0], date: normDate(r[1]), sport: r[2] === 'Mobility' ? 'Stabi' : r[2] || '', title: r[3] || '', workout: r[4] || '', dur: num(r[5]) || 0,
       note: r[6] || '', status: String(r[7] || '').toLowerCase(), done: r[11] || ''
     })).filter(p => p.id && p.date && !['gelöscht', 'löschen'].includes(p.status))
       .sort((a, b) => a.date.localeCompare(b.date) || sp(a.sport).o - sp(b.sport).o);
@@ -222,9 +224,9 @@
     if (p.date < today()) return canCatch(p) ? 'catch' : 'miss';
     return 'open';
   }
-  /* Verpasste Kraft-/Mobility-Einheiten der laufenden Woche bleiben nachholbar */
+  /* Verpasste Kraft-/Stabi-Einheiten der laufenden Woche bleiben nachholbar */
   function canCatch(p) {
-    return ['Kraft', 'Mobility'].includes(sp(p.sport).fam) && p.date >= iso(monday(new Date()));
+    return ['Kraft', 'Stabi'].includes(sp(p.sport).fam) && p.date >= iso(monday(new Date()));
   }
 
   /* ---------- Tagesform ---------- */
@@ -291,8 +293,8 @@
   }
   function advice(r, units) {
     if (r.lvl === 'g' || r.lvl === 'n' || r.lvl === 'w') return '';
-    const train = units.filter(p => sp(p.sport).fam !== 'Mobility');
-    if (r.lvl === 'r') return train.length ? 'Lass die Einheiten heute aus. Mobility tut trotzdem gut.' : 'Heute ist ohnehin frei. Gönn dir die Pause.';
+    const train = units.filter(p => sp(p.sport).fam !== 'Stabi');
+    if (r.lvl === 'r') return train.length ? 'Lass die Einheiten heute aus. Blackroll und Dehnen tun trotzdem gut.' : 'Heute ist ohnehin frei. Gönn dir die Pause.';
     const hard = train.filter(isHard);
     if (hard.length) return hard.map(p => p.sport === 'Kraft' ? `${p.title}: mit dem Gewicht vom letzten Mal, ohne Steigerung.` : `Statt „${p.title}“: gleiche Dauer ganz locker im Grundlagenbereich.`).join(' ');
     return train.length ? 'Lockere Einheiten wie geplant, eher kürzer und nicht ausreizen.' : '';
@@ -493,11 +495,11 @@
     return p.sport;
   }
 
-  /* ---------- Bildschirm wachhalten, solange Kraft oder Mobility läuft ---------- */
+  /* ---------- Bildschirm wachhalten, solange Kraft oder Stabi läuft ---------- */
   let wake = null, wakeBusy = false;
   async function syncWake(M) {
     if (!('wakeLock' in navigator)) return;
-    const want = document.visibilityState === 'visible' && !!(M && M.plan.some(p => p.date <= today() && ['Kraft', 'Mobility'].includes(sp(p.sport).fam) && isStarted(p)));
+    const want = document.visibilityState === 'visible' && !!(M && M.plan.some(p => p.date <= today() && ['Kraft', 'Stabi'].includes(sp(p.sport).fam) && isStarted(p)));
     if (want && !wake && !wakeBusy) {
       wakeBusy = true;
       try { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } catch (e) { wake = null; }
@@ -505,7 +507,7 @@
     } else if (!want && wake) { const w = wake; wake = null; try { await w.release(); } catch (e) {} }
   }
 
-  /* ---------- Übersicht vor dem Start (Kraft & Mobility) ---------- */
+  /* ---------- Übersicht vor dem Start (Kraft & Stabi) ---------- */
   const isStarted = p => !p.done && (state.started[p.id] != null ? state.started[p.id] : !!ls.get('tri:start:' + p.id, false));
   function setStarted(pid, on) { state.started[pid] = on; if (on) ls.set('tri:start:' + pid, true); else ls.del('tri:start:' + pid); }
   function overviewBody(M, p, isKraft) {
@@ -526,7 +528,7 @@
     } else {
       const items = mobItems(p), ticks = p.done ? items.map((_, i) => i) : ls.get('tri:mob:' + p.id, []);
       rows = items.map((it, i) => { const on = ticks.includes(i); if (on) doneN++; return { name: it.name, sub: it.dose, on, mob: true, lib: it.lib }; });
-      label = 'Mobility starten';
+      label = 'Stabi starten';
     }
     const begun = doneN > 0 || rows.some(r => r.part);
     let h = '';
@@ -537,12 +539,13 @@
   }
   /* Übungsliste auf der Karte vor dem Start: Figur, Name, Dosis; lange Listen ab der 6. Übung aufklappbar */
   function exList(rows) {
-    /* Mobility: knappe Liste ohne Figuren, Name links, Dosis rechts */
     if (rows.length && rows[0].mob) {
-      /* Mobility: nur eine Figur mit allen Muskeln, die heute gedehnt werden – die Übungen kommen nach dem Start */
-      const m = [...new Set(rows.flatMap(r => (r.lib && r.lib.m) || []))];
-      const map = m.length ? U.bodyMap({ m, mh: rows.length + ' Übungen · gedehnt' }) : '';
-      return map ? map.replace('class="musc"', 'class="musc big"').replace(/<div class="musc-tx">[\s\S]*?<\/div>/, '') : `<p class="u-sum">${rows.length} Übungen</p>`;
+      /* Stabi: nur eine Figur mit allen Muskeln von heute – gekräftigte in der Kraft-Farbe, gedehnte im Stabi-Ton. Die Übungen kommen nach dem Start */
+      const libs = rows.map(r => r.lib).filter(Boolean);
+      const m = [...new Set(libs.flatMap(l => l.m || []))], k = [...new Set(libs.filter(U.strengthens).flatMap(l => l.m || []))];
+      const map = m.length ? U.bodyMap({ m, k, mh: rows.length + ' Übungen' }) : '';
+      const leg = `<p class="musc-leg">${m.some(x => !k.includes(x)) ? '<span><i class="sw-mob"></i>gedehnt</span>' : ''}${k.length ? '<span><i class="sw-kraft"></i>gekräftigt</span>' : ''}</p>`;
+      return map ? map.replace('class="musc"', 'class="musc big"').replace(/<div class="musc-tx">[\s\S]*?<\/div>/, '') + leg : `<p class="u-sum">${rows.length} Übungen</p>`;
     }
     const li = (r, i) => `<li${r.on ? ' class="on"' : ''}><span class="el-fig">${r.lib ? U.svg(r.lib, { t: 0.6 }) : `<b>${i + 1}</b>`}</span><span class="el-tx"><b>${esc(r.name)}</b><small>${esc(r.sub || '')}</small></span>${r.on ? `<span class="el-ok" aria-label="erledigt">${CHECK}</span>` : ''}</li>`;
     const MAX = 6, head = rows.slice(0, MAX), rest = rows.slice(MAX);
@@ -778,7 +781,7 @@
     return { html: h, progress: [ok, total] };
   }
 
-  /* ---------- Mobility ---------- */
+  /* ---------- Stabi (Dehnen, Mobilisieren, Kräftigen ohne Geräte) ---------- */
   function mobItems(p) {
     return p.workout.split('\n').map(s => s.trim()).filter(l => /^\d+\./.test(l)).map(l => {
       const s = l.replace(/^\d+\.\s*/, '');
@@ -809,7 +812,7 @@
     const review = !!p.done; /* erledigt: Übungen zum Nachlesen, ohne Timer und Abhaken */
     let act = state.active[p.id];
     if (act == null) { act = review ? -1 : items.findIndex((_, i) => !ticks.includes(i)); }
-    let h = (review ? '' : backBar(p, `${ticks.length} von ${items.length} geschafft`)) + '<div class="exlist">';
+    let h = (review ? '' : backBar(p, `${ticks.length} von ${items.length} geschafft`)) + (review ? '' : brBlock(p)) + '<div class="exlist">';
     items.forEach((it, i) => {
       const on = ticks.includes(i), open = i === act;
       h += `<div class="mob-ex${on && !review ? ' done' : ''}${open ? ' active' : ''}"><div class="mob-row">
@@ -833,6 +836,22 @@
     if (review) h += `<button class="link manual" data-act="mobundo" data-id="${esc(p.id)}" ${state.busy[p.id] ? 'disabled' : ''}>Doch nicht fertig</button>`;
     if (state.msgs[p.id]) h += `<div class="msg">${esc(state.msgs[p.id])}</div>`;
     return { html: h, progress: [ticks.length, items.length] };
+  }
+  /* Blackroll vorab: freiwillig, ohne Abhaken und ohne Einfluss auf den Fortschritt – Stabi geht auch ohne Material */
+  const BR_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><ellipse cx="6" cy="12" rx="3" ry="6"/><path d="M6 6h12M6 18h12"/><path d="M18 6a3 6 0 0 1 0 12"/></svg>';
+  function brBlock(p) {
+    const open = !!state.brOpen[p.id], act = state.brAct[p.id];
+    let h = `<div class="warm br-box"><button class="warm-h" data-br="${esc(p.id)}" aria-expanded="${open}"><span class="warm-ic">${BR_IC}</span><span class="tx"><b>Blackroll vorab</b><small>Freiwillig, ohne Abhaken · ${U.BLACKROLL.length} Übungen · etwa 6 min</small></span>${open ? CHEV_D : CHEV_R}</button>`;
+    if (open) {
+      h += '<p class="br-note">Langsam rollen, etwa 2–3 cm pro Sekunde. Höchstens 6 von 10, ein Wohlweh. An empfindlichen Stellen 20–30 s bleiben und ausatmen. Nicht auf unteren Rücken, Kniekehle, Knochen oder Gelenke.</p>';
+      U.BLACKROLL.forEach((b, i) => {
+        const on = act === i;
+        h += `<div class="mob-ex${on ? ' active' : ''}"><div class="mob-row"><button class="open" data-br-open="${esc(p.id)}|${i}" aria-expanded="${on}"><span class="thumb">${U.svg(b, { t: 0.5 })}</span><span class="tx"><b>${esc(b.name)}</b><small>${esc(b.dose)}</small></span></button></div>`;
+        if (on) h += `<div class="mob-detail"><div class="mob-l"><button class="fig zoomable" data-zoom="${esc(b.name)}" aria-label="Skizze ${esc(b.name)} vergrößern">${U.svg(b, { id: 'live:' + encodeURIComponent(b.name), label: 'Animation: ' + b.name })}</button>${zoomMap(U.bodyMap(b), b.name)}</div><div class="mob-r"><p class="howto">${esc(b.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(b.cue)}</p></div></div>`;
+        h += '</div>';
+      });
+    }
+    return h + '</div>';
   }
   /* Ablauf als Schrittliste: nach Sätzen gruppiert, aktueller Teil hervorgehoben */
   function mobStepsHTML(p, i, it, review) {
@@ -1205,7 +1224,7 @@
     const cur = units.find(p => statusOf(p, M) !== 'done');
     const tmr = iso(addDays(now, 1));
     const next = M.plan.filter(p => p.date === tmr);
-    const nextMain = next.find(p => sp(p.sport).fam !== 'Mobility') || next[0];
+    const nextMain = next.find(p => sp(p.sport).fam !== 'Stabi') || next[0];
     let left = wide() ? '' : statusCard(M, units);
     if (!units.length) left += `<section class="card" style="padding:18px"><b style="font-size:20px">Heute ist trainingsfrei</b><p style="margin:6px 0 0;color:var(--muted)">Erholung gehört zum Plan.</p></section>`;
     const def = cur ? cur.id : null;
@@ -1255,7 +1274,7 @@
   function doneSummary(M, units, now) {
     let total = 0;
     const rows = units.map(p => { const r = doneRow(M, p); total += r.dur; return r.html; }).join('');
-    const nx = M.plan.find(p => p.date > today() && sp(p.sport).fam !== 'Mobility');
+    const nx = M.plan.find(p => p.date > today() && sp(p.sport).fam !== 'Stabi');
     const nd = nx && parseISO(nx.date), tmr = iso(addDays(now, 1));
     const nxLabel = nx ? (nx.date === tmr ? 'Morgen' : WDL[nd.getDay()]) : '';
     return `<section class="card sum">
@@ -1264,7 +1283,7 @@
       ${nx ? `<div class="sum-next" style="${cv(sp(nx.sport).k)}"><span class="ic">${ICON[sp(nx.sport).k]}</span><span class="tx"><small>Als Nächstes · ${esc(nxLabel)}${M.shifts[nx.date] ? ' · Dienst ' + esc(M.shifts[nx.date]) : ''}</small><b>${esc(cleanTitle(nx))}</b></span><span class="r">${esc(unitMeta(nx))}</span></div>` : ''}
     </section>`;
   }
-  /* Handy: alles, was morgen ansteht (inkl. Dienst und Mobility) */
+  /* Handy: alles, was morgen ansteht (inkl. Dienst und Stabi) */
   function morgenCard(M, now) {
     const d = addDays(now, 1), k = iso(d);
     const us = M.plan.filter(p => p.date === k);
@@ -1289,7 +1308,7 @@
     let h = '<section class="card ndays"><span class="eyebrow">Die nächsten Tage</span><div class="nd-list">';
     for (let i = 1; i <= 4; i++) {
       const d = addDays(now, i), k = iso(d);
-      const us = M.plan.filter(p => p.date === k && sp(p.sport).fam !== 'Mobility');
+      const us = M.plan.filter(p => p.date === k && sp(p.sport).fam !== 'Stabi');
       h += `<div class="nd-day"><div class="nd-h"><b>${i === 1 ? 'Morgen' : WDL[d.getDay()]}</b><small>${fmtShort(d)}</small>${M.shifts[k] ? `<span class="shift">${esc(M.shifts[k])}</span>` : ''}</div>`;
       h += us.length ? us.map(p => { const S = sp(p.sport); return `<button class="nd-u" style="${cv(S.k)}" data-sheet="${esc(p.id)}"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(cleanTitle(p))}</b><small>${esc(sportLabel(p))} · ${esc(unitMeta(p))}</small></span></button>`; }).join('') : '<span class="free">Trainingsfrei</span>';
       h += '</div>';
@@ -1635,7 +1654,7 @@
     /* Laptop-Woche: Einheit groß im Fenster statt in der schmalen Tagesspalte */
     if (open && v === 'woche' && wide()) { state.sheetId = id; render(); return; }
     const h0 = heightOf(id);
-    /* Zuklappen beendet die laufende Kraft-/Mobility-Ansicht: beim nächsten Aufklappen kommt wieder der Startbildschirm
+    /* Zuklappen beendet die laufende Kraft-/Stabi-Ansicht: beim nächsten Aufklappen kommt wieder der Startbildschirm
        („Weitermachen“, sobald etwas abgehakt ist). Abgehakte Übungen und Sätze bleiben erhalten. */
     if (!open && isStarted({ id })) { setStarted(id, false); if (state.timer && state.timer.pid === id) state.timer = null; delete state.active[id]; }
     (state.open[v] = state.open[v] || {})[id] = open;
@@ -1919,11 +1938,13 @@
       const [pid, i] = el.dataset.start.split('|'); const p = plan(pid); if (!p) return;
       setStarted(pid, true);
       if (+i >= 0) state.active[pid] = +i; else delete state.active[pid];
-      state.scrollEx = pid; state.scrollCheck = true; /* Kraft und Mobility: direkt zur ersten offenen Übung */
+      state.scrollEx = pid; state.scrollCheck = true; /* Kraft und Stabi: direkt zur ersten offenen Übung */
       render(); return;
     }
     if ((el = q('[data-stop]'))) { setStarted(el.dataset.stop, false); state.timer = null; render(); return; }
     if ((el = q('[data-ex]'))) { const [pid, i] = el.dataset.ex.split('|'); const wasOpen = el.classList.contains('ex-head'); state.active[pid] = wasOpen ? -1 : +i; if (wasOpen) { render(); return; } if (state.timer && state.timer.kr && state.timer.pid === pid && !state.timer.running) state.timer = null; state.scrollEx = pid; render(); return; }
+    if ((el = q('[data-br]'))) { const pid = el.dataset.br; state.brOpen[pid] = !state.brOpen[pid]; render(); return; }
+    if ((el = q('[data-br-open]'))) { const [pid, i] = el.dataset.brOpen.split('|'); state.brAct[pid] = state.brAct[pid] === +i ? -1 : +i; render(); return; }
     if ((el = q('[data-mob-open]'))) { const [pid, i] = el.dataset.mobOpen.split('|'); state.active[pid] = state.active[pid] === +i ? -1 : +i; if (state.active[pid] >= 0) state.scrollEx = pid; render(); return; }
     if ((el = q('[data-mob]'))) {
       const [pid, i] = el.dataset.mob.split('|'); const p = plan(pid); if (!p) return;
@@ -2152,7 +2173,7 @@
   }));
   window.addEventListener('online', () => { load(true); });
   /* Seitenwechsel: aufgeklappte Einheiten der verlassenen Seite zuklappen (beim Zurückkommen gilt wieder die Vorgabe).
-     Laufende Kraft-/Mobility-Ansichten gehen zurück auf den Startbildschirm, außer ein Timer oder eine Pause läuft gerade. */
+     Laufende Kraft-/Stabi-Ansichten gehen zurück auf den Startbildschirm, außer ein Timer oder eine Pause läuft gerade. */
   let viewNow = current();
   function collapseView(v) {
     Object.keys(state.open[v] || {}).forEach(id => {

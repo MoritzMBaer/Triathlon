@@ -292,6 +292,43 @@
     const b = LIB.find(e => e.re.source === base.source);
     if (b) LIB.unshift(Object.assign({}, b, { cap: undefined, next: undefined, up: undefined }, v));
   });
+
+  /* ---------- Blackroll: freiwillig vor einer Stabi-Einheit, ohne Abhaken (roll = x-Position der Rolle) ---------- */
+  const BLACKROLL = [
+    { name: 'Waden rollen', dose: '60 s je Seite', m: ['wade','soleus'], t: 'roll', roll: 86,
+      how: 'Im Sitzen eine Wade auf die Rolle legen, Hände hinter dem Körper aufstützen und das Gesäß leicht anheben. Für mehr Druck das andere Bein darüberlegen. Langsam zwischen Ferse und Kniekehle vor und zurück rollen und den Fuß dabei nach innen und außen drehen, dann Seite wechseln.',
+      cue: 'Nicht in die Kniekehle rollen und nicht auf die Achillessehne.',
+      A: P('30 36,36 43,48 61,62 57,86 57.5,90 51,62 53,85 51.5,89 45.5,38 58,34 72,40 58,36 72'),
+      B: P('42 36,48 43,60 61,74 57,98 57.5,102 51,74 53,97 51.5,101 45.5,50 58,46 72,52 58,48 72'),
+      hl: [['Kn', 'An']], dur: 4 },
+    { name: 'Oberschenkel vorn rollen', dose: '60 s je Seite', m: ['quad'], t: 'roll', roll: 66,
+      how: 'Bauchlage, auf die Unterarme stützen, die Rolle liegt unter einem Oberschenkel. Mit den Armen den Körper langsam vor und zurück schieben, zwischen Hüfte und knapp über dem Knie. Das andere Bein entlastet etwas, dann Seite wechseln.',
+      cue: 'Bauch fest, nicht ins Hohlkreuz sinken. Nicht über die Kniescheibe rollen.',
+      A: P('30 51,37 54,62 57,88 57.5,106 62,110 68,88 60,105 65,109 70,41 71,27 71,43 71,29 71'),
+      B: P('12 51,19 54,44 57,70 57.5,88 62,92 68,70 60,87 65,91 70,23 71,9 71,25 71,11 71'),
+      hl: [['P', 'Kn']], dur: 4.4 },
+    { name: 'Hüfte seitlich rollen', dose: '45 s je Seite', m: ['hueftbeuger','gesaess'], t: 'roll', roll: 64,
+      how: 'Halb seitlich auf die Rolle legen, sie liegt knapp unter dem Hüftknochen, etwas nach vorn gedreht. Auf den Unterarm stützen, das obere Bein darf vorn aufgestellt werden. Nur ein paar Zentimeter hin und her rollen, dann Seite wechseln.',
+      cue: 'Nicht über die ganze Außenseite des Oberschenkels walzen, das tut nur weh und bringt wenig.',
+      A: P('24 42,30 46,62 57,82 63,100 69,105 71,80 62,98 68,103 70,36 71,24 71,48 50,56 56'),
+      B: P('30 42,36 46,68 57,88 63,106 69,111 71,86 62,104 68,109 70,42 71,30 71,54 50,62 56'),
+      hl: [['P', 'Kn']], dur: 3 },
+    { name: 'Gesäß rollen', dose: '60 s je Seite', m: ['gesaess'], t: 'roll', roll: 58,
+      how: 'Auf die Rolle setzen, Hände hinter dem Körper aufstützen. Einen Knöchel auf das andere Knie legen und zur Seite des angehobenen Beins kippen. Langsam kleine Bewegungen über das Gesäß, dann Seite wechseln.',
+      cue: 'Ruhig weiteratmen, an harten Stellen kurz bleiben.',
+      A: P('50 26,52 34,58 58,78 48,82 71,89 72,72 44,80 46,84 44,46 58,42 72,48 58,44 72'),
+      B: P('54 26,56 34,62 58,82 48,84 71,91 72,76 44,84 46,88 44,50 58,46 72,52 58,48 72'),
+      hl: [['P', 'Kn']], dur: 3.4 },
+    { name: 'Oberer Rücken rollen', dose: '60 s', m: ['bws','lat'], t: 'roll', roll: 40,
+      how: 'Rolle quer unter die Schulterblätter, Füße aufgestellt, Hände locker hinter den Kopf. An drei bis vier Stellen zwischen Schulterblättern und unterem Rippenrand den oberen Rücken über die Rolle nach hinten sinken lassen, ausatmen und wieder hochkommen.',
+      cue: 'Nur der obere Rücken, nicht bis in den unteren Rücken rollen. Kopf mit den Händen stützen, nicht am Nacken ziehen.',
+      A: P('22 52,32 57,68 68,84 50,92 72,100 72,82 51,90 72,98 72,30 42,20 47,32 43,22 48,44 52'),
+      B: P('16 60,28 59,68 68,84 50,92 72,100 72,82 51,90 72,98 72,24 48,14 55,26 49,16 56,44 53'),
+      hl: [['N', 'P']], dur: 4.4 }
+  ];
+  BLACKROLL.forEach(b => { b.re = new RegExp('^' + b.name + '$', 'i'); b.props = ['roll']; LIB.unshift(b); });
+  /* kräftigt (Kraft-Farbe in der Muskelkarte) statt nur zu dehnen, mobilisieren oder rollen */
+  const strengthens = l => !!l && (!['stretch', 'rep', 'roll'].includes(l.t) || l.mh === 'Trainiert');
   function lib(name) { return LIB.find(e => e.re.test(name)) || null; }
 
   /* ---------- Zeichnen ---------- */
@@ -334,6 +371,7 @@
     if (pr.includes('hyper')) s.push('<path d="M47 61 58 51" stroke="var(--prop)" stroke-width="6" stroke-linecap="round"/><path d="M53 57V72M22 60 31 70M24 72H60" stroke="var(--prop)" stroke-width="3" stroke-linecap="round" fill="none"/>');
     if (pr.includes('liege')) s.push('<rect x="22" y="52" width="52" height="5" rx="2" fill="var(--prop)"/><path d="M30 57V72M66 57V72M30 61H38" stroke="var(--prop)" stroke-width="3" stroke-linecap="round"/>');
     if (pr.includes('sofa')) s.push('<rect x="78" y="50" width="38" height="9" rx="3" fill="var(--prop)"/><path d="M82 59V72M112 59V72" stroke="var(--prop)" stroke-width="3"/>');
+    if (pr.includes('roll')) s.push(`<circle cx="${ex.roll}" cy="66.5" r="6" fill="var(--c)"/><circle cx="${ex.roll}" cy="66.5" r="2" fill="var(--c-d)"/>`);
     if (pr.includes('tuer')) s.push('<rect x="34" y="4" width="5" height="69" rx="1.5" fill="var(--prop)"/>');
     return s.join('');
   }
@@ -449,17 +487,19 @@
   function bodyMap(ex) {
     if (!ex || !ex.m || !ex.m.length) return '';
     const on = new Set(ex.m), cx = { v: 30, h: 90 };
-    const st = act => `fill="${act ? 'var(--mm-act)' : 'var(--mm-in)'}" stroke="var(--mm-body)" stroke-width=".5" stroke-linejoin="round"`;
+    /* gekräftigte Muskeln immer in der Kraft-Farbe, alles andere im Ton der Einheit */
+    const kr = new Set(ex.k || (strengthens(ex) ? ex.m : []));
+    const st = (act, k) => `fill="${k ? 'var(--kraft-mm)' : act ? 'var(--mm-act)' : 'var(--mm-in)'}" stroke="var(--mm-body)" stroke-width=".5" stroke-linejoin="round"`;
     /* Pfade mit negativen x-Werten sind schon symmetrisch, alle anderen werden gespiegelt */
-    const put = (sd, path, act) => { g[sd] += `<path d="${path}" ${st(act)}/>` + (path.includes('-') ? '' : `<path d="${path}" transform="scale(-1 1)" ${st(act)}/>`); };
+    const put = (sd, path, act, k) => { g[sd] += `<path d="${path}" ${st(act, k)}/>` + (path.includes('-') ? '' : `<path d="${path}" transform="scale(-1 1)" ${st(act, k)}/>`); };
     let g = { v: '', h: '' };
     ['v', 'h'].forEach(sd => DECO[sd].forEach(d => put(sd, d, false)));
-    Object.keys(MUSC).forEach(k => { if (k === 'soleus' && !on.has(k)) return; const [, sides] = MUSC[k]; Object.keys(sides).forEach(sd => sides[sd].forEach(d => put(sd, d, on.has(k)))); });
+    Object.keys(MUSC).forEach(k => { if (k === 'soleus' && !on.has(k)) return; const [, sides] = MUSC[k]; Object.keys(sides).forEach(sd => sides[sd].forEach(d => put(sd, d, on.has(k), kr.has(k)))); });
     const names = ex.m.map(k => MUSC[k] && MUSC[k][0]).filter(Boolean);
-    const head = ex.mh || (ex.t === 'stretch' ? 'Gedehnt' : ex.t === 'rep' ? 'Mobilisiert' : 'Trainiert');
+    const head = ex.mh || (ex.t === 'stretch' ? 'Gedehnt' : ex.t === 'rep' ? 'Mobilisiert' : ex.t === 'roll' ? 'Gerollt' : 'Trainiert');
     return `<div class="musc"><svg viewBox="0 0 120 109" role="img" aria-label="${head}: ${names.join(', ')}">${figure(cx.v)}${figure(cx.h)}<g transform="translate(${cx.v} 0)">${g.v}</g><g transform="translate(${cx.h} 0)">${g.h}</g></svg>
       <div class="musc-tx"><small>${head}</small><b>${names.join(' · ')}</b></div></div>`;
   }
 
-  window.UEBUNGEN = { LIB, lib, svg, animate, bodyMap };
+  window.UEBUNGEN = { LIB, BLACKROLL, lib, strengthens, svg, animate, bodyMap };
 })();
