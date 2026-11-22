@@ -66,7 +66,7 @@
     data: ls.get('tri:data', null),
     loading: false, err: null, busy: {}, msgs: {},
     weekOff: 0, sheetId: null, active: {}, drafts: {}, open: {}, slide: 0, started: {},
-    drillOpen: {}, warmOpen: {}, brOpen: {}, brAct: {}, regenTab: 'rolle', xSec: 'regen', fuelMin: 0, fuelSp: null, rirEdit: null, rest: null, timer: null, timerSeen: {}, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
+    drillOpen: {}, warmOpen: {}, brOpen: {}, brAct: {}, regenTab: 'rolle', xSec: 'regen', fuelMin: 0, fuelSp: null, zSp: 'bike', rirEdit: null, rest: null, timer: null, timerSeen: {}, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
   };
 
   /* ---------- Schnittstelle ---------- */
@@ -846,44 +846,25 @@
   const REGEN = {
     rolle: {
       name: 'Rolle', ic: BR_IC,
-      kurz: [['Wann', 'Steif vor dem Training, nach harten oder langen Einheiten, bei Muskelkater'], ['Wie', 'Langsam, 2–3 cm pro Sekunde, höchstens 6 von 10'], ['Nicht', 'Unterer Rücken, Kniekehle, Knochen, Gelenke']],
-      info: [
-        ['Wann es Sinn macht', [
-          'Vor dem Training oder vor Stabi, wenn du dich steif fühlst: 30–60 s pro Muskel machen ihn für kurze Zeit beweglicher, ohne Kraft zu kosten (anders als langes Dehnen).',
-          'Nach harten oder langen Einheiten und bei Muskelkater: fühlt sich besser an und nimmt etwas Schmerz. Am Abend, auf dem Sofa, auch nach dem Nachtdienst.',
-          'Nicht nötig: an Tagen, an denen sich alles locker anfühlt. Es ist ein Wohlfühl-Werkzeug, kein Pflichtteil.'
-        ]],
-        ['So rollst du', [
-          'Langsam, etwa 2–3 cm pro Sekunde. Höchstens 6 von 10, ein Wohlweh. An empfindlichen Stellen 20–30 s bleiben und ausatmen.',
-          'Nicht auf unteren Rücken, Kniekehle, Knochen, Gelenke oder frische Verletzungen.'
-        ]]
+      kurz: [
+        ['Wann', ['Vor dem Training oder vor Stabi, wenn du dich steif fühlst: macht für kurze Zeit beweglicher, ohne Kraft zu kosten.', 'Nach harten oder langen Einheiten, bei Muskelkater, abends oder nach dem Nachtdienst.', 'Kein Pflichtteil: Fühlt sich alles locker an, kannst du es lassen.']],
+        ['Wie', ['Langsam, etwa 2–3 cm pro Sekunde, 30–60 s pro Muskel.', 'Höchstens 6 von 10, ein Wohlweh. An harten Stellen 20–30 s bleiben und ausatmen.']],
+        ['Nicht', ['Unterer Rücken, Kniekehle, Knochen und Gelenke.', 'Frische Verletzungen.']]
       ]
     },
     pistole: {
       name: 'Pistole', ic: GUN_IC,
-      kurz: [['Wann', 'Nach dem Laufen oder Rad, vor allem für die Beine'], ['Wie', 'Stufe 20–50 von 90, ohne Druck, 30–60 s pro Muskel'], ['Nicht', 'Knochen, Gelenke, Wirbelsäule, Hals vorn, Blutergüsse']],
-      info: [
-        ['Wann es Sinn macht', [
-          'Wie die Rolle, vor allem für Waden, Oberschenkel und Gesäß. Gut nach dem Laufen oder auf dem Rad-Trainer.',
-          'Praktisch, wenn Hinlegen auf die Rolle gerade nicht geht, etwa am Abend auf dem Sofa.'
-        ]],
-        ['So gehst du vor', [
-          'Runder Aufsatz. Den Kopf ohne Druck über den Muskel gleiten lassen, 30–60 s pro Muskel, höchstens etwa 2 min an einer Stelle.',
-          'Stufe (1–90): die ersten Male bei etwa 20 anfangen und langsam hochgehen. Waden und hintere Oberschenkel 20–40, vordere Oberschenkel und Gesäß 30–50. Über 60 bringt kaum mehr, eher Ziehen und blaue Flecken.',
-          'Vor dem Training kurz und eher niedrig (20–30, 30 s pro Muskel), danach oder am Abend etwas höher. Bei Muskelkater niedriger als sonst (15–25).',
-          'Den Muskel locker lassen, nicht anspannen. Fühlt es sich stechend an: weiterziehen oder Stufe runter.'
-        ]],
-        ['Lieber nicht', [
-          'Auf Knochen, Gelenke, Wirbelsäule, Hals vorn, Krampfadern, Blutergüsse oder frische Verletzungen.',
-          'Mit Blutverdünnern lieber ganz lassen.'
-        ]]
+      kurz: [
+        ['Wann', ['Wie die Rolle, vor allem für die Beine: nach dem Laufen, auf dem Rad-Trainer oder abends auf dem Sofa.', 'Vor dem Training nur kurz: 30 s pro Muskel, Stufe 20–30.']],
+        ['Wie', ['Runder Aufsatz, ohne Druck über den Muskel gleiten lassen, 30–60 s pro Muskel, höchstens etwa 2 min an einer Stelle.', 'Stufe 1–90: die ersten Male bei etwa 20 anfangen. Über 60 bringt kaum mehr. Bei Muskelkater niedriger (15–25).', 'Muskel locker lassen. Sticht es: weiterziehen oder Stufe runter.']],
+        ['Nicht', ['Knochen, Gelenke, Wirbelsäule, Hals vorn, Krampfadern, Blutergüsse, frische Verletzungen.', 'Mit Blutverdünnern lieber ganz lassen.']]
       ],
       list: [
-        { name: 'Waden', dose: '60 s je Seite · Stufe 20–35', how: 'Im Sitzen, das Bein locker gestreckt. Vom Knie bis kurz über die Ferse gleiten, einmal innen, einmal außen am Muskelbauch.', cue: 'Nicht auf die Achillessehne und nicht in die Kniekehle. Die Wade ist empfindlich: lieber unten anfangen.' },
-        { name: 'Oberschenkel vorn', dose: '60 s je Seite · Stufe 30–50', how: 'Im Sitzen, Bein locker gestreckt. Von der Leiste bis eine Handbreit über dem Knie in Längsbahnen gleiten.', cue: 'Nicht auf die Kniescheibe.' },
-        { name: 'Oberschenkel hinten', dose: '45 s je Seite · Stufe 25–40', how: 'Bein auf dem Sofa oder einem Stuhl ablegen, Knie leicht gebeugt. Mitte der Oberschenkelrückseite, vom Gesäß bis kurz über die Kniekehle.', cue: 'Kniekehle auslassen.' },
-        { name: 'Gesäß', dose: '60 s je Seite · Stufe 35–55', how: 'Im Stehen, Gewicht aufs andere Bein, die Gesäßseite locker lassen. In kleinen Kreisen über den Muskel.', cue: 'Nicht auf den Beckenknochen und nicht aufs Kreuzbein.' }
-      ]
+        { name: 'Waden', dose: '60 s je Seite · Stufe 20–35', m: ['wade', 'soleus'], how: 'Im Sitzen, das Bein locker gestreckt. Vom Knie bis kurz über die Ferse gleiten, einmal innen, einmal außen am Muskelbauch.', cue: 'Nicht auf die Achillessehne und nicht in die Kniekehle. Die Wade ist empfindlich: lieber unten anfangen.' },
+        { name: 'Oberschenkel vorn', dose: '60 s je Seite · Stufe 30–50', m: ['quad'], how: 'Im Sitzen, Bein locker gestreckt. Von der Leiste bis eine Handbreit über dem Knie in Längsbahnen gleiten.', cue: 'Nicht auf die Kniescheibe.' },
+        { name: 'Oberschenkel hinten', dose: '45 s je Seite · Stufe 25–40', m: ['hamstrings'], how: 'Bein auf dem Sofa oder einem Stuhl ablegen, Knie leicht gebeugt. Mitte der Oberschenkelrückseite, vom Gesäß bis kurz über die Kniekehle.', cue: 'Kniekehle auslassen.' },
+        { name: 'Gesäß', dose: '60 s je Seite · Stufe 35–55', m: ['gesaess'], how: 'Im Stehen, Gewicht aufs andere Bein, die Gesäßseite locker lassen. In kleinen Kreisen über den Muskel.', cue: 'Nicht auf den Beckenknochen und nicht aufs Kreuzbein.' }
+      ].map(x => Object.assign(x, { mh: 'Massiert' }))
     }
   };
   function regenTab() { return REGEN[state.regenTab] ? state.regenTab : 'rolle'; }
@@ -895,29 +876,29 @@
       let h = `<div class="mob-ex${on ? ' active' : ''}"><div class="mob-row"><button class="open" data-br-open="${id}|${i}" aria-expanded="${on}"><span class="thumb${fig ? '' : ' rg-num'}">${fig ? U.svg(b, { t: 0.5 }) : i + 1}</span><span class="tx"><b>${esc(b.name)}</b><small>${esc(b.dose)}</small></span>${on ? CHEV_D : CHEV_R}</button></div>`;
       if (on) h += fig
         ? `<div class="mob-detail"><div class="mob-l"><button class="fig zoomable" data-zoom="${esc(b.name)}" aria-label="Skizze ${esc(b.name)} vergrößern">${U.svg(b, { id: 'live:' + encodeURIComponent(b.name), label: 'Animation: ' + b.name })}</button>${zoomMap(U.bodyMap(b), b.name)}</div><div class="mob-r"><p class="howto">${esc(b.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(b.cue)}</p></div></div>`
-        : `<div class="mob-detail solo"><div class="mob-r"><p class="howto">${esc(b.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(b.cue)}</p></div></div>`;
+        : `<div class="mob-detail rg-gun"><div class="mob-l">${zoomMap(U.bodyMap(b), b.name)}</div><div class="mob-r"><p class="howto">${esc(b.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(b.cue)}</p></div></div>`;
       return h + '</div>';
     }).join('') + '</div>';
   }
   function regenKurz(t) {
-    return `<div class="rg-kurz">${REGEN[t].kurz.map(([k, x]) => `<div class="rg-k${k === 'Nicht' ? ' no' : ''}"><b>${k}</b><span>${esc(x)}</span></div>`).join('')}</div>`;
-  }
-  function regenInfo(t) {
-    const id = 'info-' + t, open = !!state.brOpen[id];
-    let h = `<section class="warm br-box rg-info" style="${cv('mob')}"><button class="warm-h" data-br="${id}" aria-expanded="${open}"><span class="tx"><b>Gut zu wissen</b><small>Ausführlich: wann, wie, wann lieber nicht</small></span>${CHEV_D}</button>`;
-    if (open) REGEN[t].info.forEach(([ti, xs]) => { h += `<div class="br-sec"><b>${esc(ti)}</b><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`; });
-    return h + '</section>';
+    return `<div class="rg-kurz">${REGEN[t].kurz.map(([k, xs]) => `<div class="rg-k${k === 'Nicht' ? ' no' : ''}"><b>${k}</b><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}</div>`;
   }
   function regenHTML() {
-    const t = regenTab(), R = REGEN[t];
-    const n = t === 'rolle' ? U.BLACKROLL.length : R.list.length;
+    const t = regenTab();
     const seg = `<div class="rg-seg" role="tablist" aria-label="Werkzeug">${Object.keys(REGEN).map(k => `<button role="tab" data-regen="${k}" aria-selected="${k === t}">${REGEN[k].ic}${REGEN[k].name}</button>`).join('')}</div>`;
-    const left = `<section class="card rg-card" style="${cv('mob')}">${seg}<div class="rg-sub">${n} Bereiche · nach Gefühl, kein Pflichtteil</div>${regenList(t)}</section>`;
-    return [left, regenKurz(t) + regenInfo(t)];
+    return [`<section class="card rg-card" style="${cv('mob')}">${seg}${regenList(t)}</section>`, regenKurz(t)];
   }
 
-  /* ---------- Ernährung rund ums Training ---------- */
+  /* ---------- Ernährung rund ums Training: deine Produkte ---------- */
   const FUEL_MIN = [60, 90, 120, 180, 240];
+  const PROD = {
+    drink: { n: 'Getränkepulver (500 ml)', g: 30, na: 100 },
+    bar: { n: 'Riegel', g: 30, na: 100 },
+    gel45: { n: 'Gel 45', g: 45, na: 0 },
+    gel30: { n: 'Gel 30 mit Natrium', g: 30, na: 100 },
+    banane: { n: 'Banane', g: 25, na: 0 },
+    gummi: { n: 'Gummibärchen (Handvoll)', g: 19, na: 0 }
+  };
   /* Kohlenhydrate pro Stunde und Trinkmenge je nach Dauer; Laufen etwas weniger, weil der Magen mehr durchgeschüttelt wird */
   function fuelFor(min, run) {
     const g = min < 60 ? [0, 0] : min <= 90 ? [30, 45] : min <= 150 ? [45, 60] : [60, 90];
@@ -925,37 +906,18 @@
     const ml = run ? [300, 600] : [400, 800];
     const h = min / 60;
     const gMid = Math.round((gh[0] + gh[1]) / 2 * h / 5) * 5, mlMid = Math.round((ml[0] + ml[1]) / 2 * h / 100) * 100;
-    const bottles = Math.max(0, Math.round(mlMid / 500));
-    const gels = Math.max(0, Math.ceil((gMid - bottles * 30) / 25));
-    return { gh, ml, gMid, mlMid, bottles, gels };
+    /* Mischung: Getränk nach Trinkmenge, am Rad ein Riegel pro angefangene 1,5 h (fest geht dort besser), Rest mit Gels */
+    const mix = { drink: Math.max(0, Math.round(mlMid / 500)), bar: 0, gel45: 0, gel30: 0 };
+    let rest = gMid - mix.drink * 30;
+    if (!run && rest > 0 && min >= 120) { mix.bar = Math.min(Math.floor(h / 1.5), Math.ceil(rest / 30)); rest -= mix.bar * 30; }
+    if (rest > 0) { mix.gel45 = Math.floor(rest / 45); rest -= mix.gel45 * 45; if (rest > 12) { mix.gel30 = 1; rest -= 30; } }
+    const sum = Object.keys(mix).reduce((a, k) => ({ g: a.g + mix[k] * PROD[k].g, na: a.na + mix[k] * PROD[k].na }), { g: 0, na: 0 });
+    return { gh, ml, gMid, mlMid, mix, sum };
   }
   function nextLong(M) {
     const tk = today(), tmr = iso(addDays(new Date(), 1));
     return M.plan.find(p => (p.date === tk || p.date === tmr) && ['Rad', 'Laufen'].includes(sp(p.sport).fam) && p.dur >= 60 && statusOf(p, M) !== 'done');
   }
-  const FUEL_INFO = [
-    ['Vorher', 'Mahlzeit 2–3 h vorher, sonst kleiner Snack', [
-      '2–3 Stunden vorher eine normale Mahlzeit mit Kohlenhydraten, wenig Fett und Ballaststoffen (Brot mit Honig, Haferflocken, Reis, Nudeln).',
-      'Knapp dran oder früh am Morgen: 30–60 min vorher ein kleiner Snack, z. B. eine Banane oder ein Toast mit Honig.',
-      'Lockere Einheiten unter etwa 75 min gehen morgens auch nüchtern. Harte Einheiten nicht.'
-    ]],
-    ['Währenddessen', 'Ab 60 min regelmäßig, in kleinen Portionen', [
-      'Unter 60 min: nur Wasser nach Durst.',
-      'Ab 60 min ab etwa 20–30 min regelmäßig etwas: alle 15–20 min ein paar Schlucke und kleine Portionen statt einmal viel.',
-      'Mehr als 60 g pro Stunde verträgt der Bauch erst nach Übung. In langen Einheiten trainieren, nicht erst am Wettkampftag.',
-      'Bei Hitze oder viel Schweiß: Sportgetränk oder Salztabletten statt nur Wasser.'
-    ]],
-    ['Danach', 'Kohlenhydrate und 20–30 g Eiweiß', [
-      'Innerhalb von 1–2 Stunden eine Mahlzeit mit Kohlenhydraten und 20–30 g Eiweiß (z. B. Skyr oder Quark mit Haferflocken und Obst, Nudeln mit Hähnchen oder Linsen).',
-      'Nach harten oder langen Einheiten oder wenn am selben Tag noch eine kommt: lieber schon nach 30–60 min.',
-      'Trinken, bis der Urin wieder hell ist.'
-    ]],
-    ['Rund um den Nachtdienst', 'Kleine Portionen, Koffein früh weglassen', [
-      'Vor dem Dienst eine richtige Mahlzeit, in der Nacht eher kleine, leichte Portionen statt einer großen.',
-      'Nach dem Dienst vor dem Schlafen nur etwas Leichtes, damit der Schlaf nicht leidet. Koffein ab etwa 4 Uhr weglassen.'
-    ]]
-  ];
-  const FUEL_EX = [['Gel', '≈ 25 g'], ['Sportgetränk 500 ml', '≈ 30 g'], ['Banane', '≈ 25 g'], ['Müsliriegel', '≈ 20–30 g'], ['Weißbrot mit Honig', '≈ 30 g']];
   function fuelHTML(M) {
     const nl = nextLong(M);
     const run = state.fuelSp != null ? state.fuelSp === 'run' : nl ? sp(nl.sport).fam === 'Laufen' : false;
@@ -964,56 +926,43 @@
     const hint = nl && !state.fuelMin && state.fuelSp == null ? `<div class="fu-next">Für ${nl.date === today() ? 'heute' : 'morgen'}: <b>${esc(nl.title)}</b> · ${nl.dur} min</div>` : '';
     const chips = `<div class="fu-chips" role="group" aria-label="Dauer">${FUEL_MIN.map(m => `<button data-fuel="min|${m}" aria-pressed="${m === min}">${m >= 120 ? m / 60 + ' h' : m + ' min'}</button>`).join('')}</div>`;
     const sw = `<div class="rg-seg" role="tablist" aria-label="Sportart"><button role="tab" data-fuel="sp|bike" aria-selected="${!run}">Rad</button><button role="tab" data-fuel="sp|run" aria-selected="${run}">Laufen</button></div>`;
-    const res = f.gh[1] ? `<div class="fu-res"><div><b class="num">${f.gh[0]}–${f.gh[1]} g</b><small>Kohlenhydrate pro Stunde</small></div><div><b class="num">${f.ml[0]}–${f.ml[1]} ml</b><small>Trinken pro Stunde</small></div></div>
-      <p class="fu-ex">Insgesamt etwa <b>${f.gMid} g</b> und <b>${(f.mlMid / 1000).toLocaleString('de-DE')} l</b>, z. B. ${f.bottles ? `${f.bottles} × Sportgetränk à 500 ml` : ''}${f.bottles && f.gels ? ' + ' : ''}${f.gels ? `${f.gels} ${f.gels === 1 ? 'Gel' : 'Gels'}` : ''}${run ? '. Beim Laufen Gels und Becher, die Flasche eher am Gürtel oder auf der Runde deponieren.' : '.'}</p>`
-      : '<p class="fu-ex">Unter einer Stunde reicht Wasser nach Durst.</p>';
-    const left = `<section class="card fu-card" style="${cv(run ? 'run' : 'bike')}">${hint}${sw}${chips}${res}<div class="fu-tab">${FUEL_EX.map(([n, g]) => `<span>${esc(n)}<b class="num">${g}</b></span>`).join('')}</div></section>`;
-    const right = FUEL_INFO.map(([t, sub, xs], i) => {
-      const id = 'fu-' + i, open = !!state.brOpen[id];
-      let h = `<section class="warm br-box rg-info"><button class="warm-h" data-br="${id}" aria-expanded="${open}"><span class="tx"><b>${esc(t)}</b><small>${esc(sub)}</small></span>${CHEV_D}</button>`;
-      if (open) h += `<div class="br-sec"><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
-      return h + '</section>';
-    }).join('');
+    let res;
+    if (f.gh[1]) {
+      const rows = Object.keys(f.mix).filter(k => f.mix[k]).map(k => `<div class="fu-m"><b class="num">${f.mix[k]} ×</b><span>${esc(PROD[k].n)}</span><small class="num">${f.mix[k] * PROD[k].g} g</small></div>`).join('');
+      res = `<div class="fu-res"><div><b class="num">${f.gh[0]}–${f.gh[1]} g</b><small>Kohlenhydrate pro Stunde</small></div><div><b class="num">${f.ml[0]}–${f.ml[1]} ml</b><small>Trinken pro Stunde</small></div></div>
+        <div class="fu-mix"><div class="fu-mh"><b>Vorschlag</b><span class="num">${f.sum.g} g · ${f.sum.na} mg Natrium · ${(f.mlMid / 1000).toLocaleString('de-DE')} l</span></div>${rows}</div>
+        <p class="fu-ex">Ab Minute 20 alle 20–30 min etwas${run ? ', beim Laufen eher Gels' : ', Riegel lieber in der ersten Hälfte, Gels später'}. Bei Hitze oder viel Schweiß mehr Natrium.</p>`;
+    } else res = '<p class="fu-ex">Unter einer Stunde reicht Wasser nach Durst.</p>';
+    const left = `<section class="card fu-card" style="${cv(run ? 'run' : 'bike')}">${hint}${sw}${chips}${res}</section>`;
+    const right = `<section class="card fu-prod"><div class="fu-mh"><b>Deine Produkte</b><span>pro Stück</span></div>${Object.keys(PROD).map(k => `<div class="fu-p"><span>${esc(PROD[k].n)}</span><b class="num">${PROD[k].g} g</b><small class="num">${PROD[k].na ? PROD[k].na + ' mg Na' : ''}</small></div>`).join('')}</section>`;
     return [left, right];
   }
 
-  /* ---------- Zonen aus den Bezugswerten im Blatt „Einstellungen“ ---------- */
+  /* ---------- Zonen aus den Bezugswerten im Blatt „Einstellungen“, als Tabelle ---------- */
   function zonesHTML() {
     const w = pc => r5(FTP * pc / 100), bpm = pc => Math.round(LTHR * pc / 100);
     const pace = pc => mmss(r5(TPACE * pc / 100)); /* pc in % der Schwellenzeit pro km */
     const sw = d => mmss(TCSS + d);
-    const card = (k, title, ref, rows, note) => `<section class="card zn-card" style="${cv(k)}"><div class="zn-h"><b>${title}</b><small>${ref}</small></div>${rows.map(([z, n, r, feel], i) => `<div class="zn-row"><span class="zn-z" style="--o:${0.25 + i * 0.15}">${z}</span><span class="zn-n"><b>${n}</b><small>${feel}</small></span><span class="zn-r num">${r}</span></div>`).join('')}${note ? `<p class="zn-note">${note}</p>` : ''}</section>`;
-    const bike = card('bike', 'Rad · Watt', `FTP ${FTP} W`, [
-      ['Z1', 'Erholung', `bis ${w(55)} W`, 'Ganz locker, Beine ausrollen'],
-      ['Z2', 'Grundlage', `${w(55)}–${w(75)} W`, 'Ganze Sätze reden geht'],
-      ['Z3', 'Tempo', `${w(75)}–${w(90)} W`, 'Kurze Sätze, zählt schon als hart'],
-      ['Z4', 'Schwelle', `${w(90)}–${w(105)} W`, 'Nur noch wenige Worte'],
-      ['Z5', 'VO₂max', `${w(105)}–${w(120)} W`, 'Wenige Minuten am Stück'],
-      ['Z6', 'Anaerob', `ab ${w(120)} W`, 'Kurze Sprints']
-    ], `Sweet Spot: ${w(88)}–${w(94)} W (88–94 % FTP).`);
-    const runHr = card('run', 'Laufen · Puls', `Schwellenpuls ${LTHR}`, [
-      ['Z1', 'Erholung', `bis ${bpm(85) - 1}`, 'Ganz locker'],
-      ['Z2', 'Grundlage', `${bpm(85)}–${bpm(90) - 1}`, 'Ganze Sätze reden geht'],
-      ['Z3', 'Tempo', `${bpm(90)}–${bpm(95) - 1}`, 'Kurze Sätze'],
-      ['Z4', 'Schwelle', `${bpm(95)}–${bpm(100) - 1}`, 'Nur noch wenige Worte'],
-      ['Z5', 'Hart', `ab ${bpm(100)}`, 'Intervalle, kurz']
-    ], 'Der Puls hinkt bei kurzen Intervallen hinterher: dort eher nach Pace oder Gefühl.');
-    const runPace = card('run', 'Laufen · Pace', `Schwelle ${mmss(TPACE)} /km`, [
-      ['Z1', 'Erholung', `langsamer als ${pace(129)}`, 'Ganz locker'],
-      ['Z2', 'Grundlage', `${pace(114)}–${pace(129)}`, 'Ganze Sätze reden geht'],
-      ['Z3', 'Tempo', `${pace(106)}–${pace(114)}`, 'Kurze Sätze'],
-      ['Z4', 'Schwelle', `${pace(99)}–${pace(106)}`, 'Nur noch wenige Worte'],
-      ['Z5', 'Hart', `schneller als ${pace(99)}`, 'Intervalle, kurz']
-    ], 'Pro km. Bergauf, bei Hitze und Wind lieber nach Puls.');
-    const swim = TCSS ? card('swim', 'Schwimmen · pro 100 m', `CSS ${mmss(TCSS)}`, [
-      ['Z1', 'Locker', `langsamer als ${sw(10)}`, 'Einschwimmen, Technik'],
-      ['Z2', 'Grundlage', `${sw(5)}–${sw(10)}`, 'Lange Serien, ruhig'],
-      ['Z3', 'Gleichmäßig', `${sw(2)}–${sw(5)}`, 'Hauptserien „gleichmäßig“ (≈ ' + sw(4) + ')'],
-      ['Z4', 'Schwelle', `${sw(-3)}–${sw(2)}`, 'Hauptserien „an der Schwelle“'],
-      ['Z5', 'Zügig', `schneller als ${sw(-3)}`, 'Hauptserien „zügig“ (≈ ' + sw(-6) + ')']
-    ], '') : `<section class="card zn-card" style="${cv('swim')}"><div class="zn-h"><b>Schwimmen</b><small>noch kein Test</small></div><p class="zn-note">Nach dem ersten Schwimmtest (400/200 m) stehen hier deine Zeiten pro 100 m.</p></section>`;
-    const src = '<p class="zn-src">Gerechnet aus deinen Werten im Blatt „Einstellungen“. Ändern sie sich, passen sich die Zonen an.</p>';
-    return [bike + swim, runHr + runPace + src];
+    const k = ['bike', 'run', 'swim'].includes(state.zSp) ? state.zSp : 'bike';
+    const tabs = [['bike', 'Rad'], ['run', 'Laufen'], ['swim', 'Schwimmen']];
+    const seg = `<div class="rg-seg zn-seg" role="tablist" aria-label="Sportart">${tabs.map(([v, n]) => `<button role="tab" data-zsp="${v}" aria-selected="${v === k}">${n}</button>`).join('')}</div>`;
+    let ref, cols, rows, extra = '';
+    if (k === 'bike') {
+      ref = `FTP ${FTP} W`; cols = ['Watt', '% FTP'];
+      rows = [['Z1', 'Erholung', `< ${w(55)}`, '< 55'], ['Z2', 'Grundlage', `${w(55)}–${w(75)}`, '55–75'], ['Z3', 'Tempo', `${w(75)}–${w(90)}`, '75–90'], ['Z4', 'Schwelle', `${w(90)}–${w(105)}`, '90–105'], ['Z5', 'VO₂max', `${w(105)}–${w(120)}`, '105–120'], ['Z6', 'Anaerob', `> ${w(120)}`, '> 120']];
+      extra = `<tr class="zt-ss"><td><span class="zn-z ss">SS</span>Sweet Spot</td><td class="num">${w(88)}–${w(94)}</td><td class="num">88–94</td></tr>`;
+    } else if (k === 'run') {
+      ref = `Schwelle ${LTHR} · ${mmss(TPACE)}/km`; cols = ['Puls', 'Pace /km'];
+      rows = [['Z1', 'Erholung', `< ${bpm(85)}`, `> ${pace(129)}`], ['Z2', 'Grundlage', `${bpm(85)}–${bpm(90) - 1}`, `${pace(114)}–${pace(129)}`], ['Z3', 'Tempo', `${bpm(90)}–${bpm(95) - 1}`, `${pace(106)}–${pace(114)}`], ['Z4', 'Schwelle', `${bpm(95)}–${bpm(100) - 1}`, `${pace(99)}–${pace(106)}`], ['Z5', 'Hart', `≥ ${bpm(100)}`, `< ${pace(99)}`]];
+    } else if (TCSS) {
+      ref = `CSS ${mmss(TCSS)}/100 m`; cols = ['/100 m', 'zur CSS'];
+      rows = [['Z1', 'Locker', `> ${sw(10)}`, '> +10 s'], ['Z2', 'Grundlage', `${sw(5)}–${sw(10)}`, '+5 bis +10 s'], ['Z3', 'Gleichmäßig', `${sw(2)}–${sw(5)}`, '+2 bis +5 s'], ['Z4', 'Schwelle', `${sw(-3)}–${sw(2)}`, '−3 bis +2 s'], ['Z5', 'Zügig', `< ${sw(-3)}`, '< −3 s']];
+    }
+    const n = rows ? rows.length : 0;
+    const body = rows ? `<table class="zt"><thead><tr><th>Zone</th>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.map(([z, name, a, b], i) => `<tr><td><span class="zn-z" style="--o:${(0.22 + 0.78 * i / (n - 1)).toFixed(2)}">${z}</span>${name}</td><td class="num">${a}</td><td class="num">${b}</td></tr>${k === 'bike' && i === 2 ? extra : ''}`).join('')}</tbody></table>`
+      : '<p class="zn-note">Nach dem ersten Schwimmtest (400/200 m) stehen hier deine Zeiten pro 100 m.</p>';
+    const bar = rows ? `<div class="zn-bar" aria-hidden="true">${rows.map((_, i) => `<span style="--o:${(0.22 + 0.78 * i / (n - 1)).toFixed(2)}"></span>`).join('')}</div>` : '';
+    return [`<section class="card zn-card" style="${cv(k)}">${seg}<div class="zn-h"><b>${tabs.find(x => x[0] === k)[1]}</b><small>${ref || 'noch kein Test'}</small></div>${bar}${body}</section>`, ''];
   }
 
   const XSEC = [['regen', 'Regeneration'], ['fuel', 'Ernährung'], ['zonen', 'Zonen']];
@@ -1021,7 +970,7 @@
     const sec = XSEC.some(([k]) => k === state.xSec) ? state.xSec : 'regen';
     const nav = `<div class="x-nav" role="tablist" aria-label="Themen">${XSEC.map(([k, n]) => `<button role="tab" data-xsec="${k}" aria-selected="${k === sec}">${n}</button>`).join('')}</div>`;
     const [left, right] = sec === 'fuel' ? fuelHTML(M) : sec === 'zonen' ? zonesHTML() : regenHTML();
-    return header('Extras', 'Neben dem Plan', null, 'Neben dem Plan') + banner() + nav + `<div class="grid2"><div class="col">${left}</div><div class="col">${right}</div></div>`;
+    return header('Extras', 'Neben dem Plan', null, 'Neben dem Plan') + banner() + nav + (right ? `<div class="grid2"><div class="col">${left}</div><div class="col">${right}</div></div>` : `<div class="x-one">${left}</div>`);
   }
   /* Ablauf als Schrittliste: nach Sätzen gruppiert, aktueller Teil hervorgehoben */
   function mobStepsHTML(p, i, it, review) {
@@ -2127,6 +2076,7 @@
     }
     if ((el = q('[data-regen]'))) { state.regenTab = el.dataset.regen; render(); return; }
     if ((el = q('[data-xsec]'))) { state.xSec = el.dataset.xsec; render(); window.scrollTo(0, 0); return; }
+    if ((el = q('[data-zsp]'))) { state.zSp = el.dataset.zsp; render(); return; }
     if ((el = q('[data-fuel]'))) { const [k, v] = el.dataset.fuel.split('|'); if (k === 'min') state.fuelMin = +v; else state.fuelSp = v; render(); return; }
     if ((el = q('[data-br-open]'))) { const [pid, i] = el.dataset.brOpen.split('|'); state.brAct[pid] = state.brAct[pid] === +i ? -1 : +i; render(); return; }
     if ((el = q('[data-mob-open]'))) { const [pid, i] = el.dataset.mobOpen.split('|'); state.active[pid] = state.active[pid] === +i ? -1 : +i; if (state.active[pid] >= 0) state.scrollEx = pid; render(); return; }

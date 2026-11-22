@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="tri-v172">
+<meta name="app-version" content="tri-v173">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Triathlon</title>
 <script>
@@ -496,6 +496,32 @@ button.dsd:active{background:var(--fill)}
 .fu-tab{display:flex;flex-direction:column;border-top:.5px solid var(--line);padding-top:8px}
 .fu-tab span{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);padding:4px 0}
 .fu-tab b{font-weight:600;color:var(--fg-2)}
+.fu-mix{display:flex;flex-direction:column;border-top:.5px solid var(--line);padding-top:10px}
+.fu-mh{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-bottom:4px}
+.fu-mh b{font-size:15px;font-weight:700}
+.fu-mh span{font-size:13px;color:var(--muted);text-align:right}
+.fu-m{display:grid;grid-template-columns:40px 1fr auto;align-items:baseline;gap:8px;padding:6px 0;font-size:15px}
+.fu-m b{font-weight:700;color:var(--c-d)}
+.fu-m small{font-size:13px;color:var(--muted)}
+.fu-prod{padding:14px 16px 8px;display:flex;flex-direction:column}
+.fu-p{display:grid;grid-template-columns:1fr auto 76px;gap:10px;align-items:baseline;padding:8px 0;border-top:.5px solid var(--line);font-size:14px;color:var(--fg-2)}
+.fu-p b{font-weight:600;color:var(--fg)}
+.fu-p small{font-size:12px;color:var(--muted);text-align:right}
+.x-one{max-width:720px}
+.rg-seg.zn-seg{margin-bottom:12px;grid-template-columns:repeat(3,1fr)}
+.zn-seg button[aria-selected="true"]{color:var(--c-d)}
+.zn-bar{display:flex;gap:3px;height:8px;margin:2px 0 6px}
+.zn-bar span{flex:1;border-radius:4px;background:color-mix(in srgb,var(--c) calc(var(--o) * 100%),transparent)}
+.zt{width:100%;border-collapse:collapse;font-size:15px}
+.zt th{font-size:12px;font-weight:600;color:var(--muted);text-align:right;padding:6px 0 6px 8px}
+.zt th:first-child{text-align:left;padding-left:0}
+.zt td{padding:9px 0 9px 8px;border-top:.5px solid var(--line);text-align:right;white-space:nowrap;font-weight:600}
+.zt td:first-child{text-align:left;padding-left:0;font-weight:500;display:flex;align-items:center;gap:10px;white-space:normal}
+.zt .zn-z{width:28px;height:28px;font-size:12px;border-radius:8px}
+.zt-ss td{background:var(--c-t)}
+.zt-ss td:first-child{border-radius:10px 0 0 10px;padding-left:6px}
+.zt-ss td:last-child{border-radius:0 10px 10px 0;padding-right:6px}
+.zn-z.ss{background:var(--c-d);color:var(--card)}
 .rg-info .br-sec ul{padding-bottom:2px}
 .col>.rg-info{margin-bottom:0}
 .zn-card{padding:14px 16px 12px;display:flex;flex-direction:column}
@@ -525,10 +551,12 @@ button.dsd:active{background:var(--fill)}
 .rg-card .thumb{width:72px}
 .rg-num{display:grid;place-items:center;height:48px;font:700 18px var(--round);color:var(--c-d);background:var(--c-t)}
 .rg-kurz{display:flex;flex-direction:column;gap:8px}
-.rg-k{background:var(--card);border-radius:18px;display:flex;gap:12px;padding:12px 14px}
-.rg-k b{width:48px;flex:none;padding-top:1px;font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--mob-d)}
+.rg-k{background:var(--card);border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.rg-k b{font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--mob-d)}
 .rg-k.no b{color:var(--muted)}
-.rg-k span{font-size:14px;line-height:1.4;color:var(--fg-2)}
+.rg-k ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.rg-k li{font-size:14px;line-height:1.4;color:var(--fg-2)}
+.rg-gun .mob-l .musc{margin:0}
 @media (min-width:960px){.rg-side{padding-top:46px}}
 .br-box{margin-bottom:12px}
 .br-ref{margin-bottom:0}
