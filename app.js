@@ -924,10 +924,9 @@
     const gels = P.filter(p => p.typ === 'gel').sort((a, b) => b.g - a.g);
     if (gels.length && rest > 12) {
       const big = naH ? gels.slice().sort((a, b) => b.na / b.g - a.na / a.g || b.g - a.g)[0] : gels[0];
-      const small = gels.slice().sort((a, b) => (naH ? b.na - a.na : 0) || a.g - b.g).find(g => g !== big) || big;
-      const nb = big === small ? 0 : Math.floor(rest / big.g);
-      rest -= add(big, nb);
-      if (rest > 12) rest -= add(small, Math.ceil(rest / small.g));
+      rest -= add(big, Math.floor(rest / big.g));
+      /* Rest: das kleinste Gel, das ihn deckt, sonst das größte */
+      if (rest > 12) { const by = gels.slice().sort((a, b) => a.g - b.g), fill = by.find(g => g.g >= rest) || by[by.length - 1]; const ex = mix.find(m => m.p === fill); if (ex) { ex.n++; rest -= fill.g; } else rest -= add(fill, 1); }
     }
     const sum = mix.reduce((a, m) => ({ g: a.g + m.n * m.p.g, na: a.na + m.n * (m.p.na || 0) }), { g: 0, na: 0 });
     /* Fehlendes Natrium bis zur Untergrenze: Salz in die Flaschen (1 g Kochsalz ≈ 400 mg Natrium) */
