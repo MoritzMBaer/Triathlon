@@ -846,25 +846,17 @@
   const REGEN = {
     rolle: {
       name: 'Rolle', ic: BR_IC,
-      kurz: [
-        ['Wann', ['Vor dem Training oder vor Stabi, wenn du dich steif fühlst: macht für kurze Zeit beweglicher, ohne Kraft zu kosten.', 'Nach harten oder langen Einheiten, bei Muskelkater, abends oder nach dem Nachtdienst.', 'Kein Pflichtteil: Fühlt sich alles locker an, kannst du es lassen.']],
-        ['Wie', ['Langsam, etwa 2–3 cm pro Sekunde, 30–60 s pro Muskel.', 'Höchstens 6 von 10, ein Wohlweh. An harten Stellen 20–30 s bleiben und ausatmen.']],
-        ['Nicht', ['Unterer Rücken, Kniekehle, Knochen und Gelenke.', 'Frische Verletzungen.']]
-      ]
+      kurz: [['Wann', 'Wenn du steif bist, nach harten Einheiten oder bei Muskelkater'], ['Wie', 'Langsam, 30–60 s pro Muskel, höchstens 6 von 10'], ['Nicht', 'Unterer Rücken, Kniekehle, Knochen, Gelenke']]
     },
     pistole: {
       name: 'Pistole', ic: GUN_IC,
-      kurz: [
-        ['Wann', ['Wie die Rolle, vor allem für die Beine: nach dem Laufen, auf dem Rad-Trainer oder abends auf dem Sofa.', 'Vor dem Training nur kurz: 30 s pro Muskel, Stufe 20–30.']],
-        ['Wie', ['Runder Aufsatz, ohne Druck über den Muskel gleiten lassen, 30–60 s pro Muskel, höchstens etwa 2 min an einer Stelle.', 'Stufe 1–90: die ersten Male bei etwa 20 anfangen. Über 60 bringt kaum mehr. Bei Muskelkater niedriger (15–25).', 'Muskel locker lassen. Sticht es: weiterziehen oder Stufe runter.']],
-        ['Nicht', ['Knochen, Gelenke, Wirbelsäule, Hals vorn, Krampfadern, Blutergüsse, frische Verletzungen.', 'Mit Blutverdünnern lieber ganz lassen.']]
-      ],
+      kurz: [['Wann', 'Nach dem Training oder abends, vorher nur kurz auf Stufe 20–30'], ['Wie', 'Ohne Druck gleiten lassen, 30–60 s pro Muskel, nicht über Stufe 60'], ['Nicht', 'Knochen, Gelenke, Wirbelsäule, Blutergüsse']],
       list: [
-        { name: 'Waden', dose: '60 s je Seite · Stufe 20–35', m: ['wade', 'soleus'], how: 'Im Sitzen, das Bein locker gestreckt. Vom Knie bis kurz über die Ferse gleiten, einmal innen, einmal außen am Muskelbauch.', cue: 'Nicht auf die Achillessehne und nicht in die Kniekehle. Die Wade ist empfindlich: lieber unten anfangen.' },
-        { name: 'Oberschenkel vorn', dose: '60 s je Seite · Stufe 30–50', m: ['quad'], how: 'Im Sitzen, Bein locker gestreckt. Von der Leiste bis eine Handbreit über dem Knie in Längsbahnen gleiten.', cue: 'Nicht auf die Kniescheibe.' },
-        { name: 'Oberschenkel hinten', dose: '45 s je Seite · Stufe 25–40', m: ['hamstrings'], how: 'Bein auf dem Sofa oder einem Stuhl ablegen, Knie leicht gebeugt. Mitte der Oberschenkelrückseite, vom Gesäß bis kurz über die Kniekehle.', cue: 'Kniekehle auslassen.' },
-        { name: 'Gesäß', dose: '60 s je Seite · Stufe 35–55', m: ['gesaess'], how: 'Im Stehen, Gewicht aufs andere Bein, die Gesäßseite locker lassen. In kleinen Kreisen über den Muskel.', cue: 'Nicht auf den Beckenknochen und nicht aufs Kreuzbein.' }
-      ].map(x => Object.assign(x, { mh: 'Massiert' }))
+        { name: 'Waden', dose: '60 s je Seite · Stufe 20–35', how: 'Im Sitzen, das Bein locker gestreckt. Vom Knie bis kurz über die Ferse gleiten, einmal innen, einmal außen am Muskelbauch.', cue: 'Nicht auf die Achillessehne und nicht in die Kniekehle.' },
+        { name: 'Oberschenkel vorn', dose: '60 s je Seite · Stufe 30–50', how: 'Im Sitzen, Bein locker gestreckt. Von der Leiste bis eine Handbreit über dem Knie in Längsbahnen gleiten.', cue: 'Nicht auf die Kniescheibe.' },
+        { name: 'Oberschenkel hinten', dose: '45 s je Seite · Stufe 25–40', how: 'Bein auf dem Sofa oder einem Stuhl ablegen, Knie leicht gebeugt. Mitte der Oberschenkelrückseite, vom Gesäß bis kurz über die Kniekehle.', cue: 'Kniekehle auslassen.' },
+        { name: 'Gesäß', dose: '60 s je Seite · Stufe 35–55', how: 'Im Stehen, Gewicht aufs andere Bein, die Gesäßseite locker lassen. In kleinen Kreisen über den Muskel.', cue: 'Nicht auf den Beckenknochen und nicht aufs Kreuzbein.' }
+      ]
     }
   };
   function regenTab() { return REGEN[state.regenTab] ? state.regenTab : 'rolle'; }
@@ -876,65 +868,97 @@
       let h = `<div class="mob-ex${on ? ' active' : ''}"><div class="mob-row"><button class="open" data-br-open="${id}|${i}" aria-expanded="${on}"><span class="thumb${fig ? '' : ' rg-num'}">${fig ? U.svg(b, { t: 0.5 }) : i + 1}</span><span class="tx"><b>${esc(b.name)}</b><small>${esc(b.dose)}</small></span>${on ? CHEV_D : CHEV_R}</button></div>`;
       if (on) h += fig
         ? `<div class="mob-detail"><div class="mob-l"><button class="fig zoomable" data-zoom="${esc(b.name)}" aria-label="Skizze ${esc(b.name)} vergrößern">${U.svg(b, { id: 'live:' + encodeURIComponent(b.name), label: 'Animation: ' + b.name })}</button>${zoomMap(U.bodyMap(b), b.name)}</div><div class="mob-r"><p class="howto">${esc(b.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(b.cue)}</p></div></div>`
-        : `<div class="mob-detail rg-gun"><div class="mob-l">${zoomMap(U.bodyMap(b), b.name)}</div><div class="mob-r"><p class="howto">${esc(b.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(b.cue)}</p></div></div>`;
+        : `<div class="mob-detail solo"><div class="mob-r"><p class="howto">${esc(b.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(b.cue)}</p></div></div>`;
       return h + '</div>';
     }).join('') + '</div>';
   }
   function regenKurz(t) {
-    return `<div class="rg-kurz">${REGEN[t].kurz.map(([k, xs]) => `<div class="rg-k${k === 'Nicht' ? ' no' : ''}"><b>${k}</b><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}</div>`;
+    return `<div class="rg-tips">${REGEN[t].kurz.map(([k, x]) => `<div class="rg-t${k === 'Nicht' ? ' no' : ''}"><b>${k}</b><span>${esc(x)}</span></div>`).join('')}</div>`;
   }
   function regenHTML() {
     const t = regenTab();
     const seg = `<div class="rg-seg" role="tablist" aria-label="Werkzeug">${Object.keys(REGEN).map(k => `<button role="tab" data-regen="${k}" aria-selected="${k === t}">${REGEN[k].ic}${REGEN[k].name}</button>`).join('')}</div>`;
-    return [`<section class="card rg-card" style="${cv('mob')}">${seg}${regenList(t)}</section>`, regenKurz(t)];
+    return [`<section class="card rg-card" style="${cv('mob')}">${seg}${regenKurz(t)}${regenList(t)}</section>`, ''];
   }
 
   /* ---------- Ernährung rund ums Training: deine Produkte ---------- */
   const FUEL_MIN = [60, 90, 120, 180, 240];
-  const PROD = {
-    drink: { n: 'Getränkepulver (500 ml)', g: 30, na: 100 },
-    bar: { n: 'Riegel', g: 30, na: 100 },
-    gel45: { n: 'Gel 45', g: 45, na: 0 },
-    gel30: { n: 'Gel 30 mit Natrium', g: 30, na: 100 },
-    banane: { n: 'Banane', g: 25, na: 0 },
-    gummi: { n: 'Gummibärchen (Handvoll)', g: 19, na: 0 }
-  };
-  /* Kohlenhydrate pro Stunde und Trinkmenge je nach Dauer; Laufen etwas weniger, weil der Magen mehr durchgeschüttelt wird */
+  /* Mitgelieferte Produkte; eigene kommen aus dem Gerät (tri:fuel) dazu. typ: drink = Pulver pro Portion, bar, gel, snack (nur zum Nachschlagen) */
+  const PROD_BASE = [
+    { id: 'drink', n: 'Getränkepulver', g: 30, na: 100, typ: 'drink' },
+    { id: 'bar', n: 'Riegel', g: 30, na: 100, typ: 'bar' },
+    { id: 'gel45', n: 'Gel', g: 45, na: 0, typ: 'gel' },
+    { id: 'gel30', n: 'Gel mit Natrium', g: 30, na: 100, typ: 'gel' },
+    { id: 'banane', n: 'Banane', g: 25, na: 0, typ: 'snack' },
+    { id: 'gummi', n: 'Gummibärchen, Handvoll', g: 19, na: 0, typ: 'snack' }
+  ];
+  const TYP = { drink: 'Getränk', bar: 'Riegel', gel: 'Gel', snack: 'Snack' };
+  const fuelCfg = () => Object.assign({ custom: [], bottle: 750, por: 1 }, ls.get('tri:fuel', {}));
+  const setFuelCfg = c => ls.set('tri:fuel', c);
+  const products = () => PROD_BASE.concat(fuelCfg().custom);
+  /* Kohlenhydrate pro Stunde nach Dauer (Jeukendrup 2014, ACSM): Laufen etwas weniger, weil der Magen mehr durchgeschüttelt wird.
+     Natrium: unter 2 h nur bei Hitze nötig, darüber 300–600 mg pro Stunde (ACSM/IOC; Schweiß enthält im Mittel etwa 900 mg pro Liter, sehr unterschiedlich) */
   function fuelFor(min, run) {
+    const C = fuelCfg(), P = products();
     const g = min < 60 ? [0, 0] : min <= 90 ? [30, 45] : min <= 150 ? [45, 60] : [60, 90];
     const gh = run ? [g[0], Math.min(g[1], 60)] : g;
     const ml = run ? [300, 600] : [400, 800];
     const h = min / 60;
     const gMid = Math.round((gh[0] + gh[1]) / 2 * h / 5) * 5, mlMid = Math.round((ml[0] + ml[1]) / 2 * h / 100) * 100;
-    /* Mischung: Getränk nach Trinkmenge, am Rad ein Riegel pro angefangene 1,5 h (fest geht dort besser), Rest mit Gels */
-    const mix = { drink: Math.max(0, Math.round(mlMid / 500)), bar: 0, gel45: 0, gel30: 0 };
-    let rest = gMid - mix.drink * 30;
-    if (!run && rest > 0 && min >= 120) { mix.bar = Math.min(Math.floor(h / 1.5), Math.ceil(rest / 30)); rest -= mix.bar * 30; }
-    if (rest > 0) { mix.gel45 = Math.floor(rest / 45); rest -= mix.gel45 * 45; if (rest > 12) { mix.gel30 = 1; rest -= 30; } }
-    const sum = Object.keys(mix).reduce((a, k) => ({ g: a.g + mix[k] * PROD[k].g, na: a.na + mix[k] * PROD[k].na }), { g: 0, na: 0 });
-    return { gh, ml, gMid, mlMid, mix, sum };
+    const naH = min >= 120 ? [300, 600] : null;
+    const mix = [];
+    const add = (p, n) => { if (!p || n <= 0) return 0; mix.push({ p, n }); return n * p.g; };
+    /* Getränk: Flaschen nach Trinkmenge, je Flasche die eingestellten Portionen Pulver */
+    const pick = typ => P.slice().reverse().find(p => p.typ === typ); /* eigenes Produkt vor dem mitgelieferten */
+    const drink = pick('drink');
+    const bottles = Math.max(1, Math.round(mlMid / C.bottle));
+    let rest = gMid;
+    if (drink) { rest -= add(Object.assign({}, drink, { n: drink.n + ' · ' + C.bottle + ' ml', g: drink.g * C.por, na: drink.na * C.por }), bottles); }
+    /* Rad ab 2 h: ein Riegel pro angefangene 1,5 h, fest geht dort besser */
+    const bar = pick('bar');
+    if (!run && bar && rest > 0 && min >= 120) rest -= add(bar, Math.min(Math.floor(h / 1.5), Math.ceil(rest / bar.g)));
+    /* Rest mit Gels: erst die großen, den Rest mit dem kleinsten auffüllen; bei Natrium-Bedarf das mit Natrium bevorzugen */
+    const gels = P.filter(p => p.typ === 'gel').sort((a, b) => b.g - a.g);
+    if (gels.length && rest > 12) {
+      const big = gels[0], small = gels.slice().sort((a, b) => (naH ? b.na - a.na : 0) || a.g - b.g)[0];
+      const nb = big === small ? 0 : Math.floor(rest / big.g);
+      rest -= add(big, nb);
+      if (rest > 12) rest -= add(small, Math.ceil(rest / small.g));
+    }
+    const sum = mix.reduce((a, m) => ({ g: a.g + m.n * m.p.g, na: a.na + m.n * (m.p.na || 0) }), { g: 0, na: 0 });
+    /* Fehlendes Natrium bis zur Untergrenze: Salz in die Flaschen (1 g Kochsalz ≈ 400 mg Natrium) */
+    const naGap = naH ? Math.max(0, naH[0] * h - sum.na) : 0;
+    const salt = naGap ? Math.ceil(naGap / 400 * 2) / 2 : 0;
+    return { gh, ml, gMid, mlMid, mix, sum, naH, salt, bottles, h };
   }
   function nextLong(M) {
     const tk = today(), tmr = iso(addDays(new Date(), 1));
     return M.plan.find(p => (p.date === tk || p.date === tmr) && ['Rad', 'Laufen'].includes(sp(p.sport).fam) && p.dur >= 60 && statusOf(p, M) !== 'done');
   }
+  const dez = x => (Math.round(x * 10) / 10).toLocaleString('de-DE');
   function fuelHTML(M) {
-    const nl = nextLong(M);
+    const C = fuelCfg(), nl = nextLong(M);
     const run = state.fuelSp != null ? state.fuelSp === 'run' : nl ? sp(nl.sport).fam === 'Laufen' : false;
     const min = state.fuelMin || (nl ? nl.dur : 90);
     const f = fuelFor(min, run);
     const hint = nl && !state.fuelMin && state.fuelSp == null ? `<div class="fu-next">Für ${nl.date === today() ? 'heute' : 'morgen'}: <b>${esc(nl.title)}</b> · ${nl.dur} min</div>` : '';
     const chips = `<div class="fu-chips" role="group" aria-label="Dauer">${FUEL_MIN.map(m => `<button data-fuel="min|${m}" aria-pressed="${m === min}">${m >= 120 ? m / 60 + ' h' : m + ' min'}</button>`).join('')}</div>`;
     const sw = `<div class="rg-seg" role="tablist" aria-label="Sportart"><button role="tab" data-fuel="sp|bike" aria-selected="${!run}">Rad</button><button role="tab" data-fuel="sp|run" aria-selected="${run}">Laufen</button></div>`;
+    const opt = (k, v, cur, lab) => `<button data-fuel="${k}|${v}" aria-pressed="${v === cur}">${lab}</button>`;
+    const bot = `<div class="fu-opt"><span>Flasche</span><div class="fu-mini">${opt('bottle', 750, C.bottle, '750 ml')}${opt('bottle', 500, C.bottle, '500 ml')}</div><span>Pulver</span><div class="fu-mini">${opt('por', 1, C.por, '1 Portion')}${opt('por', 2, C.por, '2 Portionen')}</div></div>`;
     let res;
     if (f.gh[1]) {
-      const rows = Object.keys(f.mix).filter(k => f.mix[k]).map(k => `<div class="fu-m"><b class="num">${f.mix[k]} ×</b><span>${esc(PROD[k].n)}</span><small class="num">${f.mix[k] * PROD[k].g} g</small></div>`).join('');
+      const rows = f.mix.map(m => `<div class="fu-m"><b class="num">${m.n} ×</b><span>${esc(m.p.n)}<small class="num">je ${m.p.g} g${m.p.na ? ' · ' + m.p.na + ' mg Natrium' : ''}</small></span><small class="num">${m.n * m.p.g} g</small></div>`).join('');
+      const naLine = f.naH
+        ? `<div class="fu-na${f.salt ? ' low' : ''}"><b>Natrium ${f.sum.na} mg</b><span>Ziel ${f.naH[0]}–${f.naH[1]} mg pro Stunde, also ${Math.round(f.naH[0] * f.h)}–${Math.round(f.naH[1] * f.h)} mg.${f.salt ? ` Fehlt noch: etwa ${dez(f.salt)} g Salz auf die Flaschen verteilt (1 g ≈ 400 mg Natrium) oder eine Elektrolyttablette.` : ' Passt.'}</span></div>`
+        : '<div class="fu-na"><b>Natrium</b><span>Unter 2 Stunden nicht nötig, nur bei Hitze oder starkem Schwitzen.</span></div>';
       res = `<div class="fu-res"><div><b class="num">${f.gh[0]}–${f.gh[1]} g</b><small>Kohlenhydrate pro Stunde</small></div><div><b class="num">${f.ml[0]}–${f.ml[1]} ml</b><small>Trinken pro Stunde</small></div></div>
-        <div class="fu-mix"><div class="fu-mh"><b>Vorschlag</b><span class="num">${f.sum.g} g · ${f.sum.na} mg Natrium · ${(f.mlMid / 1000).toLocaleString('de-DE')} l</span></div>${rows}</div>
-        <p class="fu-ex">Ab Minute 20 alle 20–30 min etwas${run ? ', beim Laufen eher Gels' : ', Riegel lieber in der ersten Hälfte, Gels später'}. Bei Hitze oder viel Schweiß mehr Natrium.</p>`;
+        ${bot}<div class="fu-mix"><div class="fu-mh"><b>Vorschlag</b><span class="num">${f.sum.g} g Kohlenhydrate</span></div>${rows}</div>${naLine}`;
     } else res = '<p class="fu-ex">Unter einer Stunde reicht Wasser nach Durst.</p>';
     const left = `<section class="card fu-card" style="${cv(run ? 'run' : 'bike')}">${hint}${sw}${chips}${res}</section>`;
-    const right = `<section class="card fu-prod"><div class="fu-mh"><b>Deine Produkte</b><span>pro Stück</span></div>${Object.keys(PROD).map(k => `<div class="fu-p"><span>${esc(PROD[k].n)}</span><b class="num">${PROD[k].g} g</b><small class="num">${PROD[k].na ? PROD[k].na + ' mg Na' : ''}</small></div>`).join('')}</section>`;
+    const prow = p => `<div class="fu-p"><span>${esc(p.n)}<small>${TYP[p.typ] || ''}</small></span><b class="num">${p.g} g</b><small class="num">${p.na ? p.na + ' mg Na' : ''}</small>${p.own ? `<button class="fu-del" data-fdel="${esc(p.id)}" aria-label="${esc(p.n)} entfernen">×</button>` : '<i></i>'}</div>`;
+    const form = `<div class="fu-add"><input id="fp-n" placeholder="Name" autocomplete="off"><input id="fp-g" type="number" inputmode="numeric" placeholder="KH g"><input id="fp-na" type="number" inputmode="numeric" placeholder="Na mg"><select id="fp-t" aria-label="Art">${Object.keys(TYP).map(k => `<option value="${k}">${TYP[k]}</option>`).join('')}</select><button class="btn" data-fadd>Hinzufügen</button></div>`;
+    const right = `<section class="card fu-prod"><div class="fu-mh"><b>Deine Produkte</b><span>Kohlenhydrate · Natrium</span></div>${products().map(prow).join('')}${form}<p class="fu-hint">Eigene Produkte bleiben auf diesem Gerät gespeichert.</p></section>`;
     return [left, right];
   }
 
@@ -948,9 +972,9 @@
     const seg = `<div class="rg-seg zn-seg" role="tablist" aria-label="Sportart">${tabs.map(([v, n]) => `<button role="tab" data-zsp="${v}" aria-selected="${v === k}">${n}</button>`).join('')}</div>`;
     let ref, cols, rows, extra = '';
     if (k === 'bike') {
-      ref = `FTP ${FTP} W`; cols = ['Watt', '% FTP'];
-      rows = [['Z1', 'Erholung', `< ${w(55)}`, '< 55'], ['Z2', 'Grundlage', `${w(55)}–${w(75)}`, '55–75'], ['Z3', 'Tempo', `${w(75)}–${w(90)}`, '75–90'], ['Z4', 'Schwelle', `${w(90)}–${w(105)}`, '90–105'], ['Z5', 'VO₂max', `${w(105)}–${w(120)}`, '105–120'], ['Z6', 'Anaerob', `> ${w(120)}`, '> 120']];
-      extra = `<tr class="zt-ss"><td><span class="zn-z ss">SS</span>Sweet Spot</td><td class="num">${w(88)}–${w(94)}</td><td class="num">88–94</td></tr>`;
+      ref = `FTP ${FTP} W`; cols = ['Watt'];
+      rows = [['Z1', 'Erholung', `< ${w(55)}`], ['Z2', 'Grundlage', `${w(55)}–${w(75)}`], ['Z3', 'Tempo', `${w(75)}–${w(90)}`], ['Z4', 'Schwelle', `${w(90)}–${w(105)}`], ['Z5', 'VO₂max', `${w(105)}–${w(120)}`], ['Z6', 'Anaerob', `> ${w(120)}`]];
+      extra = `<tr class="zt-ss"><td><span class="zn-z ss">SS</span>Sweet Spot</td><td class="num">${w(88)}–${w(94)}</td></tr>`;
     } else if (k === 'run') {
       ref = `Schwelle ${LTHR} · ${mmss(TPACE)}/km`; cols = ['Puls', 'Pace /km'];
       rows = [['Z1', 'Erholung', `< ${bpm(85)}`, `> ${pace(129)}`], ['Z2', 'Grundlage', `${bpm(85)}–${bpm(90) - 1}`, `${pace(114)}–${pace(129)}`], ['Z3', 'Tempo', `${bpm(90)}–${bpm(95) - 1}`, `${pace(106)}–${pace(114)}`], ['Z4', 'Schwelle', `${bpm(95)}–${bpm(100) - 1}`, `${pace(99)}–${pace(106)}`], ['Z5', 'Hart', `≥ ${bpm(100)}`, `< ${pace(99)}`]];
@@ -959,7 +983,7 @@
       rows = [['Z1', 'Locker', `> ${sw(10)}`, '> +10 s'], ['Z2', 'Grundlage', `${sw(5)}–${sw(10)}`, '+5 bis +10 s'], ['Z3', 'Gleichmäßig', `${sw(2)}–${sw(5)}`, '+2 bis +5 s'], ['Z4', 'Schwelle', `${sw(-3)}–${sw(2)}`, '−3 bis +2 s'], ['Z5', 'Zügig', `< ${sw(-3)}`, '< −3 s']];
     }
     const n = rows ? rows.length : 0;
-    const body = rows ? `<table class="zt"><thead><tr><th>Zone</th>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.map(([z, name, a, b], i) => `<tr><td><span class="zn-z" style="--o:${(0.22 + 0.78 * i / (n - 1)).toFixed(2)}">${z}</span>${name}</td><td class="num">${a}</td><td class="num">${b}</td></tr>${k === 'bike' && i === 2 ? extra : ''}`).join('')}</tbody></table>`
+    const body = rows ? `<table class="zt"><thead><tr><th>Zone</th>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.map(([z, name, a, b], i) => `<tr><td><span class="zn-z" style="--o:${(0.22 + 0.78 * i / (n - 1)).toFixed(2)}">${z}</span>${name}</td><td class="num">${a}</td>${b != null ? `<td class="num">${b}</td>` : ''}</tr>${k === 'bike' && i === 2 ? extra : ''}`).join('')}</tbody></table>`
       : '<p class="zn-note">Nach dem ersten Schwimmtest (400/200 m) stehen hier deine Zeiten pro 100 m.</p>';
     const bar = rows ? `<div class="zn-bar" aria-hidden="true">${rows.map((_, i) => `<span style="--o:${(0.22 + 0.78 * i / (n - 1)).toFixed(2)}"></span>`).join('')}</div>` : '';
     return [`<section class="card zn-card" style="${cv(k)}">${seg}<div class="zn-h"><b>${tabs.find(x => x[0] === k)[1]}</b><small>${ref || 'noch kein Test'}</small></div>${bar}${body}</section>`, ''];
@@ -2077,7 +2101,14 @@
     if ((el = q('[data-regen]'))) { state.regenTab = el.dataset.regen; render(); return; }
     if ((el = q('[data-xsec]'))) { state.xSec = el.dataset.xsec; render(); window.scrollTo(0, 0); return; }
     if ((el = q('[data-zsp]'))) { state.zSp = el.dataset.zsp; render(); return; }
-    if ((el = q('[data-fuel]'))) { const [k, v] = el.dataset.fuel.split('|'); if (k === 'min') state.fuelMin = +v; else state.fuelSp = v; render(); return; }
+    if ((el = q('[data-fuel]'))) { const [k, v] = el.dataset.fuel.split('|'); if (k === 'min') state.fuelMin = +v; else if (k === 'sp') state.fuelSp = v; else { const c = fuelCfg(); c[k] = +v; setFuelCfg(c); } render(); return; }
+    if ((el = q('[data-fdel]'))) { const c = fuelCfg(); c.custom = c.custom.filter(p => p.id !== el.dataset.fdel); setFuelCfg(c); render(); return; }
+    if ((el = q('[data-fadd]'))) {
+      const n = $('#fp-n').value.trim(), g = num($('#fp-g').value), na = num($('#fp-na').value) || 0, typ = $('#fp-t').value;
+      if (!n || !(g > 0)) { toast('Name und Kohlenhydrate angeben'); return; }
+      const c = fuelCfg(); c.custom.push({ id: 'c' + Date.now(), n: n.slice(0, 40), g: Math.round(g), na: Math.round(na), typ, own: true }); setFuelCfg(c);
+      $('#fp-n').value = $('#fp-g').value = $('#fp-na').value = ''; toast(n + ' hinzugefügt'); render(); return;
+    }
     if ((el = q('[data-br-open]'))) { const [pid, i] = el.dataset.brOpen.split('|'); state.brAct[pid] = state.brAct[pid] === +i ? -1 : +i; render(); return; }
     if ((el = q('[data-mob-open]'))) { const [pid, i] = el.dataset.mobOpen.split('|'); state.active[pid] = state.active[pid] === +i ? -1 : +i; if (state.active[pid] >= 0) state.scrollEx = pid; render(); return; }
     if ((el = q('[data-mob]'))) {

@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="tri-v173">
+<meta name="app-version" content="tri-v174">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Triathlon</title>
 <script>
@@ -496,6 +496,28 @@ button.dsd:active{background:var(--fill)}
 .fu-tab{display:flex;flex-direction:column;border-top:.5px solid var(--line);padding-top:8px}
 .fu-tab span{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);padding:4px 0}
 .fu-tab b{font-weight:600;color:var(--fg-2)}
+.rg-tips{display:flex;flex-direction:column;gap:2px;background:var(--c-t);border-radius:14px;padding:8px 12px}
+.rg-t{display:flex;gap:10px;align-items:baseline;padding:3px 0;font-size:13.5px;line-height:1.35;color:var(--fg-2)}
+.rg-t b{width:40px;flex:none;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--c-d)}
+.rg-t.no b{color:var(--muted)}
+.fu-opt{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:13px;color:var(--muted)}
+.fu-mini{display:flex;gap:4px;background:var(--fill-2);border-radius:10px;padding:3px}
+.fu-mini button{flex:1;min-height:32px;border:0;border-radius:8px;background:none;font-size:13px;font-weight:600;color:var(--fg-2)}
+.fu-mini button[aria-pressed="true"]{background:var(--card);color:var(--c-d);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.fu-m>span{display:flex;flex-direction:column}
+.fu-m>span small{font-size:12px;color:var(--muted)}
+.fu-na{display:flex;flex-direction:column;gap:2px;border-radius:12px;padding:10px 12px;background:var(--fill-2);font-size:13px;line-height:1.4;color:var(--fg-2)}
+.fu-na b{font-size:14px;color:var(--fg)}
+.fu-na.low{background:var(--c-t)}
+.fu-p{grid-template-columns:1fr auto 70px 28px !important}
+.fu-p>span{display:flex;flex-direction:column}
+.fu-p>span small{font-size:11px;color:var(--muted);text-align:left}
+.fu-del{width:28px;height:28px;border:0;border-radius:50%;background:var(--fill-2);color:var(--muted);font-size:16px;line-height:1;padding:0}
+.fu-add{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding-top:10px;border-top:.5px solid var(--line)}
+.fu-add input,.fu-add select{min-height:40px;border:0;border-radius:10px;background:var(--fill-2);color:var(--fg);font-size:15px;padding:0 10px;min-width:0}
+.fu-add #fp-n{grid-column:1/-1}
+.fu-add .btn{min-height:40px}
+.fu-hint{margin:6px 0 4px;font-size:12px;color:var(--muted)}
 .fu-mix{display:flex;flex-direction:column;border-top:.5px solid var(--line);padding-top:10px}
 .fu-mh{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-bottom:4px}
 .fu-mh b{font-size:15px;font-weight:700}
@@ -550,13 +572,6 @@ button.dsd:active{background:var(--fill)}
 .rg-card .mob-row .tx{flex-grow:1}
 .rg-card .thumb{width:72px}
 .rg-num{display:grid;place-items:center;height:48px;font:700 18px var(--round);color:var(--c-d);background:var(--c-t)}
-.rg-kurz{display:flex;flex-direction:column;gap:8px}
-.rg-k{background:var(--card);border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
-.rg-k b{font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--mob-d)}
-.rg-k.no b{color:var(--muted)}
-.rg-k ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
-.rg-k li{font-size:14px;line-height:1.4;color:var(--fg-2)}
-.rg-gun .mob-l .musc{margin:0}
 @media (min-width:960px){.rg-side{padding-top:46px}}
 .br-box{margin-bottom:12px}
 .br-ref{margin-bottom:0}
