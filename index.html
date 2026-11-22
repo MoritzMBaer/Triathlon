@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="tri-v169">
+<meta name="app-version" content="tri-v170">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Triathlon</title>
 <script>
@@ -476,6 +476,26 @@ button.dsd:active{background:var(--fill)}
 .exrow.done .tx b{color:var(--faint);text-decoration:line-through}
 
 /* Stabi */
+/* Extras: Regeneration mit Rolle und Pistole */
+.rg-card{padding:14px 16px 6px;display:flex;flex-direction:column;gap:8px}
+.rg-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--fill-2);border-radius:14px;padding:3px}
+.rg-seg button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border:0;border-radius:11px;background:none;font-size:15px;font-weight:600;color:var(--fg-2)}
+.rg-seg button svg{width:18px;height:18px}
+.rg-seg button[aria-selected="true"]{background:var(--card);color:var(--c-d);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.rg-sub{font-size:13px;color:var(--muted);padding:2px 2px 0}
+.rg-card .mob-row{padding:8px 0}
+.rg-card .mob-row .chev{width:16px;height:16px;color:var(--chev);flex:none}
+.rg-card .mob-detail{padding:0 0 12px;background:none}
+.rg-card .mob-ex.active .mob-row,.rg-card .mob-ex.active .mob-row:hover{background:none}
+.rg-card .mob-row .tx{flex-grow:1}
+.rg-card .thumb{width:72px}
+.rg-num{display:grid;place-items:center;height:48px;font:700 18px var(--round);color:var(--c-d);background:var(--c-t)}
+.rg-kurz{display:flex;flex-direction:column;gap:8px}
+.rg-k{background:var(--card);border-radius:18px;display:flex;gap:12px;padding:12px 14px}
+.rg-k b{width:48px;flex:none;padding-top:1px;font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--mob-d)}
+.rg-k.no b{color:var(--muted)}
+.rg-k span{font-size:14px;line-height:1.4;color:var(--fg-2)}
+@media (min-width:960px){.rg-side{padding-top:46px}}
 .br-box{margin-bottom:12px}
 .br-ref{margin-bottom:0}
 .br-ref .warm-h .chev{transition:transform var(--t-med,.25s) ease}
@@ -574,8 +594,8 @@ button.dsd:active{background:var(--fill)}
 
 /* Navigation */
 nav.tabs{position:fixed;z-index:15;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));max-width:528px;margin:0 auto;display:flex;gap:4px;background:var(--nav-bg);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:.5px solid var(--line);border-radius:999px;padding:5px;box-shadow:var(--shadow)}
-nav.tabs a{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;color:var(--muted);border-radius:999px;font-size:14px;font-weight:600;padding:11px 0;min-height:44px}
-nav.tabs a svg{width:18px;height:18px}
+nav.tabs a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;color:var(--muted);border-radius:999px;font-size:11.5px;font-weight:600;padding:6px 0;min-height:48px;min-width:0}
+nav.tabs a svg{width:20px;height:20px}
 nav.tabs a[aria-current="page"]{background:var(--ink);color:var(--on-ink)}
 .side-nav{display:none}
 
@@ -951,6 +971,7 @@ button.fig.zoomable{display:block;width:100%;border:0;font:inherit;color:inherit
   <a href="#heute" data-v="heute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>Heute<kbd>1</kbd></a>
   <a href="#woche" data-v="woche"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 10h17M8.5 3v4M15.5 3v4"/></svg>Woche<kbd>2</kbd></a>
   <a href="#fortschritt" data-v="fortschritt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5.5-5.5 4 4L21 7"/><path d="M15 7h6v6"/></svg>Fortschritt<kbd>3</kbd></a>
+  <a href="#extras" data-v="extras"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>Extras<kbd>4</kbd></a>
   <span class="grow"></span>
   <div class="side-count" id="side-count"></div>
   <p class="side-keys"><kbd>R</kbd> aktualisieren<br><kbd>←</kbd><kbd>→</kbd> Woche wechseln<br><kbd>Esc</kbd> Einheit zuklappen</p>
@@ -961,6 +982,7 @@ button.fig.zoomable{display:block;width:100%;border:0;font:inherit;color:inherit
   <a href="#heute" data-v="heute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>Heute</a>
   <a href="#woche" data-v="woche"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 10h17M8.5 3v4M15.5 3v4"/></svg>Woche</a>
   <a href="#fortschritt" data-v="fortschritt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5.5-5.5 4 4L21 7"/><path d="M15 7h6v6"/></svg>Fortschritt</a>
+  <a href="#extras" data-v="extras"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>Extras</a>
 </nav>
 <div id="restbar" class="restbar" hidden role="status" aria-live="polite"><b>Pause</b><button data-skiprest>Weiter</button></div>
 <div id="sheet" hidden></div>

@@ -66,7 +66,7 @@
     data: ls.get('tri:data', null),
     loading: false, err: null, busy: {}, msgs: {},
     weekOff: 0, sheetId: null, active: {}, drafts: {}, open: {}, slide: 0, started: {},
-    drillOpen: {}, warmOpen: {}, brOpen: {}, brAct: {}, rirEdit: null, rest: null, timer: null, timerSeen: {}, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
+    drillOpen: {}, warmOpen: {}, brOpen: {}, brAct: {}, regenTab: 'rolle', rirEdit: null, rest: null, timer: null, timerSeen: {}, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
   };
 
   /* ---------- Schnittstelle ---------- */
@@ -840,38 +840,80 @@
     if (state.msgs[p.id]) h += `<div class="msg">${esc(state.msgs[p.id])}</div>`;
     return { html: h, progress: [ticks.length, items.length] };
   }
-  /* Blackroll und Massagepistole: nur zum Nachlesen auf Heute, in keiner Einheit eingebettet und ohne Abhaken */
+  /* Blackroll und Massagepistole: eigener Reiter „Extras“, nicht Teil des Plans und ohne Abhaken */
   const BR_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><ellipse cx="6" cy="12" rx="3" ry="6"/><path d="M6 6h12M6 18h12"/><path d="M18 6a3 6 0 0 1 0 12"/></svg>';
-  const BR_INFO = [
-    ['Wann es Sinn macht', [
-      'Vor dem Training oder vor Stabi, wenn du dich steif fühlst: 30–60 s pro Muskel machen ihn für kurze Zeit beweglicher, ohne Kraft zu kosten (anders als langes Dehnen).',
-      'Nach harten oder langen Einheiten und bei Muskelkater: fühlt sich besser an und nimmt etwas Schmerz. Am Abend, auf dem Sofa, auch nach dem Nachtdienst.',
-      'Nicht nötig: an Tagen, an denen sich alles locker anfühlt. Es ist ein Wohlfühl-Werkzeug, kein Pflichtteil.'
-    ]],
-    ['So rollst du', [
-      'Langsam, etwa 2–3 cm pro Sekunde. Höchstens 6 von 10, ein Wohlweh. An empfindlichen Stellen 20–30 s bleiben und ausatmen.',
-      'Nicht auf unteren Rücken, Kniekehle, Knochen, Gelenke oder frische Verletzungen.'
-    ]],
-    ['Massagepistole', [
-      'Wann: wie die Rolle, vor allem für Waden, Oberschenkel und Gesäß. Gut nach dem Laufen oder auf dem Rad-Trainer.',
-      'Wie: niedrige bis mittlere Stufe, runder Aufsatz. Den Kopf ohne Druck über den Muskel gleiten lassen, 30–60 s pro Muskel, höchstens etwa 2 min an einer Stelle.',
-      'Nicht: auf Knochen, Gelenke, Wirbelsäule, Hals vorn, Krampfadern, Blutergüsse oder frische Verletzungen. Mit Blutverdünnern lieber lassen.'
-    ]]
-  ];
-  function brRefCard() {
-    const id = 'ref', open = !!state.brOpen[id], act = state.brAct[id];
-    let h = `<section class="warm br-box br-ref" style="${cv('mob')}"><button class="warm-h" data-br="${id}" aria-expanded="${open}"><span class="warm-ic">${BR_IC}</span><span class="tx"><b>Blackroll und Massagepistole</b><small>Wann es hilft · ${U.BLACKROLL.length} Übungen</small></span>${CHEV_D}</button>`;
-    if (open) {
-      BR_INFO.forEach(([t, xs]) => { h += `<div class="br-sec"><b>${esc(t)}</b><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`; });
-      h += '<div class="br-sec"><b>Übungen mit der Rolle</b></div>';
-      U.BLACKROLL.forEach((b, i) => {
-        const on = act === i;
-        h += `<div class="mob-ex${on ? ' active' : ''}"><div class="mob-row"><button class="open" data-br-open="${id}|${i}" aria-expanded="${on}"><span class="thumb">${U.svg(b, { t: 0.5 })}</span><span class="tx"><b>${esc(b.name)}</b><small>${esc(b.dose)}</small></span></button></div>`;
-        if (on) h += `<div class="mob-detail"><div class="mob-l"><button class="fig zoomable" data-zoom="${esc(b.name)}" aria-label="Skizze ${esc(b.name)} vergrößern">${U.svg(b, { id: 'live:' + encodeURIComponent(b.name), label: 'Animation: ' + b.name })}</button>${zoomMap(U.bodyMap(b), b.name)}</div><div class="mob-r"><p class="howto">${esc(b.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(b.cue)}</p></div></div>`;
-        h += '</div>';
-      });
+  const GUN_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5h12a3 3 0 0 1 0 6H9"/><path d="M9 13.5l1.5 7h3l-1-7"/><path d="M18 10.5h3"/></svg>';
+  const REGEN = {
+    rolle: {
+      name: 'Rolle', ic: BR_IC,
+      kurz: [['Wann', 'Steif vor dem Training, nach harten oder langen Einheiten, bei Muskelkater'], ['Wie', 'Langsam, 2–3 cm pro Sekunde, höchstens 6 von 10'], ['Nicht', 'Unterer Rücken, Kniekehle, Knochen, Gelenke']],
+      info: [
+        ['Wann es Sinn macht', [
+          'Vor dem Training oder vor Stabi, wenn du dich steif fühlst: 30–60 s pro Muskel machen ihn für kurze Zeit beweglicher, ohne Kraft zu kosten (anders als langes Dehnen).',
+          'Nach harten oder langen Einheiten und bei Muskelkater: fühlt sich besser an und nimmt etwas Schmerz. Am Abend, auf dem Sofa, auch nach dem Nachtdienst.',
+          'Nicht nötig: an Tagen, an denen sich alles locker anfühlt. Es ist ein Wohlfühl-Werkzeug, kein Pflichtteil.'
+        ]],
+        ['So rollst du', [
+          'Langsam, etwa 2–3 cm pro Sekunde. Höchstens 6 von 10, ein Wohlweh. An empfindlichen Stellen 20–30 s bleiben und ausatmen.',
+          'Nicht auf unteren Rücken, Kniekehle, Knochen, Gelenke oder frische Verletzungen.'
+        ]]
+      ]
+    },
+    pistole: {
+      name: 'Pistole', ic: GUN_IC,
+      kurz: [['Wann', 'Nach dem Laufen oder Rad, vor allem für die Beine'], ['Wie', 'Niedrige bis mittlere Stufe, ohne Druck, 30–60 s pro Muskel'], ['Nicht', 'Knochen, Gelenke, Wirbelsäule, Hals vorn, Blutergüsse']],
+      info: [
+        ['Wann es Sinn macht', [
+          'Wie die Rolle, vor allem für Waden, Oberschenkel und Gesäß. Gut nach dem Laufen oder auf dem Rad-Trainer.',
+          'Praktisch, wenn Hinlegen auf die Rolle gerade nicht geht, etwa am Abend auf dem Sofa.'
+        ]],
+        ['So gehst du vor', [
+          'Niedrige bis mittlere Stufe, runder Aufsatz. Den Kopf ohne Druck über den Muskel gleiten lassen, 30–60 s pro Muskel, höchstens etwa 2 min an einer Stelle.',
+          'Den Muskel locker lassen, nicht anspannen. Fühlt es sich stechend an: weiterziehen oder Stufe runter.'
+        ]],
+        ['Lieber nicht', [
+          'Auf Knochen, Gelenke, Wirbelsäule, Hals vorn, Krampfadern, Blutergüsse oder frische Verletzungen.',
+          'Mit Blutverdünnern lieber ganz lassen.'
+        ]]
+      ],
+      list: [
+        { name: 'Waden', dose: '60 s je Seite', how: 'Im Sitzen, das Bein locker gestreckt. Vom Knie bis kurz über die Ferse gleiten, einmal innen, einmal außen am Muskelbauch.', cue: 'Nicht auf die Achillessehne und nicht in die Kniekehle.' },
+        { name: 'Oberschenkel vorn', dose: '60 s je Seite', how: 'Im Sitzen, Bein locker gestreckt. Von der Leiste bis eine Handbreit über dem Knie in Längsbahnen gleiten.', cue: 'Nicht auf die Kniescheibe.' },
+        { name: 'Oberschenkel hinten', dose: '45 s je Seite', how: 'Bein auf dem Sofa oder einem Stuhl ablegen, Knie leicht gebeugt. Mitte der Oberschenkelrückseite, vom Gesäß bis kurz über die Kniekehle.', cue: 'Kniekehle auslassen.' },
+        { name: 'Gesäß', dose: '60 s je Seite', how: 'Im Stehen, Gewicht aufs andere Bein, die Gesäßseite locker lassen. In kleinen Kreisen über den Muskel.', cue: 'Nicht auf den Beckenknochen und nicht aufs Kreuzbein.' }
+      ]
     }
+  };
+  function regenTab() { return REGEN[state.regenTab] ? state.regenTab : 'rolle'; }
+  function regenList(t) {
+    const id = 'x-' + t, act = state.brAct[id], R = REGEN[t];
+    const items = t === 'rolle' ? U.BLACKROLL : R.list;
+    return '<div class="rg-list">' + items.map((b, i) => {
+      const on = act === i, fig = t === 'rolle';
+      let h = `<div class="mob-ex${on ? ' active' : ''}"><div class="mob-row"><button class="open" data-br-open="${id}|${i}" aria-expanded="${on}"><span class="thumb${fig ? '' : ' rg-num'}">${fig ? U.svg(b, { t: 0.5 }) : i + 1}</span><span class="tx"><b>${esc(b.name)}</b><small>${esc(b.dose)}</small></span>${on ? CHEV_D : CHEV_R}</button></div>`;
+      if (on) h += fig
+        ? `<div class="mob-detail"><div class="mob-l"><button class="fig zoomable" data-zoom="${esc(b.name)}" aria-label="Skizze ${esc(b.name)} vergrößern">${U.svg(b, { id: 'live:' + encodeURIComponent(b.name), label: 'Animation: ' + b.name })}</button>${zoomMap(U.bodyMap(b), b.name)}</div><div class="mob-r"><p class="howto">${esc(b.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(b.cue)}</p></div></div>`
+        : `<div class="mob-detail solo"><div class="mob-r"><p class="howto">${esc(b.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(b.cue)}</p></div></div>`;
+      return h + '</div>';
+    }).join('') + '</div>';
+  }
+  function regenKurz(t) {
+    return `<div class="rg-kurz">${REGEN[t].kurz.map(([k, x]) => `<div class="rg-k${k === 'Nicht' ? ' no' : ''}"><b>${k}</b><span>${esc(x)}</span></div>`).join('')}</div>`;
+  }
+  function regenInfo(t) {
+    const id = 'info-' + t, open = !!state.brOpen[id];
+    let h = `<section class="warm br-box rg-info" style="${cv('mob')}"><button class="warm-h" data-br="${id}" aria-expanded="${open}"><span class="tx"><b>Gut zu wissen</b><small>Ausführlich: wann, wie, wann lieber nicht</small></span>${CHEV_D}</button>`;
+    if (open) REGEN[t].info.forEach(([ti, xs]) => { h += `<div class="br-sec"><b>${esc(ti)}</b><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`; });
     return h + '</section>';
+  }
+  function viewExtras() {
+    const t = regenTab(), R = REGEN[t];
+    const n = t === 'rolle' ? U.BLACKROLL.length : R.list.length;
+    const seg = `<div class="rg-seg" role="tablist" aria-label="Werkzeug">${Object.keys(REGEN).map(k => `<button role="tab" data-regen="${k}" aria-selected="${k === t}">${REGEN[k].ic}${REGEN[k].name}</button>`).join('')}</div>`;
+    const left = `<div class="mhead"><b>Regeneration</b><small>Rolle und Massagepistole</small></div>
+      <section class="card rg-card" style="${cv('mob')}">${seg}<div class="rg-sub">${n} Bereiche · nach Gefühl, kein Pflichtteil</div>${regenList(t)}</section>`;
+    const right = regenKurz(t) + regenInfo(t);
+    return header('Extras', 'Neben dem Plan', null, 'Neben dem Plan') + banner() + `<div class="grid2"><div class="col">${left}</div><div class="col rg-side">${right}</div></div>`;
   }
   /* Ablauf als Schrittliste: nach Sätzen gruppiert, aktueller Teil hervorgehoben */
   function mobStepsHTML(p, i, it, review) {
@@ -1113,7 +1155,7 @@
   function isOpen(view, id, def) {
     const m = state.open[view] || {};
     if (m[id] !== undefined) return m[id];
-    return id === def && (isStarted({ id }) || (!Object.keys(m).some(k => m[k]) && !state.brOpen.ref));
+    return id === def && (isStarted({ id }) || (!Object.keys(m).some(k => m[k])));
   }
   function wide() { return window.innerWidth >= 960; }
   function unitOrTile(M, p, sub, view, def) {
@@ -1263,8 +1305,6 @@
     /* Krafteinheiten, die diese Woche liegen geblieben sind, hier zum Nachholen anbieten */
     const late = M.plan.filter(p => p.date < tk && sp(p.sport).fam === 'Kraft' && statusOf(p, M) === 'catch');
     if (late.length) left += `<div class="mhead"><b>Noch offen</b><small>aus dieser Woche</small></div>` + late.map(p => unitOrTile(M, p, 'Nachholen · ' + WDL[parseISO(p.date).getDay()] + ' · ' + unitMeta(p), 'heute', null)).join('');
-    /* Blackroll zum Nachlesen: eigener Abschnitt unter den Einheiten von heute, vor „Morgen“ */
-    left += `<div class="mhead"><b>Regeneration</b><small>zum Nachlesen</small></div>` + brRefCard();
     if (wide()) left += morgenWide(M, now);
     let right = wide() ? statusCard(M, units) : '';
     if (!wide()) right += morgenCard(M, now); /* Handy: was morgen ansteht statt Wochenkarte */
@@ -1487,9 +1527,9 @@
     t.classList.remove('flash'); void t.offsetWidth; t.classList.add('flash');
     return true;
   }
-  function current() { const h = location.hash.slice(1); return ['heute', 'woche', 'fortschritt', 'einrichtung'].includes(h) ? h : 'heute'; }
+  function current() { const h = location.hash.slice(1); return ['heute', 'woche', 'fortschritt', 'extras', 'einrichtung'].includes(h) ? h : 'heute'; }
   let lastRender = '', lastView = '', lastSheet = '';
-  const ORDER = ['heute', 'woche', 'fortschritt', 'einrichtung'];
+  const ORDER = ['heute', 'woche', 'fortschritt', 'extras', 'einrichtung'];
   const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function morph(el, html) {
     if (!window.morphdom) { el.innerHTML = html; return; }
@@ -1533,7 +1573,7 @@
     syncWake(M);
     if (v === 'einrichtung') html = viewSetup();
     else if (!M) html = header('Heute', 'Lade deine Daten …', null, 'Lädt …') + banner() + '<div class="skel"></div>';
-    else html = v === 'woche' ? viewWoche(M) : v === 'fortschritt' ? viewFortschritt(M) : viewHeute(M);
+    else html = v === 'woche' ? viewWoche(M) : v === 'fortschritt' ? viewFortschritt(M) : v === 'extras' ? viewExtras() : viewHeute(M);
     if (v !== lastView) {
       app.innerHTML = html; lastRender = html;
       app.style.transition = ''; app.style.transform = ''; app.style.opacity = '';
@@ -1686,7 +1726,6 @@
     if (!open && isStarted({ id })) { setStarted(id, false); if (state.timer && state.timer.pid === id) state.timer = null; delete state.active[id]; }
     const m = state.open[v] = state.open[v] || {};
     /* Immer nur eine Einheit offen: Aufklappen schließt die anderen. Gestartete Kraft-/Stabi-Einheiten bleiben offen. */
-    if (open) state.brOpen.ref = false;
     if (open) Object.keys(m).forEach(k => { if (k !== id && m[k] && !isStarted({ id: k })) m[k] = false; });
     m[id] = open;
     state.lastOpen = open ? id : null;
@@ -1723,8 +1762,8 @@
     }
   }
 
-  /* Wischen zwischen Heute, Woche und Fortschritt */
-  const TABS = ['heute', 'woche', 'fortschritt'];
+  /* Wischen zwischen Heute, Woche, Fortschritt und Extras */
+  const TABS = ['heute', 'woche', 'fortschritt', 'extras'];
   (function swipeTabs() {
     const app = $('#app');
     let x0 = 0, y0 = 0, t0 = 0, dx = 0, mode = null;
@@ -1976,10 +2015,9 @@
     if ((el = q('[data-ex]'))) { const [pid, i] = el.dataset.ex.split('|'); const wasOpen = el.classList.contains('ex-head'); state.active[pid] = wasOpen ? -1 : +i; if (wasOpen) { render(); return; } if (state.timer && state.timer.kr && state.timer.pid === pid && !state.timer.running) state.timer = null; state.scrollEx = pid; render(); return; }
     if ((el = q('[data-br]'))) {
       const pid = el.dataset.br; state.brOpen[pid] = !state.brOpen[pid];
-      /* Wie bei den Einheiten: Aufklappen schließt die anderen, gestartete Kraft-/Stabi-Einheiten bleiben offen */
-      if (state.brOpen[pid]) { const m = state.open[current()] || {}; Object.keys(m).forEach(k => { if (m[k] && !isStarted({ id: k })) m[k] = false; }); }
       render(); return;
     }
+    if ((el = q('[data-regen]'))) { state.regenTab = el.dataset.regen; render(); return; }
     if ((el = q('[data-br-open]'))) { const [pid, i] = el.dataset.brOpen.split('|'); state.brAct[pid] = state.brAct[pid] === +i ? -1 : +i; render(); return; }
     if ((el = q('[data-mob-open]'))) { const [pid, i] = el.dataset.mobOpen.split('|'); state.active[pid] = state.active[pid] === +i ? -1 : +i; if (state.active[pid] >= 0) state.scrollEx = pid; render(); return; }
     if ((el = q('[data-mob]'))) {
@@ -2108,7 +2146,7 @@
     if (t.closest && t.closest('input,textarea,select,[contenteditable],[data-chart],.cbt')) return;
     if (!(state.cfg && state.cfg.key)) return;
     const v = current(), k = e.key;
-    if (k === '1' || k === '2' || k === '3') { const to = TABS[+k - 1]; if (to !== v) { state.slide = TABS.indexOf(to) > TABS.indexOf(v) ? 1 : -1; location.hash = '#' + to; } e.preventDefault(); return; }
+    if (k === '1' || k === '2' || k === '3' || k === '4') { const to = TABS[+k - 1]; if (to !== v) { state.slide = TABS.indexOf(to) > TABS.indexOf(v) ? 1 : -1; location.hash = '#' + to; } e.preventDefault(); return; }
     if (k === 'r' || k === 'R') { load(true); e.preventDefault(); return; }
     if (v === 'woche' && (k === 'ArrowLeft' || k === 'ArrowRight')) { state.weekOff += k === 'ArrowLeft' ? -1 : 1; render(); e.preventDefault(); return; }
     if (v === 'woche' && (k === 't' || k === 'T') && state.weekOff) { state.weekOff = 0; render(); e.preventDefault(); return; }
@@ -2215,7 +2253,6 @@
     const m = state.open[v] || {}, keep = {};
     Object.keys(m).forEach(id => { if (m[id] && isStarted({ id })) keep[id] = true; });
     state.open[v] = keep;
-    state.brOpen.ref = false;
     state.lastOpen = null;
   }
   window.addEventListener('hashchange', () => { const left = viewNow; viewNow = current(); if (left !== viewNow) collapseView(left); if (state.sheetId) { state.sheetId = null; closeSheetNow(); } render(); if (state.pendingJump) { const k = state.pendingJump; state.pendingJump = null; requestAnimationFrame(() => setTimeout(() => jumpTo(k), 60)); } });
