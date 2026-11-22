@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="tri-v168">
+<meta name="app-version" content="tri-v169">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Triathlon</title>
 <script>
@@ -478,6 +478,8 @@ button.dsd:active{background:var(--fill)}
 /* Stabi */
 .br-box{margin-bottom:12px}
 .br-ref{margin-bottom:0}
+.br-ref .warm-h .chev{transition:transform var(--t-med,.25s) ease}
+.br-ref .warm-h[aria-expanded="true"] .chev{transform:rotate(180deg)}
 .br-box .br-note{margin:0;font-size:14px;line-height:1.45;color:var(--c-mu)}
 .br-box .mob-row{padding:8px 0}
 .br-box .mob-detail{padding:0 0 12px;background:none}
