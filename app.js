@@ -861,14 +861,16 @@
     },
     pistole: {
       name: 'Pistole', ic: GUN_IC,
-      kurz: [['Wann', 'Nach dem Laufen oder Rad, vor allem für die Beine'], ['Wie', 'Niedrige bis mittlere Stufe, ohne Druck, 30–60 s pro Muskel'], ['Nicht', 'Knochen, Gelenke, Wirbelsäule, Hals vorn, Blutergüsse']],
+      kurz: [['Wann', 'Nach dem Laufen oder Rad, vor allem für die Beine'], ['Wie', 'Stufe 20–50 von 90, ohne Druck, 30–60 s pro Muskel'], ['Nicht', 'Knochen, Gelenke, Wirbelsäule, Hals vorn, Blutergüsse']],
       info: [
         ['Wann es Sinn macht', [
           'Wie die Rolle, vor allem für Waden, Oberschenkel und Gesäß. Gut nach dem Laufen oder auf dem Rad-Trainer.',
           'Praktisch, wenn Hinlegen auf die Rolle gerade nicht geht, etwa am Abend auf dem Sofa.'
         ]],
         ['So gehst du vor', [
-          'Niedrige bis mittlere Stufe, runder Aufsatz. Den Kopf ohne Druck über den Muskel gleiten lassen, 30–60 s pro Muskel, höchstens etwa 2 min an einer Stelle.',
+          'Runder Aufsatz. Den Kopf ohne Druck über den Muskel gleiten lassen, 30–60 s pro Muskel, höchstens etwa 2 min an einer Stelle.',
+          'Stufe (1–90): die ersten Male bei etwa 20 anfangen und langsam hochgehen. Waden und hintere Oberschenkel 20–40, vordere Oberschenkel und Gesäß 30–50. Über 60 bringt kaum mehr, eher Ziehen und blaue Flecken.',
+          'Vor dem Training kurz und eher niedrig (20–30, 30 s pro Muskel), danach oder am Abend etwas höher. Bei Muskelkater niedriger als sonst (15–25).',
           'Den Muskel locker lassen, nicht anspannen. Fühlt es sich stechend an: weiterziehen oder Stufe runter.'
         ]],
         ['Lieber nicht', [
@@ -877,10 +879,10 @@
         ]]
       ],
       list: [
-        { name: 'Waden', dose: '60 s je Seite', how: 'Im Sitzen, das Bein locker gestreckt. Vom Knie bis kurz über die Ferse gleiten, einmal innen, einmal außen am Muskelbauch.', cue: 'Nicht auf die Achillessehne und nicht in die Kniekehle.' },
-        { name: 'Oberschenkel vorn', dose: '60 s je Seite', how: 'Im Sitzen, Bein locker gestreckt. Von der Leiste bis eine Handbreit über dem Knie in Längsbahnen gleiten.', cue: 'Nicht auf die Kniescheibe.' },
-        { name: 'Oberschenkel hinten', dose: '45 s je Seite', how: 'Bein auf dem Sofa oder einem Stuhl ablegen, Knie leicht gebeugt. Mitte der Oberschenkelrückseite, vom Gesäß bis kurz über die Kniekehle.', cue: 'Kniekehle auslassen.' },
-        { name: 'Gesäß', dose: '60 s je Seite', how: 'Im Stehen, Gewicht aufs andere Bein, die Gesäßseite locker lassen. In kleinen Kreisen über den Muskel.', cue: 'Nicht auf den Beckenknochen und nicht aufs Kreuzbein.' }
+        { name: 'Waden', dose: '60 s je Seite · Stufe 20–35', how: 'Im Sitzen, das Bein locker gestreckt. Vom Knie bis kurz über die Ferse gleiten, einmal innen, einmal außen am Muskelbauch.', cue: 'Nicht auf die Achillessehne und nicht in die Kniekehle. Die Wade ist empfindlich: lieber unten anfangen.' },
+        { name: 'Oberschenkel vorn', dose: '60 s je Seite · Stufe 30–50', how: 'Im Sitzen, Bein locker gestreckt. Von der Leiste bis eine Handbreit über dem Knie in Längsbahnen gleiten.', cue: 'Nicht auf die Kniescheibe.' },
+        { name: 'Oberschenkel hinten', dose: '45 s je Seite · Stufe 25–40', how: 'Bein auf dem Sofa oder einem Stuhl ablegen, Knie leicht gebeugt. Mitte der Oberschenkelrückseite, vom Gesäß bis kurz über die Kniekehle.', cue: 'Kniekehle auslassen.' },
+        { name: 'Gesäß', dose: '60 s je Seite · Stufe 35–55', how: 'Im Stehen, Gewicht aufs andere Bein, die Gesäßseite locker lassen. In kleinen Kreisen über den Muskel.', cue: 'Nicht auf den Beckenknochen und nicht aufs Kreuzbein.' }
       ]
     }
   };
