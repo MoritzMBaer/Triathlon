@@ -929,8 +929,25 @@
       /* Rest: das kleinste Gel, das ihn deckt, sonst das größte */
       if (rest > 12) { const by = gels.slice().sort((a, b) => a.g - b.g), fill = by.find(g => g.g >= rest) || by[by.length - 1]; const ex = mix.find(m => m.p === fill); if (ex) { ex.n++; rest -= fill.g; } else rest -= add(fill, 1); }
     }
-    const sum = mix.reduce((a, m) => ({ g: a.g + m.n * m.p.g, na: a.na + m.n * (m.p.na || 0) }), { g: 0, na: 0 });
-    /* Fehlendes Natrium bis zur Untergrenze: Salz in die Flaschen (1 g Kochsalz ≈ 400 mg Natrium) */
+    const tot = () => mix.reduce((a, m) => ({ g: a.g + m.n * m.p.g, na: a.na + m.n * (m.p.na || 0) }), { g: 0, na: 0 });
+    /* Natrium zuerst über die Produkte decken, Salz nur als letzter Ausweg:
+       1. Gels ohne Natrium gegen das Produkt mit dem meisten Natrium pro Gramm tauschen, solange die Kohlenhydrate im Bereich bleiben
+       2. weitere Natrium-Produkte dazu, solange die Obergrenze der Kohlenhydrate nicht überschritten wird */
+    if (naH) {
+      const naP = P.filter(p => p.na > 0 && (p.typ === 'gel' || (!run && p.typ === 'bar'))).sort((a, b) => b.na / b.g - a.na / a.g)[0];
+      const lo = gh[0] * h, hi = gh[1] * h, need = naH[0] * h;
+      const put = p => { const ex = mix.find(m => m.p === p); if (ex) ex.n++; else mix.push({ p, n: 1 }); };
+      for (let i = 0; naP && i < 30 && tot().na < need; i++) {
+        const z = mix.find(m => m.p.typ === 'gel' && !m.p.na && m.n > 0);
+        const t = tot();
+        if (z && t.g - z.p.g + naP.g >= lo) { z.n--; put(naP); continue; }
+        if (t.g + naP.g <= hi) { put(naP); continue; }
+        break;
+      }
+      for (let i = mix.length - 1; i >= 0; i--) if (!mix[i].n) mix.splice(i, 1);
+    }
+    const sum = tot();
+    /* Was dann noch fehlt bis zur Untergrenze: Salz in die Flaschen (1 g Kochsalz ≈ 400 mg Natrium) */
     const naGap = naH ? Math.max(0, naH[0] * h - sum.na) : 0;
     const salt = naGap ? Math.ceil(naGap / 400 * 2) / 2 : 0;
     return { gh, ml, gMid, mlMid, mix, sum, naH, salt, bottles, h };
