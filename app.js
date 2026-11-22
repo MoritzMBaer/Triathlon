@@ -840,7 +840,7 @@
     if (state.msgs[p.id]) h += `<div class="msg">${esc(state.msgs[p.id])}</div>`;
     return { html: h, progress: [ticks.length, items.length] };
   }
-  /* Blackroll und Massagepistole: nur zum Nachlesen unter Fortschritt, in keiner Einheit eingebettet und ohne Abhaken */
+  /* Blackroll und Massagepistole: nur zum Nachlesen auf Heute, in keiner Einheit eingebettet und ohne Abhaken */
   const BR_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><ellipse cx="6" cy="12" rx="3" ry="6"/><path d="M6 6h12M6 18h12"/><path d="M18 6a3 6 0 0 1 0 12"/></svg>';
   const BR_INFO = [
     ['Wann es Sinn macht', [
@@ -860,7 +860,7 @@
   ];
   function brRefCard() {
     const id = 'ref', open = !!state.brOpen[id], act = state.brAct[id];
-    let h = `<section class="warm br-box br-ref" style="${cv('mob')};order:6"><button class="warm-h" data-br="${id}" aria-expanded="${open}"><span class="warm-ic">${BR_IC}</span><span class="tx"><b>Blackroll und Massagepistole</b><small>Zum Nachlesen · wann es hilft, ${U.BLACKROLL.length} Übungen</small></span>${open ? CHEV_D : CHEV_R}</button>`;
+    let h = `<section class="warm br-box br-ref" style="${cv('mob')}"><button class="warm-h" data-br="${id}" aria-expanded="${open}"><span class="warm-ic">${BR_IC}</span><span class="tx"><b>Blackroll und Massagepistole</b><small>Zum Nachlesen · wann es hilft, ${U.BLACKROLL.length} Übungen</small></span>${open ? CHEV_D : CHEV_R}</button>`;
     if (open) {
       BR_INFO.forEach(([t, xs]) => { h += `<div class="br-sec"><b>${esc(t)}</b><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`; });
       h += '<div class="br-sec"><b>Übungen mit der Rolle</b></div>';
@@ -1263,9 +1263,10 @@
     /* Krafteinheiten, die diese Woche liegen geblieben sind, hier zum Nachholen anbieten */
     const late = M.plan.filter(p => p.date < tk && sp(p.sport).fam === 'Kraft' && statusOf(p, M) === 'catch');
     if (late.length) left += `<div class="mhead"><b>Noch offen</b><small>aus dieser Woche</small></div>` + late.map(p => unitOrTile(M, p, 'Nachholen · ' + WDL[parseISO(p.date).getDay()] + ' · ' + unitMeta(p), 'heute', null)).join('');
-    if (wide()) left += morgenWide(M, now);
+    /* Blackroll zum Nachlesen: unter den Einheiten (Laptop) bzw. ganz unten (Handy) */
+    if (wide()) left += brRefCard() + morgenWide(M, now);
     let right = wide() ? statusCard(M, units) : '';
-    if (!wide()) right += morgenCard(M, now); /* Handy: was morgen ansteht statt Wochenkarte */
+    if (!wide()) right += morgenCard(M, now) + brRefCard(); /* Handy: was morgen ansteht statt Wochenkarte */
     else {
       right += weekCard(M, monday(now), true, true, true);
     }
@@ -1418,7 +1419,7 @@
       const xs = rec.filter(t => sp(t.sport).fam === f), km = xs.reduce((a, t) => a + (t.km || 0), 0), min = xs.reduce((a, t) => a + (t.dur || 0), 0);
       return `<div class="sprow" style="${cv(k)}"><span class="ic">${ICON[k]}</span><span><b>${f}</b><small>${xs.length === 1 ? '1 Einheit' : xs.length + ' Einheiten'}</small></span><span class="spv"><b class="num">${f === 'Schwimmen' ? Math.round(km * 1000).toLocaleString('de-DE') + ' m' : Math.round(km).toLocaleString('de-DE') + ' km'}</b><small class="num">${xs.length ? fmtH(min) : '–'}</small></span></div>`;
     }).join('')}</section>`);
-    h += '</div><div class="pcol pk">' + stunden + brRefCard() + '</div></div>';
+    h += '</div><div class="pcol pk">' + stunden + '</div></div>';
     if (state.ver) {
       /* Seite und Service Worker getrennt: weichen sie ab, läuft noch eine ältere Seite aus dem Zwischenspeicher */
       const pm = document.querySelector('meta[name="app-version"]'), pv = pm ? +(/(\d+)$/.exec(pm.content) || [])[1] : 0;
