@@ -66,7 +66,7 @@
     data: ls.get('tri:data', null),
     loading: false, err: null, busy: {}, msgs: {},
     weekOff: 0, sheetId: null, active: {}, drafts: {}, open: {}, slide: 0, started: {},
-    drillOpen: {}, warmOpen: {}, brOpen: {}, brAct: {}, regenTab: 'rolle', rirEdit: null, rest: null, timer: null, timerSeen: {}, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
+    drillOpen: {}, warmOpen: {}, brOpen: {}, brAct: {}, regenTab: 'rolle', xSec: 'regen', fuelMin: 0, fuelSp: null, rirEdit: null, rest: null, timer: null, timerSeen: {}, checkDraft: null, checkEdit: false, checkBusy: false, checkMsg: ''
   };
 
   /* ---------- Schnittstelle ---------- */
@@ -908,14 +908,120 @@
     if (open) REGEN[t].info.forEach(([ti, xs]) => { h += `<div class="br-sec"><b>${esc(ti)}</b><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`; });
     return h + '</section>';
   }
-  function viewExtras() {
+  function regenHTML() {
     const t = regenTab(), R = REGEN[t];
     const n = t === 'rolle' ? U.BLACKROLL.length : R.list.length;
     const seg = `<div class="rg-seg" role="tablist" aria-label="Werkzeug">${Object.keys(REGEN).map(k => `<button role="tab" data-regen="${k}" aria-selected="${k === t}">${REGEN[k].ic}${REGEN[k].name}</button>`).join('')}</div>`;
-    const left = `<div class="mhead"><b>Regeneration</b><small>Rolle und Massagepistole</small></div>
-      <section class="card rg-card" style="${cv('mob')}">${seg}<div class="rg-sub">${n} Bereiche · nach Gefühl, kein Pflichtteil</div>${regenList(t)}</section>`;
-    const right = regenKurz(t) + regenInfo(t);
-    return header('Extras', 'Neben dem Plan', null, 'Neben dem Plan') + banner() + `<div class="grid2"><div class="col">${left}</div><div class="col rg-side">${right}</div></div>`;
+    const left = `<section class="card rg-card" style="${cv('mob')}">${seg}<div class="rg-sub">${n} Bereiche · nach Gefühl, kein Pflichtteil</div>${regenList(t)}</section>`;
+    return [left, regenKurz(t) + regenInfo(t)];
+  }
+
+  /* ---------- Ernährung rund ums Training ---------- */
+  const FUEL_MIN = [60, 90, 120, 180, 240];
+  /* Kohlenhydrate pro Stunde und Trinkmenge je nach Dauer; Laufen etwas weniger, weil der Magen mehr durchgeschüttelt wird */
+  function fuelFor(min, run) {
+    const g = min < 60 ? [0, 0] : min <= 90 ? [30, 45] : min <= 150 ? [45, 60] : [60, 90];
+    const gh = run ? [g[0], Math.min(g[1], 60)] : g;
+    const ml = run ? [300, 600] : [400, 800];
+    const h = min / 60;
+    const gMid = Math.round((gh[0] + gh[1]) / 2 * h / 5) * 5, mlMid = Math.round((ml[0] + ml[1]) / 2 * h / 100) * 100;
+    const bottles = Math.max(0, Math.round(mlMid / 500));
+    const gels = Math.max(0, Math.ceil((gMid - bottles * 30) / 25));
+    return { gh, ml, gMid, mlMid, bottles, gels };
+  }
+  function nextLong(M) {
+    const tk = today(), tmr = iso(addDays(new Date(), 1));
+    return M.plan.find(p => (p.date === tk || p.date === tmr) && ['Rad', 'Laufen'].includes(sp(p.sport).fam) && p.dur >= 60 && statusOf(p, M) !== 'done');
+  }
+  const FUEL_INFO = [
+    ['Vorher', 'Mahlzeit 2–3 h vorher, sonst kleiner Snack', [
+      '2–3 Stunden vorher eine normale Mahlzeit mit Kohlenhydraten, wenig Fett und Ballaststoffen (Brot mit Honig, Haferflocken, Reis, Nudeln).',
+      'Knapp dran oder früh am Morgen: 30–60 min vorher ein kleiner Snack, z. B. eine Banane oder ein Toast mit Honig.',
+      'Lockere Einheiten unter etwa 75 min gehen morgens auch nüchtern. Harte Einheiten nicht.'
+    ]],
+    ['Währenddessen', 'Ab 60 min regelmäßig, in kleinen Portionen', [
+      'Unter 60 min: nur Wasser nach Durst.',
+      'Ab 60 min ab etwa 20–30 min regelmäßig etwas: alle 15–20 min ein paar Schlucke und kleine Portionen statt einmal viel.',
+      'Mehr als 60 g pro Stunde verträgt der Bauch erst nach Übung. In langen Einheiten trainieren, nicht erst am Wettkampftag.',
+      'Bei Hitze oder viel Schweiß: Sportgetränk oder Salztabletten statt nur Wasser.'
+    ]],
+    ['Danach', 'Kohlenhydrate und 20–30 g Eiweiß', [
+      'Innerhalb von 1–2 Stunden eine Mahlzeit mit Kohlenhydraten und 20–30 g Eiweiß (z. B. Skyr oder Quark mit Haferflocken und Obst, Nudeln mit Hähnchen oder Linsen).',
+      'Nach harten oder langen Einheiten oder wenn am selben Tag noch eine kommt: lieber schon nach 30–60 min.',
+      'Trinken, bis der Urin wieder hell ist.'
+    ]],
+    ['Rund um den Nachtdienst', 'Kleine Portionen, Koffein früh weglassen', [
+      'Vor dem Dienst eine richtige Mahlzeit, in der Nacht eher kleine, leichte Portionen statt einer großen.',
+      'Nach dem Dienst vor dem Schlafen nur etwas Leichtes, damit der Schlaf nicht leidet. Koffein ab etwa 4 Uhr weglassen.'
+    ]]
+  ];
+  const FUEL_EX = [['Gel', '≈ 25 g'], ['Sportgetränk 500 ml', '≈ 30 g'], ['Banane', '≈ 25 g'], ['Müsliriegel', '≈ 20–30 g'], ['Weißbrot mit Honig', '≈ 30 g']];
+  function fuelHTML(M) {
+    const nl = nextLong(M);
+    const run = state.fuelSp != null ? state.fuelSp === 'run' : nl ? sp(nl.sport).fam === 'Laufen' : false;
+    const min = state.fuelMin || (nl ? nl.dur : 90);
+    const f = fuelFor(min, run);
+    const hint = nl && !state.fuelMin && state.fuelSp == null ? `<div class="fu-next">Für ${nl.date === today() ? 'heute' : 'morgen'}: <b>${esc(nl.title)}</b> · ${nl.dur} min</div>` : '';
+    const chips = `<div class="fu-chips" role="group" aria-label="Dauer">${FUEL_MIN.map(m => `<button data-fuel="min|${m}" aria-pressed="${m === min}">${m >= 120 ? m / 60 + ' h' : m + ' min'}</button>`).join('')}</div>`;
+    const sw = `<div class="rg-seg" role="tablist" aria-label="Sportart"><button role="tab" data-fuel="sp|bike" aria-selected="${!run}">Rad</button><button role="tab" data-fuel="sp|run" aria-selected="${run}">Laufen</button></div>`;
+    const res = f.gh[1] ? `<div class="fu-res"><div><b class="num">${f.gh[0]}–${f.gh[1]} g</b><small>Kohlenhydrate pro Stunde</small></div><div><b class="num">${f.ml[0]}–${f.ml[1]} ml</b><small>Trinken pro Stunde</small></div></div>
+      <p class="fu-ex">Insgesamt etwa <b>${f.gMid} g</b> und <b>${(f.mlMid / 1000).toLocaleString('de-DE')} l</b>, z. B. ${f.bottles ? `${f.bottles} × Sportgetränk à 500 ml` : ''}${f.bottles && f.gels ? ' + ' : ''}${f.gels ? `${f.gels} ${f.gels === 1 ? 'Gel' : 'Gels'}` : ''}${run ? '. Beim Laufen Gels und Becher, die Flasche eher am Gürtel oder auf der Runde deponieren.' : '.'}</p>`
+      : '<p class="fu-ex">Unter einer Stunde reicht Wasser nach Durst.</p>';
+    const left = `<section class="card fu-card" style="${cv(run ? 'run' : 'bike')}">${hint}${sw}${chips}${res}<div class="fu-tab">${FUEL_EX.map(([n, g]) => `<span>${esc(n)}<b class="num">${g}</b></span>`).join('')}</div></section>`;
+    const right = FUEL_INFO.map(([t, sub, xs], i) => {
+      const id = 'fu-' + i, open = !!state.brOpen[id];
+      let h = `<section class="warm br-box rg-info"><button class="warm-h" data-br="${id}" aria-expanded="${open}"><span class="tx"><b>${esc(t)}</b><small>${esc(sub)}</small></span>${CHEV_D}</button>`;
+      if (open) h += `<div class="br-sec"><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
+      return h + '</section>';
+    }).join('');
+    return [left, right];
+  }
+
+  /* ---------- Zonen aus den Bezugswerten im Blatt „Einstellungen“ ---------- */
+  function zonesHTML() {
+    const w = pc => r5(FTP * pc / 100), bpm = pc => Math.round(LTHR * pc / 100);
+    const pace = pc => mmss(r5(TPACE * pc / 100)); /* pc in % der Schwellenzeit pro km */
+    const sw = d => mmss(TCSS + d);
+    const card = (k, title, ref, rows, note) => `<section class="card zn-card" style="${cv(k)}"><div class="zn-h"><b>${title}</b><small>${ref}</small></div>${rows.map(([z, n, r, feel], i) => `<div class="zn-row"><span class="zn-z" style="--o:${0.25 + i * 0.15}">${z}</span><span class="zn-n"><b>${n}</b><small>${feel}</small></span><span class="zn-r num">${r}</span></div>`).join('')}${note ? `<p class="zn-note">${note}</p>` : ''}</section>`;
+    const bike = card('bike', 'Rad · Watt', `FTP ${FTP} W`, [
+      ['Z1', 'Erholung', `bis ${w(55)} W`, 'Ganz locker, Beine ausrollen'],
+      ['Z2', 'Grundlage', `${w(55)}–${w(75)} W`, 'Ganze Sätze reden geht'],
+      ['Z3', 'Tempo', `${w(75)}–${w(90)} W`, 'Kurze Sätze, zählt schon als hart'],
+      ['Z4', 'Schwelle', `${w(90)}–${w(105)} W`, 'Nur noch wenige Worte'],
+      ['Z5', 'VO₂max', `${w(105)}–${w(120)} W`, 'Wenige Minuten am Stück'],
+      ['Z6', 'Anaerob', `ab ${w(120)} W`, 'Kurze Sprints']
+    ], `Sweet Spot: ${w(88)}–${w(94)} W (88–94 % FTP).`);
+    const runHr = card('run', 'Laufen · Puls', `Schwellenpuls ${LTHR}`, [
+      ['Z1', 'Erholung', `bis ${bpm(85) - 1}`, 'Ganz locker'],
+      ['Z2', 'Grundlage', `${bpm(85)}–${bpm(90) - 1}`, 'Ganze Sätze reden geht'],
+      ['Z3', 'Tempo', `${bpm(90)}–${bpm(95) - 1}`, 'Kurze Sätze'],
+      ['Z4', 'Schwelle', `${bpm(95)}–${bpm(100) - 1}`, 'Nur noch wenige Worte'],
+      ['Z5', 'Hart', `ab ${bpm(100)}`, 'Intervalle, kurz']
+    ], 'Der Puls hinkt bei kurzen Intervallen hinterher: dort eher nach Pace oder Gefühl.');
+    const runPace = card('run', 'Laufen · Pace', `Schwelle ${mmss(TPACE)} /km`, [
+      ['Z1', 'Erholung', `langsamer als ${pace(129)}`, 'Ganz locker'],
+      ['Z2', 'Grundlage', `${pace(114)}–${pace(129)}`, 'Ganze Sätze reden geht'],
+      ['Z3', 'Tempo', `${pace(106)}–${pace(114)}`, 'Kurze Sätze'],
+      ['Z4', 'Schwelle', `${pace(99)}–${pace(106)}`, 'Nur noch wenige Worte'],
+      ['Z5', 'Hart', `schneller als ${pace(99)}`, 'Intervalle, kurz']
+    ], 'Pro km. Bergauf, bei Hitze und Wind lieber nach Puls.');
+    const swim = TCSS ? card('swim', 'Schwimmen · pro 100 m', `CSS ${mmss(TCSS)}`, [
+      ['Z1', 'Locker', `langsamer als ${sw(10)}`, 'Einschwimmen, Technik'],
+      ['Z2', 'Grundlage', `${sw(5)}–${sw(10)}`, 'Lange Serien, ruhig'],
+      ['Z3', 'Gleichmäßig', `${sw(2)}–${sw(5)}`, 'Hauptserien „gleichmäßig“ (≈ ' + sw(4) + ')'],
+      ['Z4', 'Schwelle', `${sw(-3)}–${sw(2)}`, 'Hauptserien „an der Schwelle“'],
+      ['Z5', 'Zügig', `schneller als ${sw(-3)}`, 'Hauptserien „zügig“ (≈ ' + sw(-6) + ')']
+    ], '') : `<section class="card zn-card" style="${cv('swim')}"><div class="zn-h"><b>Schwimmen</b><small>noch kein Test</small></div><p class="zn-note">Nach dem ersten Schwimmtest (400/200 m) stehen hier deine Zeiten pro 100 m.</p></section>`;
+    const src = '<p class="zn-src">Gerechnet aus deinen Werten im Blatt „Einstellungen“. Ändern sie sich, passen sich die Zonen an.</p>';
+    return [bike + swim, runHr + runPace + src];
+  }
+
+  const XSEC = [['regen', 'Regeneration'], ['fuel', 'Ernährung'], ['zonen', 'Zonen']];
+  function viewExtras(M) {
+    const sec = XSEC.some(([k]) => k === state.xSec) ? state.xSec : 'regen';
+    const nav = `<div class="x-nav" role="tablist" aria-label="Themen">${XSEC.map(([k, n]) => `<button role="tab" data-xsec="${k}" aria-selected="${k === sec}">${n}</button>`).join('')}</div>`;
+    const [left, right] = sec === 'fuel' ? fuelHTML(M) : sec === 'zonen' ? zonesHTML() : regenHTML();
+    return header('Extras', 'Neben dem Plan', null, 'Neben dem Plan') + banner() + nav + `<div class="grid2"><div class="col">${left}</div><div class="col">${right}</div></div>`;
   }
   /* Ablauf als Schrittliste: nach Sätzen gruppiert, aktueller Teil hervorgehoben */
   function mobStepsHTML(p, i, it, review) {
@@ -1575,7 +1681,7 @@
     syncWake(M);
     if (v === 'einrichtung') html = viewSetup();
     else if (!M) html = header('Heute', 'Lade deine Daten …', null, 'Lädt …') + banner() + '<div class="skel"></div>';
-    else html = v === 'woche' ? viewWoche(M) : v === 'fortschritt' ? viewFortschritt(M) : v === 'extras' ? viewExtras() : viewHeute(M);
+    else html = v === 'woche' ? viewWoche(M) : v === 'fortschritt' ? viewFortschritt(M) : v === 'extras' ? viewExtras(M) : viewHeute(M);
     if (v !== lastView) {
       app.innerHTML = html; lastRender = html;
       app.style.transition = ''; app.style.transform = ''; app.style.opacity = '';
@@ -2020,6 +2126,8 @@
       render(); return;
     }
     if ((el = q('[data-regen]'))) { state.regenTab = el.dataset.regen; render(); return; }
+    if ((el = q('[data-xsec]'))) { state.xSec = el.dataset.xsec; render(); window.scrollTo(0, 0); return; }
+    if ((el = q('[data-fuel]'))) { const [k, v] = el.dataset.fuel.split('|'); if (k === 'min') state.fuelMin = +v; else state.fuelSp = v; render(); return; }
     if ((el = q('[data-br-open]'))) { const [pid, i] = el.dataset.brOpen.split('|'); state.brAct[pid] = state.brAct[pid] === +i ? -1 : +i; render(); return; }
     if ((el = q('[data-mob-open]'))) { const [pid, i] = el.dataset.mobOpen.split('|'); state.active[pid] = state.active[pid] === +i ? -1 : +i; if (state.active[pid] >= 0) state.scrollEx = pid; render(); return; }
     if ((el = q('[data-mob]'))) {

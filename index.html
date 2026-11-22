@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="tri-v171">
+<meta name="app-version" content="tri-v172">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Triathlon</title>
 <script>
@@ -476,6 +476,40 @@ button.dsd:active{background:var(--fill)}
 .exrow.done .tx b{color:var(--faint);text-decoration:line-through}
 
 /* Stabi */
+/* Extras: Themenwahl, Ernährung, Zonen */
+.x-nav{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px}
+.x-nav::-webkit-scrollbar{display:none}
+.x-nav button{flex:none;min-height:40px;padding:0 16px;border:0;border-radius:999px;background:var(--card);color:var(--fg-2);font-size:15px;font-weight:600}
+.x-nav button[aria-selected="true"]{background:var(--ink);color:var(--on-ink)}
+@media (min-width:960px){.x-nav{margin:0;padding:0 0 4px}}
+.fu-card{padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.fu-card .rg-seg button[aria-selected="true"]{color:var(--c-d)}
+.fu-next{font-size:14px;color:var(--fg-2);background:var(--c-t);border-radius:12px;padding:10px 12px}
+.fu-chips{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.fu-chips button{min-height:40px;border:0;border-radius:12px;background:var(--fill-2);color:var(--fg-2);font-size:14px;font-weight:600;padding:0}
+.fu-chips button[aria-pressed="true"]{background:var(--c-d);color:var(--card)}
+.fu-res{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fu-res div{background:var(--c-t);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:2px}
+.fu-res b{font-size:22px;font-weight:700;font-family:var(--round);color:var(--c-d)}
+.fu-res small{font-size:12px;color:var(--fg-2)}
+.fu-ex{margin:0;font-size:14px;line-height:1.45;color:var(--fg-2)}
+.fu-tab{display:flex;flex-direction:column;border-top:.5px solid var(--line);padding-top:8px}
+.fu-tab span{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);padding:4px 0}
+.fu-tab b{font-weight:600;color:var(--fg-2)}
+.rg-info .br-sec ul{padding-bottom:2px}
+.col>.rg-info{margin-bottom:0}
+.zn-card{padding:14px 16px 12px;display:flex;flex-direction:column}
+.zn-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-bottom:6px}
+.zn-h b{font-size:17px;font-weight:700}
+.zn-h small{font-size:13px;color:var(--c-d);font-weight:600}
+.zn-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:.5px solid var(--line)}
+.zn-z{width:32px;height:32px;flex:none;border-radius:10px;display:grid;place-items:center;font:700 13px var(--round);color:var(--fg);background:color-mix(in srgb,var(--c) calc(var(--o) * 100%),transparent)}
+.zn-n{display:flex;flex-direction:column;flex-grow:1;min-width:0}
+.zn-n b{font-size:15px;font-weight:600}
+.zn-n small{font-size:12px;color:var(--muted)}
+.zn-r{font-size:15px;font-weight:600;text-align:right;white-space:nowrap}
+.zn-note{margin:6px 0 0;font-size:13px;line-height:1.4;color:var(--muted)}
+.zn-src{margin:0;padding:0 4px;font-size:13px;color:var(--muted)}
 /* Extras: Regeneration mit Rolle und Pistole */
 .rg-card{padding:14px 16px 6px;display:flex;flex-direction:column;gap:8px}
 .rg-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--fill-2);border-radius:14px;padding:3px}
