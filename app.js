@@ -860,7 +860,7 @@
   ];
   function brRefCard() {
     const id = 'ref', open = !!state.brOpen[id], act = state.brAct[id];
-    let h = `<section class="warm br-box br-ref" style="${cv('mob')}"><button class="warm-h" data-br="${id}" aria-expanded="${open}"><span class="warm-ic">${BR_IC}</span><span class="tx"><b>Blackroll und Massagepistole</b><small>Zum Nachlesen · wann es hilft, ${U.BLACKROLL.length} Übungen</small></span>${open ? CHEV_D : CHEV_R}</button>`;
+    let h = `<section class="warm br-box br-ref" style="${cv('mob')}"><button class="warm-h" data-br="${id}" aria-expanded="${open}"><span class="warm-ic">${BR_IC}</span><span class="tx"><b>Blackroll und Massagepistole</b><small>Wann es hilft · ${U.BLACKROLL.length} Übungen</small></span>${CHEV_D}</button>`;
     if (open) {
       BR_INFO.forEach(([t, xs]) => { h += `<div class="br-sec"><b>${esc(t)}</b><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`; });
       h += '<div class="br-sec"><b>Übungen mit der Rolle</b></div>';
@@ -1113,7 +1113,7 @@
   function isOpen(view, id, def) {
     const m = state.open[view] || {};
     if (m[id] !== undefined) return m[id];
-    return id === def && (isStarted({ id }) || !Object.keys(m).some(k => m[k]));
+    return id === def && (isStarted({ id }) || (!Object.keys(m).some(k => m[k]) && !state.brOpen.ref));
   }
   function wide() { return window.innerWidth >= 960; }
   function unitOrTile(M, p, sub, view, def) {
@@ -1263,10 +1263,11 @@
     /* Krafteinheiten, die diese Woche liegen geblieben sind, hier zum Nachholen anbieten */
     const late = M.plan.filter(p => p.date < tk && sp(p.sport).fam === 'Kraft' && statusOf(p, M) === 'catch');
     if (late.length) left += `<div class="mhead"><b>Noch offen</b><small>aus dieser Woche</small></div>` + late.map(p => unitOrTile(M, p, 'Nachholen · ' + WDL[parseISO(p.date).getDay()] + ' · ' + unitMeta(p), 'heute', null)).join('');
-    /* Blackroll zum Nachlesen: unter den Einheiten (Laptop) bzw. ganz unten (Handy) */
-    if (wide()) left += brRefCard() + morgenWide(M, now);
+    /* Blackroll zum Nachlesen: eigener Abschnitt unter den Einheiten von heute, vor „Morgen“ */
+    left += `<div class="mhead"><b>Regeneration</b><small>zum Nachlesen</small></div>` + brRefCard();
+    if (wide()) left += morgenWide(M, now);
     let right = wide() ? statusCard(M, units) : '';
-    if (!wide()) right += morgenCard(M, now) + brRefCard(); /* Handy: was morgen ansteht statt Wochenkarte */
+    if (!wide()) right += morgenCard(M, now); /* Handy: was morgen ansteht statt Wochenkarte */
     else {
       right += weekCard(M, monday(now), true, true, true);
     }
@@ -1685,6 +1686,7 @@
     if (!open && isStarted({ id })) { setStarted(id, false); if (state.timer && state.timer.pid === id) state.timer = null; delete state.active[id]; }
     const m = state.open[v] = state.open[v] || {};
     /* Immer nur eine Einheit offen: Aufklappen schließt die anderen. Gestartete Kraft-/Stabi-Einheiten bleiben offen. */
+    if (open) state.brOpen.ref = false;
     if (open) Object.keys(m).forEach(k => { if (k !== id && m[k] && !isStarted({ id: k })) m[k] = false; });
     m[id] = open;
     state.lastOpen = open ? id : null;
@@ -1972,7 +1974,12 @@
     }
     if ((el = q('[data-stop]'))) { setStarted(el.dataset.stop, false); state.timer = null; render(); return; }
     if ((el = q('[data-ex]'))) { const [pid, i] = el.dataset.ex.split('|'); const wasOpen = el.classList.contains('ex-head'); state.active[pid] = wasOpen ? -1 : +i; if (wasOpen) { render(); return; } if (state.timer && state.timer.kr && state.timer.pid === pid && !state.timer.running) state.timer = null; state.scrollEx = pid; render(); return; }
-    if ((el = q('[data-br]'))) { const pid = el.dataset.br; state.brOpen[pid] = !state.brOpen[pid]; render(); return; }
+    if ((el = q('[data-br]'))) {
+      const pid = el.dataset.br; state.brOpen[pid] = !state.brOpen[pid];
+      /* Wie bei den Einheiten: Aufklappen schließt die anderen, gestartete Kraft-/Stabi-Einheiten bleiben offen */
+      if (state.brOpen[pid]) { const m = state.open[current()] || {}; Object.keys(m).forEach(k => { if (m[k] && !isStarted({ id: k })) m[k] = false; }); }
+      render(); return;
+    }
     if ((el = q('[data-br-open]'))) { const [pid, i] = el.dataset.brOpen.split('|'); state.brAct[pid] = state.brAct[pid] === +i ? -1 : +i; render(); return; }
     if ((el = q('[data-mob-open]'))) { const [pid, i] = el.dataset.mobOpen.split('|'); state.active[pid] = state.active[pid] === +i ? -1 : +i; if (state.active[pid] >= 0) state.scrollEx = pid; render(); return; }
     if ((el = q('[data-mob]'))) {
@@ -2208,6 +2215,7 @@
     const m = state.open[v] || {}, keep = {};
     Object.keys(m).forEach(id => { if (m[id] && isStarted({ id })) keep[id] = true; });
     state.open[v] = keep;
+    state.brOpen.ref = false;
     state.lastOpen = null;
   }
   window.addEventListener('hashchange', () => { const left = viewNow; viewNow = current(); if (left !== viewNow) collapseView(left); if (state.sheetId) { state.sheetId = null; closeSheetNow(); } render(); if (state.pendingJump) { const k = state.pendingJump; state.pendingJump = null; requestAnimationFrame(() => setTimeout(() => jumpTo(k), 60)); } });
