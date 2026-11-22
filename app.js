@@ -157,6 +157,9 @@
   }
 
   /* ---------- Daten aufbereiten ---------- */
+  /* Kraft und Stabi heißen nur noch so: Varianten-Buchstaben („Kraft A“, „Stabi B/C“) fallen in der Anzeige weg.
+     Im Kraftprotokoll bleibt der Titel aus dem Sheet stehen (sheetTitle). */
+  const plainTitle = t => String(t).replace(/^Mobility\b/i, 'Stabi').replace(/^(Stabi|Kraft)\s+[A-Z0-9](?:\s*\/\s*[A-Z0-9])*(?![\wäöüß])\s*[–—:-]?\s*/i, '$1 ').trim();
   let cache = { at: -1 };
   function model() {
     const d = state.data;
@@ -165,7 +168,7 @@
     setRefs(d.einstellungen);
     const rows = v => (v || []).slice(1);
     const plan = rows(d.plan).map((r, i) => ({
-      id: r[0], date: normDate(r[1]), sport: r[2] === 'Mobility' ? 'Stabi' : r[2] || '', title: r[3] || '', workout: r[4] || '', dur: num(r[5]) || 0,
+      id: r[0], date: normDate(r[1]), sport: r[2] === 'Mobility' ? 'Stabi' : r[2] || '', title: plainTitle(r[3] || ''), sheetTitle: r[3] || '', workout: r[4] || '', dur: num(r[5]) || 0,
       note: r[6] || '', status: String(r[7] || '').toLowerCase(), done: r[11] || ''
     })).filter(p => p.id && p.date && !['gelöscht', 'löschen'].includes(p.status))
       .sort((a, b) => a.date.localeCompare(b.date) || sp(a.sport).o - sp(b.sport).o);
@@ -812,7 +815,7 @@
     const review = !!p.done; /* erledigt: Übungen zum Nachlesen, ohne Timer und Abhaken */
     let act = state.active[p.id];
     if (act == null) { act = review ? -1 : items.findIndex((_, i) => !ticks.includes(i)); }
-    let h = (review ? '' : backBar(p, `${ticks.length} von ${items.length} geschafft`)) + (review ? '' : brBlock(p)) + '<div class="exlist">';
+    let h = (review ? '' : backBar(p, `${ticks.length} von ${items.length} geschafft`)) + '<div class="exlist">';
     items.forEach((it, i) => {
       const on = ticks.includes(i), open = i === act;
       h += `<div class="mob-ex${on && !review ? ' done' : ''}${open ? ' active' : ''}"><div class="mob-row">
@@ -837,21 +840,38 @@
     if (state.msgs[p.id]) h += `<div class="msg">${esc(state.msgs[p.id])}</div>`;
     return { html: h, progress: [ticks.length, items.length] };
   }
-  /* Blackroll vorab: freiwillig, ohne Abhaken und ohne Einfluss auf den Fortschritt – Stabi geht auch ohne Material */
+  /* Blackroll und Massagepistole: nur zum Nachlesen auf Heute, in keiner Einheit eingebettet und ohne Abhaken */
   const BR_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><ellipse cx="6" cy="12" rx="3" ry="6"/><path d="M6 6h12M6 18h12"/><path d="M18 6a3 6 0 0 1 0 12"/></svg>';
-  function brBlock(p) {
-    const open = !!state.brOpen[p.id], act = state.brAct[p.id];
-    let h = `<div class="warm br-box"><button class="warm-h" data-br="${esc(p.id)}" aria-expanded="${open}"><span class="warm-ic">${BR_IC}</span><span class="tx"><b>Blackroll vorab</b><small>Freiwillig, ohne Abhaken · ${U.BLACKROLL.length} Übungen · etwa 6 min</small></span>${open ? CHEV_D : CHEV_R}</button>`;
+  const BR_INFO = [
+    ['Wann es Sinn macht', [
+      'Vor dem Training oder vor Stabi, wenn du dich steif fühlst: 30–60 s pro Muskel machen ihn für kurze Zeit beweglicher, ohne Kraft zu kosten (anders als langes Dehnen).',
+      'Nach harten oder langen Einheiten und bei Muskelkater: fühlt sich besser an und nimmt etwas Schmerz. Am Abend, auf dem Sofa, auch nach dem Nachtdienst.',
+      'Nicht nötig: an Tagen, an denen sich alles locker anfühlt. Es ist ein Wohlfühl-Werkzeug, kein Pflichtteil.'
+    ]],
+    ['So rollst du', [
+      'Langsam, etwa 2–3 cm pro Sekunde. Höchstens 6 von 10, ein Wohlweh. An empfindlichen Stellen 20–30 s bleiben und ausatmen.',
+      'Nicht auf unteren Rücken, Kniekehle, Knochen, Gelenke oder frische Verletzungen.'
+    ]],
+    ['Massagepistole', [
+      'Wann: wie die Rolle, vor allem für Waden, Oberschenkel und Gesäß. Gut nach dem Laufen oder auf dem Rad-Trainer.',
+      'Wie: niedrige bis mittlere Stufe, runder Aufsatz. Den Kopf ohne Druck über den Muskel gleiten lassen, 30–60 s pro Muskel, höchstens etwa 2 min an einer Stelle.',
+      'Nicht: auf Knochen, Gelenke, Wirbelsäule, Hals vorn, Krampfadern, Blutergüsse oder frische Verletzungen. Mit Blutverdünnern lieber lassen.'
+    ]]
+  ];
+  function brRefCard() {
+    const id = 'ref', open = !!state.brOpen[id], act = state.brAct[id];
+    let h = `<section class="warm br-box br-ref" style="${cv('mob')}"><button class="warm-h" data-br="${id}" aria-expanded="${open}"><span class="warm-ic">${BR_IC}</span><span class="tx"><b>Blackroll und Massagepistole</b><small>Zum Nachlesen · wann es hilft, ${U.BLACKROLL.length} Übungen</small></span>${open ? CHEV_D : CHEV_R}</button>`;
     if (open) {
-      h += '<p class="br-note">Langsam rollen, etwa 2–3 cm pro Sekunde. Höchstens 6 von 10, ein Wohlweh. An empfindlichen Stellen 20–30 s bleiben und ausatmen. Nicht auf unteren Rücken, Kniekehle, Knochen oder Gelenke.</p>';
+      BR_INFO.forEach(([t, xs]) => { h += `<div class="br-sec"><b>${esc(t)}</b><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`; });
+      h += '<div class="br-sec"><b>Übungen mit der Rolle</b></div>';
       U.BLACKROLL.forEach((b, i) => {
         const on = act === i;
-        h += `<div class="mob-ex${on ? ' active' : ''}"><div class="mob-row"><button class="open" data-br-open="${esc(p.id)}|${i}" aria-expanded="${on}"><span class="thumb">${U.svg(b, { t: 0.5 })}</span><span class="tx"><b>${esc(b.name)}</b><small>${esc(b.dose)}</small></span></button></div>`;
+        h += `<div class="mob-ex${on ? ' active' : ''}"><div class="mob-row"><button class="open" data-br-open="${id}|${i}" aria-expanded="${on}"><span class="thumb">${U.svg(b, { t: 0.5 })}</span><span class="tx"><b>${esc(b.name)}</b><small>${esc(b.dose)}</small></span></button></div>`;
         if (on) h += `<div class="mob-detail"><div class="mob-l"><button class="fig zoomable" data-zoom="${esc(b.name)}" aria-label="Skizze ${esc(b.name)} vergrößern">${U.svg(b, { id: 'live:' + encodeURIComponent(b.name), label: 'Animation: ' + b.name })}</button>${zoomMap(U.bodyMap(b), b.name)}</div><div class="mob-r"><p class="howto">${esc(b.how)}</p><p class="cue"><b>Achte darauf:</b> ${esc(b.cue)}</p></div></div>`;
         h += '</div>';
       });
     }
-    return h + '</div>';
+    return h + '</section>';
   }
   /* Ablauf als Schrittliste: nach Sätzen gruppiert, aktueller Teil hervorgehoben */
   function mobStepsHTML(p, i, it, review) {
@@ -1089,7 +1109,12 @@
     return `<button class="tile" style="${cv(S.k)}" data-open="${esc(p.id)}" data-uid="${esc(p.id)}" aria-expanded="false" aria-label="${esc(p.title)} aufklappen"><span class="ic">${ICON[S.k]}</span><span class="tx"><b>${esc(p.title)}</b><small>${esc(sub || sportLabel(p) + ' · ' + unitMeta(p))}</small></span>${right}</button>`;
   }
   /* Aufgeklappt oder als Kachel, je nachdem was gerade offen ist */
-  function isOpen(view, id, def) { const m = state.open[view] || {}; return m[id] !== undefined ? m[id] : id === def; }
+  /* Vorgabe (z. B. die nächste Einheit von heute) ist nur offen, solange nichts anderes aufgeklappt ist – außer sie läuft schon */
+  function isOpen(view, id, def) {
+    const m = state.open[view] || {};
+    if (m[id] !== undefined) return m[id];
+    return id === def && (isStarted({ id }) || !Object.keys(m).some(k => m[k]));
+  }
   function wide() { return window.innerWidth >= 960; }
   function unitOrTile(M, p, sub, view, def) {
     return isOpen(view, p.id, def) ? unitExpanded(M, p, { fold: true, showActual: statusOf(p, M) === 'done' }) : tile(M, p, sub);
@@ -1238,9 +1263,10 @@
     /* Krafteinheiten, die diese Woche liegen geblieben sind, hier zum Nachholen anbieten */
     const late = M.plan.filter(p => p.date < tk && sp(p.sport).fam === 'Kraft' && statusOf(p, M) === 'catch');
     if (late.length) left += `<div class="mhead"><b>Noch offen</b><small>aus dieser Woche</small></div>` + late.map(p => unitOrTile(M, p, 'Nachholen · ' + WDL[parseISO(p.date).getDay()] + ' · ' + unitMeta(p), 'heute', null)).join('');
-    if (wide()) left += morgenWide(M, now);
+    /* Blackroll zum Nachlesen: unter den Einheiten (Laptop) bzw. ganz unten (Handy) */
+    if (wide()) left += brRefCard() + morgenWide(M, now);
     let right = wide() ? statusCard(M, units) : '';
-    if (!wide()) right += morgenCard(M, now); /* Handy: was morgen ansteht statt Wochenkarte */
+    if (!wide()) right += morgenCard(M, now) + brRefCard(); /* Handy: was morgen ansteht statt Wochenkarte */
     else {
       right += weekCard(M, monday(now), true, true, true);
     }
@@ -1657,7 +1683,10 @@
     /* Zuklappen beendet die laufende Kraft-/Stabi-Ansicht: beim nächsten Aufklappen kommt wieder der Startbildschirm
        („Weitermachen“, sobald etwas abgehakt ist). Abgehakte Übungen und Sätze bleiben erhalten. */
     if (!open && isStarted({ id })) { setStarted(id, false); if (state.timer && state.timer.pid === id) state.timer = null; delete state.active[id]; }
-    (state.open[v] = state.open[v] || {})[id] = open;
+    const m = state.open[v] = state.open[v] || {};
+    /* Immer nur eine Einheit offen: Aufklappen schließt die anderen. Gestartete Kraft-/Stabi-Einheiten bleiben offen. */
+    if (open) Object.keys(m).forEach(k => { if (k !== id && m[k] && !isStarted({ id: k })) m[k] = false; });
+    m[id] = open;
     state.lastOpen = open ? id : null;
     render();
     /* Ziel-Layout messen, bevor die Höhenanimation startet */
@@ -1798,7 +1827,7 @@
     const zeilen = [];
     exs.forEach((ex, i) => {
       const lib = U.lib(ex.name), tg = target(p, ex, lib), k = kind(lib, ex);
-      (d.ex[i] || []).filter(s => s.ok).forEach((s, j) => zeilen.push({ datum: today(), einheit: p.title, uebung: ex.name, satz: j + 1, wdh: k === 'time' ? '' : (s.r == null ? '' : s.r), sek: k === 'time' ? (s.s == null ? '' : s.s) : '', kg: k === 'w' ? (s.kg == null ? '' : s.kg) : '', ziel: `${tg.sets}×${tg.reps}${k === 'time' ? ' s' : ''}${k !== 'time' && s.rir != null ? ' · RIR ' + s.rir : ''}`, gespeichert: stamp }));
+      (d.ex[i] || []).filter(s => s.ok).forEach((s, j) => zeilen.push({ datum: today(), einheit: p.sheetTitle || p.title, uebung: ex.name, satz: j + 1, wdh: k === 'time' ? '' : (s.r == null ? '' : s.r), sek: k === 'time' ? (s.s == null ? '' : s.s) : '', kg: k === 'w' ? (s.kg == null ? '' : s.kg) : '', ziel: `${tg.sets}×${tg.reps}${k === 'time' ? ' s' : ''}${k !== 'time' && s.rir != null ? ' · RIR ' + s.rir : ''}`, gespeichert: stamp }));
     });
     if (!zeilen.length) { state.msgs[p.id] = 'Hake mindestens einen Satz ab, bevor du speicherst.'; render(); return; }
     state.busy[p.id] = true; delete state.msgs[p.id]; render();
@@ -2173,15 +2202,12 @@
   }));
   window.addEventListener('online', () => { load(true); });
   /* Seitenwechsel: aufgeklappte Einheiten der verlassenen Seite zuklappen (beim Zurückkommen gilt wieder die Vorgabe).
-     Laufende Kraft-/Stabi-Ansichten gehen zurück auf den Startbildschirm, außer ein Timer oder eine Pause läuft gerade. */
+     Gestartete Kraft-/Stabi-Einheiten bleiben offen und laufen weiter, bis man sie selbst zuklappt oder abschließt. */
   let viewNow = current();
   function collapseView(v) {
-    Object.keys(state.open[v] || {}).forEach(id => {
-      const busy = (state.timer && state.timer.pid === id) || (state.rest && state.active[id] != null);
-      if (!busy && isStarted({ id })) { setStarted(id, false); delete state.active[id]; }
-    });
-    const keep = state.timer ? state.timer.pid : null;
-    state.open[v] = keep && state.open[v] && state.open[v][keep] ? { [keep]: true } : {};
+    const m = state.open[v] || {}, keep = {};
+    Object.keys(m).forEach(id => { if (m[id] && isStarted({ id })) keep[id] = true; });
+    state.open[v] = keep;
     state.lastOpen = null;
   }
   window.addEventListener('hashchange', () => { const left = viewNow; viewNow = current(); if (left !== viewNow) collapseView(left); if (state.sheetId) { state.sheetId = null; closeSheetNow(); } render(); if (state.pendingJump) { const k = state.pendingJump; state.pendingJump = null; requestAnimationFrame(() => setTimeout(() => jumpTo(k), 60)); } });

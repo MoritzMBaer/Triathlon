@@ -7,7 +7,8 @@
 
 ## Trainingsplan planen oder ändern (Blatt „Plan“)
 
-- Sportart „Stabi“ (früher „Mobility“): Dehnen, Mobilisieren und Kräftigen ohne Geräte für zu Hause. Die App blendet davor einen freiwilligen Blackroll-Block ein (nicht im Plan, ohne Abhaken), damit die Einheit auch ohne Material geht.
+- Sportart „Stabi“ (früher „Mobility“): Dehnen, Mobilisieren und Kräftigen ohne Geräte für zu Hause. Blackroll und Massagepistole stehen nicht in der Einheit, sondern nur als Nachschlage-Karte auf der Seite Heute (nicht im Plan, ohne Abhaken).
+- Titel im Blatt „Plan“: Kraft und Stabi ohne Varianten-Buchstaben („Kraft“, nicht „Kraft A“). Die App blendet solche Buchstaben ohnehin aus.
 
 - Vorher immer beide Kalender prüfen: den Dienstkalender und den privaten Hauptkalender. Ganztägige private Termine (Ausflüge, Lehrgänge, Reisen) sind keine Trainingstage, höchstens Stabi.
 - Termine am Tag beachten: Schwimmen nur an Tagen, an denen Zeit fürs Bad ist. Ist ein Tag knapp, dort lieber eine kurze Runde Laufen oder Rad statt Schwimmen.
