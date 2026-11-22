@@ -894,9 +894,9 @@
   ];
   const TYP = { drink: 'Getränk', bar: 'Riegel', gel: 'Gel', snack: 'Snack' };
   /* off: Produkte, die gerade nicht im Vorschlag landen sollen; half: nur jede zweite Flasche mit Pulver */
-  const fuelCfg = () => Object.assign({ custom: [], bottle: 750, half: false, off: ['banane', 'gummi'] }, ls.get('tri:fuel', {}));
+  const fuelCfg = () => Object.assign({ custom: [], bottle: 750, half: false, off: ['banane', 'gummi'], hide: [] }, ls.get('tri:fuel', {}));
   const setFuelCfg = c => ls.set('tri:fuel', c);
-  const products = () => PROD_BASE.concat(fuelCfg().custom);
+  const products = () => { const c = fuelCfg(); return PROD_BASE.filter(p => !c.hide.includes(p.id)).concat(c.custom); };
   /* Kohlenhydrate pro Stunde nach Dauer (Jeukendrup 2014, ACSM): Laufen etwas weniger, weil der Magen mehr durchgeschüttelt wird.
      Natrium: unter 2 h nur bei Hitze nötig, darüber 300–600 mg pro Stunde (ACSM/IOC; Schweiß enthält im Mittel etwa 900 mg pro Liter, sehr unterschiedlich) */
   function fuelFor(min, run) {
@@ -911,8 +911,9 @@
     const add = (p, n) => { if (!p || n <= 0) return 0; mix.push({ p, n }); return n * p.g; };
     /* Getränk: Flaschen nach Trinkmenge, je Flasche die eingestellten Portionen Pulver */
     const pick = typ => P.slice().reverse().find(p => p.typ === typ); /* eigenes Produkt vor dem mitgelieferten */
-    const drink = pick('drink');
-    const bottles = Math.max(1, Math.round(mlMid / C.bottle));
+    /* Laufen: meist ohne Trinken unterwegs, Kohlenhydrate dann über Gels */
+    const drink = run ? null : pick('drink');
+    const bottles = run ? 0 : Math.max(1, Math.round(mlMid / C.bottle));
     let rest = gMid;
     const withP = drink ? (C.half ? Math.ceil(bottles / 2) : bottles) : 0;
     if (drink) rest -= add(Object.assign({}, drink, { n: drink.n + ' · ' + C.bottle + ' ml' }), withP);
@@ -952,18 +953,24 @@
     let res;
     if (f.gh[1]) {
       const rows = f.mix.map(m => `<tr><td class="num fu-n">${m.n} ×</td><td>${esc(m.p.n)}</td><td class="num">${m.p.g ? m.n * m.p.g + ' g' : '–'}</td><td class="num">${m.p.na ? m.n * m.p.na + ' mg' : '–'}</td></tr>`).join('');
-      const naTxt = f.naH
-        ? `Natrium-Ziel ab 2 h: ${f.naH[0]}–${f.naH[1]} mg pro Stunde, hier ${Math.round(f.naH[0] * f.h)}–${Math.round(f.naH[1] * f.h)} mg.${f.salt ? ` Es fehlen etwa ${Math.round(f.naH[0] * f.h) - f.sum.na} mg: ${dez(f.salt)} g Salz auf die Flaschen verteilen (1 g ≈ 400 mg) oder eine Elektrolyttablette.` : ' Passt.'}`
-        : 'Natrium ist unter 2 Stunden nur bei Hitze oder starkem Schwitzen nötig.';
-      res = `<div class="fu-res"><div><b class="num">${f.gh[0]}–${f.gh[1]} g</b><small>Kohlenhydrate pro Stunde</small></div><div><b class="num">${f.ml[0]}–${f.ml[1]} ml</b><small>Trinken pro Stunde</small></div></div>
-        ${bot}<table class="fu-t"><thead><tr><th colspan="2">Vorschlag</th><th>KH</th><th>Natrium</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td></td><td>Summe</td><td class="num">${f.sum.g} g</td><td class="num${f.salt ? ' low' : ''}">${f.sum.na} mg</td></tr></tfoot></table>
-        <p class="fu-ex">${naTxt}</p>`;
+      /* Natrium ab 2 h: 300–600 mg pro Stunde. Nur wenn es nicht reicht, ein kurzer Hinweis */
+      const naTxt = f.salt ? `<p class="fu-salt">+ ${run ? 'eine Elektrolyttablette oder ein Gel mit Natrium mehr' : `${dez(f.salt)} g Salz auf die Flaschen verteilen`}, damit das Natrium reicht (Ziel ${Math.round(f.naH[0] * f.h)} mg).</p>` : '';
+      res = `<div class="fu-res"><div><b class="num">${f.gh[0]}–${f.gh[1]} g</b><small>Kohlenhydrate pro Stunde</small></div>${run ? '<div><b>Nach Durst</b><small>Trinken, meist nichts nötig</small></div>' : `<div><b class="num">${f.ml[0]}–${f.ml[1]} ml</b><small>Trinken pro Stunde</small></div>`}</div>
+        ${run ? '' : bot}<table class="fu-t"><thead><tr><th colspan="2">Vorschlag</th><th>KH</th><th>Natrium</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td></td><td>Summe</td><td class="num">${f.sum.g} g</td><td class="num${f.salt ? ' low' : ''}">${f.sum.na} mg</td></tr></tfoot></table>
+        ${naTxt}`;
     } else res = '<p class="fu-ex">Unter einer Stunde reicht Wasser nach Durst.</p>';
     const left = `<section class="card fu-card" style="${cv(run ? 'run' : 'bike')}">${hint}${sw}${chips}${res}</section>`;
-    const prow = p => { const on = !C.off.includes(p.id); return `<div class="fu-p${on ? '' : ' off'}"><button class="fu-on" data-fon="${esc(p.id)}" aria-pressed="${on}" aria-label="${esc(p.n)} im Vorschlag nutzen">${on ? CHECK : ''}</button><span>${esc(p.n)}<small>${TYP[p.typ] || ''}</small></span><b class="num">${p.g} g</b><small class="num">${p.na ? p.na + ' mg' : ''}</small>${p.own ? `<button class="fu-del" data-fdel="${esc(p.id)}" aria-label="${esc(p.n)} entfernen">×</button>` : '<i></i>'}</div>`; };
-    const form = `<div class="fu-add"><input id="fp-n" placeholder="Name" autocomplete="off"><input id="fp-g" type="number" inputmode="numeric" placeholder="KH g"><input id="fp-na" type="number" inputmode="numeric" placeholder="Na mg"><select id="fp-t" aria-label="Art">${Object.keys(TYP).map(k => `<option value="${k}">${TYP[k]}</option>`).join('')}</select><button class="btn" data-fadd>Hinzufügen</button></div>`;
-    const addBtn = state.fuelAdd ? form : '<button class="link fu-addbtn" data-fopen>+ Produkt hinzufügen</button>';
-    const right = `<section class="card fu-prod"><div class="fu-mh"><b>Deine Produkte</b><span>KH · Natrium</span></div><p class="fu-hint">Abgehakte Produkte nutzt der Vorschlag.</p>${products().map(prow).join('')}${addBtn}<p class="fu-hint">Eigene Produkte bleiben auf diesem Gerät gespeichert.</p></section>`;
+    /* Produkte: zugeklappt nur eine Zeile, aufgeklappt zum Abhaken, Entfernen und Hinzufügen */
+    const P = products(), on = P.filter(p => !C.off.includes(p.id)).length, open = !!state.fuelEdit;
+    let right = `<section class="card fu-prod${open ? ' open' : ''}"><button class="warm-h" data-fedit aria-expanded="${open}"><span class="tx"><b>Deine Produkte</b><small>${on} von ${P.length} im Vorschlag</small></span>${CHEV_D}</button>`;
+    if (open) {
+      const prow = p => { const act = !C.off.includes(p.id); return `<div class="fu-p${act ? '' : ' off'}"><button class="fu-on" data-fon="${esc(p.id)}" aria-pressed="${act}" aria-label="${esc(p.n)} im Vorschlag nutzen">${act ? CHECK : ''}</button><span>${esc(p.n)}<small>${TYP[p.typ] || ''}</small></span><b class="num">${p.g} g</b><small class="num">${p.na ? p.na + ' mg' : '–'}</small><button class="fu-del" data-fdel="${esc(p.id)}" aria-label="${esc(p.n)} entfernen">×</button></div>`; };
+      const form = `<div class="fu-add"><input id="fp-n" placeholder="Name" autocomplete="off"><input id="fp-g" type="number" inputmode="numeric" placeholder="KH g"><input id="fp-na" type="number" inputmode="numeric" placeholder="Na mg"><select id="fp-t" aria-label="Art">${Object.keys(TYP).map(k => `<option value="${k}">${TYP[k]}</option>`).join('')}</select><button class="btn" data-fadd>Hinzufügen</button></div>`;
+      right += `<div class="fu-p fu-ph"><i></i><span></span><b>KH</b><small>Natrium</small><i></i></div>${P.map(prow).join('')}`;
+      right += state.fuelAdd ? form : '<button class="link fu-addbtn" data-fopen>+ Produkt hinzufügen</button>';
+      if (C.hide.length) right += '<button class="link fu-addbtn" data-freset>Entfernte Standard-Produkte zurückholen</button>';
+    }
+    right += '</section>';
     return [left, right];
   }
 
@@ -2109,7 +2116,9 @@
     if ((el = q('[data-fuel]'))) { const [k, v] = el.dataset.fuel.split('|'); if (k === 'min') state.fuelMin = +v; else if (k === 'sp') state.fuelSp = v; else { const c = fuelCfg(); c[k] = k === 'half' ? !!+v : +v; setFuelCfg(c); } render(); return; }
     if ((el = q('[data-fon]'))) { const c = fuelCfg(), id = el.dataset.fon; c.off = c.off.includes(id) ? c.off.filter(x => x !== id) : c.off.concat(id); setFuelCfg(c); render(); return; }
     if ((el = q('[data-fopen]'))) { state.fuelAdd = true; render(); const i = $('#fp-n'); if (i) i.focus(); return; }
-    if ((el = q('[data-fdel]'))) { const c = fuelCfg(); c.custom = c.custom.filter(p => p.id !== el.dataset.fdel); setFuelCfg(c); render(); return; }
+    if ((el = q('[data-fdel]'))) { const c = fuelCfg(), id = el.dataset.fdel; if (PROD_BASE.some(p => p.id === id)) c.hide = c.hide.concat(id); else c.custom = c.custom.filter(p => p.id !== id); setFuelCfg(c); render(); return; }
+    if ((el = q('[data-freset]'))) { const c = fuelCfg(); c.hide = []; setFuelCfg(c); render(); return; }
+    if ((el = q('[data-fedit]'))) { state.fuelEdit = !state.fuelEdit; state.fuelAdd = false; render(); return; }
     if ((el = q('[data-fadd]'))) {
       const n = $('#fp-n').value.trim(), g = num($('#fp-g').value), na = num($('#fp-na').value) || 0, typ = $('#fp-t').value;
       if (!n || !(g > 0)) { toast('Name und Kohlenhydrate angeben'); return; }

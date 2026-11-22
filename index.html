@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="tri-v175">
+<meta name="app-version" content="tri-v176">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Triathlon</title>
 <script>
@@ -509,7 +509,15 @@ button.dsd:active{background:var(--fill)}
 .fu-na{display:flex;flex-direction:column;gap:2px;border-radius:12px;padding:10px 12px;background:var(--fill-2);font-size:13px;line-height:1.4;color:var(--fg-2)}
 .fu-na b{font-size:14px;color:var(--fg)}
 .fu-na.low{background:var(--c-t)}
-.fu-p{grid-template-columns:28px 1fr auto 64px 28px !important;align-items:center !important}
+.fu-p{grid-template-columns:28px minmax(0,1fr) 44px 64px 28px !important;align-items:center !important}
+.fu-p>b{text-align:right}
+.fu-ph{padding:4px 0 !important;border-top:0 !important}
+.fu-ph b,.fu-ph small{font-size:12px !important;font-weight:600 !important;color:var(--muted) !important}
+.fu-prod{padding:4px 16px 10px !important}
+.fu-prod .warm-h{padding:8px 0}
+.fu-prod .warm-h .chev{transition:transform var(--t-med,.25s) ease}
+.fu-prod .warm-h[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.fu-salt{margin:0;font-size:14px;line-height:1.4;color:var(--c-d);font-weight:600}
 .fu-p.off>span,.fu-p.off>b,.fu-p.off>small{opacity:.45}
 .fu-on{width:26px;height:26px;border-radius:8px;border:1.5px solid var(--line);background:none;padding:0;display:grid;place-items:center;color:var(--card)}
 .fu-on[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--on-ink)}

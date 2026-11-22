@@ -2,7 +2,7 @@
    Eine verspätete Antwort aus dem Netz landet trotzdem im Zwischenspeicher. Daten laufen nie über den Cache.
    Abrufe tragen ?v=<Version>: GitHub Pages hält Dateien sonst bis zu 10 min im CDN, und eine neue Version
    bekäme noch die alte index.html. Gespeichert wird unter der Adresse ohne Zusatz. */
-const CACHE = 'tri-v175';
+const CACHE = 'tri-v176';
 const FILES = ['./', './index.html', './app.js', './uebungen.js', './morphdom.min.js', './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png'];
 const WAIT = 3000;
 const bust = u => { const x = new URL(u, location.href); x.searchParams.set('v', CACHE); return x.href; };
