@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="tri-v187">
+<meta name="app-version" content="tri-v188">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Triathlon</title>
 <script>
@@ -187,9 +187,10 @@ input{font:inherit}
 .st-dr{align-items:center}
 /* Schwimmen: Meterangaben sind kurz, schmalere erste Spalte lässt Übungsnamen in einer Zeile */
 .steps.swim .st{grid-template-columns:58px minmax(0,1fr) auto}
-/* Schwimmen: Wiederholungszahl in der Meter-Spalte, Name in der Übungsspalte, damit alle „4×“ untereinander stehen */
-.steps.swim .rep-h{display:grid;grid-template-columns:58px minmax(0,1fr);gap:10px;padding-left:14px}
-.steps.swim .rep-h b{order:-1;justify-self:start}
+/* Wiederholungszahl in der Dauer- bzw. Meter-Spalte, Name in der Schrittspalte, damit alle „4×“ untereinander stehen */
+.steps .rep-h{display:grid;grid-template-columns:72px minmax(0,1fr);gap:10px;padding-left:14px}
+.steps.swim .rep-h{grid-template-columns:58px minmax(0,1fr)}
+.steps .rep-h b{order:-1;justify-self:start}
 .dr-in{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-width:0;min-height:44px;margin:-6px 0;padding:0;border:0;background:transparent;font:inherit;font-size:15px;text-align:left;cursor:pointer;color:var(--fg)}
 .dr-in b{font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .st-dr .t{white-space:nowrap}
@@ -209,6 +210,10 @@ input{font:inherit}
 .gear b{margin-right:8px;font-weight:700;color:var(--c-d)}
 .fuel{display:inline-flex;align-self:flex-start;gap:6px;align-items:center;background:color-mix(in srgb,var(--card) 70%,transparent);border-radius:999px;padding:5px 11px 5px 8px;font-size:13px;font-weight:600;color:var(--c-d);margin-top:-6px}
 .fuel svg{width:18px;height:18px;flex:none}
+button.fuel{border:0;font-family:inherit;cursor:pointer;text-align:left}
+.fuel .fuel-go{margin-left:2px;font-size:16px;line-height:1;opacity:.7}
+/* Notiz, Material und „Ohne Aufzeichnung erledigt“ bündig mit den Schritten (12 px Abstand + 2 px Linie) */
+.steps ~ :is(.note,.gear,.link.manual,.msg){margin-left:14px}
 .runlen{font-size:14px;color:var(--c-mu)}
 .runlen.warn{color:var(--fg);background:color-mix(in srgb,#ff9f0a 16%,var(--card));border-radius:14px;padding:10px 12px}
 .cssbar{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--c-mu);background:color-mix(in srgb,var(--card) 70%,transparent);border-radius:14px;padding:8px 12px}

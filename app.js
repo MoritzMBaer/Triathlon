@@ -331,7 +331,8 @@
   const BOTTLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2h4M10.5 2v3.2c0 .5-.3 1-.7 1.3C8.7 7.3 8 8.6 8 10v10a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V10c0-1.4-.7-2.7-1.8-3.5-.4-.3-.7-.8-.7-1.3V2"/><path d="M8 13h8"/></svg>';
   function fuelCue(p) {
     if (!['bike', 'run'].includes(sp(p.sport).k) || !(p.dur >= 90)) return '';
-    return `<span class="fuel">${BOTTLE}${p.dur >= 150 || /koppel/i.test(p.title) ? '60–90 g Kohlenhydrate/h üben' : '30–60 g Kohlenhydrate/h'}</span>`;
+    /* Tippen öffnet Extras → Ernährung mit Dauer und Sportart dieser Einheit */
+    return `<button class="fuel" data-gofuel="${p.dur}|${sp(p.sport).k}" aria-label="Ernährung für diese Einheit öffnen">${BOTTLE}${p.dur >= 150 || /koppel/i.test(p.title) ? '60–90 g Kohlenhydrate/h üben' : '30–60 g Kohlenhydrate/h'}<span class="fuel-go" aria-hidden="true">›</span></button>`;
   }
   /* Lauflänge (Frandsen et al., BJSM 2025): kein Lauf mehr als 10 % länger als der längste der letzten 30 Tage.
      Nur anzeigen, wenn der geplante Lauf länger ist als der bisher längste. */
@@ -2176,6 +2177,7 @@
       render(); return;
     }
     if ((el = q('[data-regen]'))) { state.regenTab = el.dataset.regen; render(); return; }
+    if ((el = q('[data-gofuel]'))) { const [m, k] = el.dataset.gofuel.split('|'); state.xSec = 'fuel'; state.fuelMin = +m; state.fuelSp = k; if (state.sheetId) { state.sheetId = null; closeSheetNow(); } location.hash = '#extras'; window.scrollTo(0, 0); return; }
     if ((el = q('[data-xsec]'))) { state.xSec = el.dataset.xsec; render(); window.scrollTo(0, 0); return; }
     if ((el = q('[data-zsp]'))) { state.zSp = el.dataset.zsp; render(); return; }
     if ((el = q('[data-fuel]'))) { const [k, v] = el.dataset.fuel.split('|'); if (k === 'min') state.fuelMin = +v; else if (k === 'sp') state.fuelSp = v; else { const c = fuelCfg(); c[k] = k === 'half' ? !!+v : +v; setFuelCfg(c); } render(); return; }
