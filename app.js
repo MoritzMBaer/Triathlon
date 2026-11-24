@@ -432,7 +432,7 @@
     'fäuste': ['Fäuste', 'Kraul mit geschlossenen Fäusten. Danach wieder mit offener Hand weiterschwimmen.', 'Du ziehst mit dem ganzen Unterarm und hältst den Ellbogen hoch. Mit offener Hand spürst du danach deutlich mehr Druck am Wasser.'],
     'einarmig': ['Einarmig', 'Nur ein Arm zieht, der andere bleibt vorn gestreckt liegen. Zur Seite des ziehenden Arms atmen, nach jeder Bahn den Arm wechseln.', 'Ein vollständiger Zug bis zur Hüfte und eine Körperdrehung, die mit dem Zug mitgeht.'],
     'wriggen': ['Wriggen', 'Pullbuoy zwischen die Oberschenkel, Gesicht im Wasser, Arme vor dem Kopf gestreckt. Die Hände drücken in kleinen, flachen Achterbewegungen abwechselnd nach außen und innen, dadurch kommst du langsam voran. Nach 25 m in normales Kraul übergehen.', 'Gefühl für den Wasserdruck an Hand und Unterarm. Das ist die Grundlage für einen Zug, der früh greift.'],
-    'seitlage-kick': ['Seitlage-Kick', 'Mit Flossen. Auf der Seite liegen, der untere Arm vorn gestreckt, der obere an der Hüfte, Gesicht im Wasser. 6 Beinschläge, dann ein Zug und auf die andere Seite rollen. Zum Atmen nur den Kopf drehen, mit Schnorchel einfach weiteratmen.', 'Gleichgewicht in Seitlage und eine Rotation, die aus der Hüfte kommt. Genau diese Position hast du bei jedem Kraulzug.'],
+    'seitlage-kick': ['Seitlage-Kick', 'Mit Flossen. Auf der Seite liegen, der untere Arm vorn gestreckt, der obere an der Hüfte, Gesicht im Wasser. 6 Beinschläge, dann ein Zug und auf die andere Seite rollen. Zum Atmen nur den Kopf drehen.', 'Gleichgewicht in Seitlage und eine Rotation, die aus der Hüfte kommt. Genau diese Position hast du bei jedem Kraulzug.'],
     'reißverschluss': ['Reißverschluss', 'Normales Kraul, aber in der Rückholphase streifen die Daumen seitlich am Körper entlang von der Hüfte bis zur Achsel, wie beim Hochziehen eines Reißverschlusses. Dann vor der Schulter eintauchen.', 'Hoher Ellbogen in der Rückholphase und ein Eintauchen vor der Schulter statt über die Körpermitte.'],
     'rechts-links': ['Rechts-Links', '3 Züge nur mit dem rechten Arm, der linke bleibt vorn gestreckt. Dann 3 Züge nur links, dann 3 Züge normales Kraul. So im Wechsel weiter.', 'Jeder Arm wird einzeln sauber, danach setzt du beide wieder zusammen. Gleicht Unterschiede zwischen den Seiten aus.'],
     'rückenbeine': ['Rückenbeine', 'In Rückenlage, das Brett flach auf der Brust umarmen. Beinschlag aus der Hüfte, die Knie bleiben unter der Wasseroberfläche, Fußspitzen gestreckt.', 'Lockerer Beinschlag aus der Hüfte statt aus dem Knie. Das hält die Beine oben und stabilisiert die Wasserlage.'],
@@ -440,6 +440,10 @@
     'wechselatmung': ['Wechselatmung', 'Die ersten 25 m alle 3 Züge atmen, die zweiten 25 m alle 5 Züge. Unter Wasser gleichmäßig durch Nase und Mund ausatmen.', 'Beidseitiges Atmen und ruhiges Ausatmen. Im Freiwasser kannst du so zur Seite ohne Wellen und Sonne atmen.'],
     'kopf hoch': ['Kopf hoch', 'Normales Kraul. Alle 6 Züge für einen Zug den Blick nach vorn heben, nur die Augen knapp über Wasser, und kurz ein Ziel anpeilen. Danach Kopf wieder runter und wie gewohnt zur Seite atmen.', 'Orientierung im Freiwasser, ohne dass die Beine absinken.']
   };
+  /* Schwimm-Material steht im Workout als „… mit Flossen“, „mit Pullbuoy und Paddles“ usw. */
+  const GEAR = ['Flossen', 'Pullbuoy', 'Paddles', 'Brett', 'Schnorchel'];
+  const gearOf = txt => GEAR.filter(g => new RegExp('\\b' + g + '\\b', 'i').test(txt || ''));
+  const gearSplit = lab => { const m = (lab || '').trim().replace(/\.$/, '').match(/^(.*?)\s+mit\s+(.+)$/i); return m && gearOf(m[2]).length ? [m[1], gearOf(m[2])] : [(lab || '').trim().replace(/\.$/, ''), []]; };
   function drillsOf(lab) {
     const m = (lab || '').match(/^Technik(?:übung(?:en)?)?(?:\s+im Wechsel)?:\s*(.+)$/i);
     if (!m) return null;
@@ -469,10 +473,10 @@
           }).join('')}</ol>`;
         }
         /* Einzelne Übung als eigener Schritt (z. B. „50mtr Abschlag. 20 s Pause“): Info-Button direkt hinter der Übung */
-        const one = !dr && DRILLS[(s.lab || '').trim().replace(/\.$/, '').toLowerCase()];
+        const [dn, dg] = gearSplit(s.lab), one = !dr && DRILLS[dn.toLowerCase()];
         if (one) {
           const [n, t, why] = one, key = p.id + ':' + bi + ':' + si, open = !!state.drillOpen[key];
-          return `<div class="st st-dr${s.pause ? ' ps' : ''}${open ? ' open' : ''}"><span class="d">${esc(s.dur)}</span><button class="l dr-in" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>${tgtHTML(s)}</div>${open ? `<div class="dr-x dr-st"><p>${esc(t)}</p>${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}</div>` : ''}`;
+          return `<div class="st st-dr${s.pause ? ' ps' : ''}${open ? ' open' : ''}"><span class="d">${esc(s.dur)}</span><button class="l dr-in" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}${dg.length ? `<span class="dr-g"> · ${esc(dg.join(', '))}</span>` : ''}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>${tgtHTML(s)}</div>${open ? `<div class="dr-x dr-st"><p>${esc(t)}</p>${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}</div>` : ''}`;
         }
         return `<div class="st${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${lab}</span>${tgtHTML(s)}</div>`;
       }).join('');
@@ -1234,6 +1238,8 @@
       const css = S.k === 'swim' && TCSS && bl.some(b => b.steps.some(x => swimPace(x.lab))) ? `<div class="cssbar"><span>Deine Schwelle (CSS)</span><b class="num">${mmss(TCSS)} /100 m</b></div>` : '';
       h += flowBar(bl, S.k) + css + `<div class="steps${S.k === 'swim' ? ' swim' : ''}">${stepsHTML(p)}</div>`;
       if (p.note) h += `<span class="note">${esc(p.note)}</span>`;
+      const gear = S.k === 'swim' && st !== 'done' ? gearOf(p.workout) : [];
+      if (gear.length) h += `<p class="gear"><b>Material</b>${esc(gear.join(' · '))}</p>`;
       h += runLen(M, p);
       if (t && opts.showActual) h += actualHTML(p, t);
       /* Ohne Aufzeichnung trainiert (Uhr vergessen, Akku leer): von Hand abhaken */
