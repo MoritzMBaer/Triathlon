@@ -444,6 +444,19 @@
     'wechselatmung': ['Wechselatmung', 'Die ersten 25 m alle 3 Züge atmen, die zweiten 25 m alle 5 Züge. Unter Wasser gleichmäßig durch Nase und Mund ausatmen.', 'Beidseitiges Atmen und ruhiges Ausatmen. Im Freiwasser kannst du so zur Seite ohne Wellen und Sonne atmen.'],
     'kopf hoch': ['Kopf hoch', 'Normales Kraul. Alle 6 Züge für einen Zug den Blick nach vorn heben, nur die Augen knapp über Wasser, und kurz ein Ziel anpeilen. Danach Kopf wieder runter und wie gewohnt zur Seite atmen.', 'Orientierung im Freiwasser, ohne dass die Beine absinken.']
   };
+  /* Kurze Erklärung für Schritte, die kein normales Schwimmen sind (Material, Tempo, Atmung, Tests). Erster Treffer zählt. */
+  const STEPINFO = [
+    [/pullbuoy und paddles/i, 'Pullbuoy zwischen die Oberschenkel, Paddles an die Hände, nur Armzug ohne Beinschlag. Locker ziehen, nicht mit Kraft. Zieht es in der Schulter, die Paddles ablegen.'],
+    [/pullbuoy/i, 'Pullbuoy zwischen die Oberschenkel, nur Armzug ohne Beinschlag. Die Beine bleiben oben, du kannst dich ganz auf den Zug konzentrieren.'],
+    [/paddles/i, 'Paddles an die Hände, locker ziehen, nicht mit Kraft. Zieht es in der Schulter, die Paddles ablegen.'],
+    [/flossen/i, 'Mit Flossen locker aus der Hüfte schlagen, nicht aus dem Knie. Die Flossen geben Vortrieb, du musst nicht fest treten.'],
+    [/atmung alle 3/i, 'Jeden dritten Zug atmen, also abwechselnd links und rechts. Unter Wasser ruhig und gleichmäßig ausatmen.'],
+    [/steigernd/i, 'Langsam beginnen und bis zum Ende der Strecke immer schneller werden. Die letzten Meter zügig, aber sauber.'],
+    [/so schnell wie gleichmäßig/i, 'Gleichmäßig einteilen: etwas ruhiger beginnen und das Tempo bis zum Ende halten. Am Ende die Zeit merken.'],
+    [/so schnell wie möglich/i, 'Voll, aber in den ersten 50 m nicht überziehen. Am Ende die Zeit merken.'],
+    [/zügig/i, 'Deutlich schneller als locker, aber kontrolliert und nicht voll. Die Technik bleibt sauber.']
+  ];
+  const stepInfo = lab => { const m = STEPINFO.find(([r]) => r.test(lab || '')); return m ? m[1] : ''; };
   /* Schwimm-Material steht im Workout als „… mit Flossen“, „mit Pullbuoy und Paddles“ usw. */
   const GEAR = ['Flossen', 'Pullbuoy', 'Paddles', 'Brett', 'Schnorchel'];
   const gearOf = txt => GEAR.filter(g => new RegExp('\\b' + g + '\\b', 'i').test(txt || ''));
@@ -512,10 +525,10 @@
           return `<div class="st st-dr${s.pause ? ' ps' : ''}${open ? ' open' : ''}"><span class="d">${esc(s.dur)}</span><button class="l dr-in" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>${tgtHTML(s)}</div>${open ? `<div class="dr-x dr-st"><p>${esc(t)}</p>${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}${mat}${hintP(bi + ':' + si)}</div>` : ''}`;
         }
         /* Normaler Schritt mit Hinweis aus der Notiz (z. B. Paddles): Info-Button hinter dem Text */
-        const hp = !dr && hintP(bi + ':' + si);
-        if (hp) {
+        const inf = !dr && sp(p.sport).k === 'swim' ? stepInfo(s.lab) : '', hp = !dr && hintP(bi + ':' + si);
+        if (inf || hp) {
           const key = p.id + ':' + bi + ':' + si, open = !!state.drillOpen[key];
-          return `<div class="st st-dr${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}${open ? ' open' : ''}"><span class="d">${esc(s.dur)}</span><button class="l dr-in" data-drill="${esc(key)}" aria-expanded="${open}"><span class="dr-l">${lab}</span><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Hinweis ausblenden' : 'Hinweis anzeigen'}</span></button>${tgtHTML(s)}</div>${open ? `<div class="dr-x dr-st">${hp.replace('<p class="why">', '<p class="why first">')}</div>` : ''}`;
+          return `<div class="st st-dr${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}${open ? ' open' : ''}"><span class="d">${esc(s.dur)}</span><button class="l dr-in" data-drill="${esc(key)}" aria-expanded="${open}"><span class="dr-l">${lab}</span><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>${tgtHTML(s)}</div>${open ? `<div class="dr-x dr-st">${inf ? `<p>${esc(inf)}</p>${hp}` : hp.replace('<p class="why">', '<p class="why first">')}</div>` : ''}`;
         }
         return `<div class="st${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${lab}</span>${tgtHTML(s)}</div>`;
       }).join('');
