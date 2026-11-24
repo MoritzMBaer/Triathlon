@@ -437,6 +437,7 @@
     'seitlage-kick': ['Seitlage-Kick', 'Mit Flossen. Auf der Seite liegen, der untere Arm vorn gestreckt, der obere an der Hüfte, Gesicht im Wasser. 6 Beinschläge, dann ein Zug und auf die andere Seite rollen. Zum Atmen nur den Kopf drehen.', 'Gleichgewicht in Seitlage und eine Rotation, die aus der Hüfte kommt. Genau diese Position hast du bei jedem Kraulzug.'],
     'reißverschluss': ['Reißverschluss', 'Normales Kraul, aber in der Rückholphase streifen die Daumen seitlich am Körper entlang von der Hüfte bis zur Achsel, wie beim Hochziehen eines Reißverschlusses. Dann vor der Schulter eintauchen.', 'Hoher Ellbogen in der Rückholphase und ein Eintauchen vor der Schulter statt über die Körpermitte.'],
     'rechts-links': ['Rechts-Links', '3 Züge nur mit dem rechten Arm, der linke bleibt vorn gestreckt. Dann 3 Züge nur links, dann 3 Züge normales Kraul. So im Wechsel weiter.', 'Jeder Arm wird einzeln sauber, danach setzt du beide wieder zusammen. Gleicht Unterschiede zwischen den Seiten aus.'],
+    'beine': ['Beine mit Brett', 'Arme gestreckt auf dem Brett, nicht draufdrücken, Hüfte bleibt oben. Kleiner, lockerer Beinschlag aus der Hüfte, Knie nur leicht gebeugt, Fußspitzen gestreckt. Ruhig, nicht ausreizen.', 'Ein sauberer Beinschlag hält die Beine oben und stabilisiert die Wasserlage.'],
     'rückenbeine': ['Rückenbeine', 'In Rückenlage, das Brett flach auf der Brust umarmen. Beinschlag aus der Hüfte, die Knie bleiben unter der Wasseroberfläche, Fußspitzen gestreckt.', 'Lockerer Beinschlag aus der Hüfte statt aus dem Knie. Das hält die Beine oben und stabilisiert die Wasserlage.'],
     'rotation': ['Rotation', 'Kraul mit Pullbuoy, ohne Beinschlag. Bei jedem Zug drehen Hüfte und Schulter gemeinsam zur Seite, bis die Schulter des ziehenden Arms aus dem Wasser kommt.', 'Rotation aus dem Rumpf. Der Zug wird länger und das Atmen fällt leichter.'],
     'wechselatmung': ['Wechselatmung', 'Die ersten 25 m alle 3 Züge atmen, die zweiten 25 m alle 5 Züge. Unter Wasser gleichmäßig durch Nase und Mund ausatmen.', 'Beidseitiges Atmen und ruhiges Ausatmen. Im Freiwasser kannst du so zur Seite ohne Wellen und Sonne atmen.'],
@@ -506,7 +507,7 @@
         const [dn, dg] = gearSplit(s.lab), one = !dr && DRILLS[dn.toLowerCase()];
         if (one) {
           const [n, t, why] = one, key = p.id + ':' + bi + ':' + si, open = !!state.drillOpen[key];
-          const mat = dg.length ? `<p class="why"><span>Material</span>${esc(dg.join(', '))}</p>` : '';
+          const mat = dg.filter(g => !n.includes(g)).length ? `<p class="why"><span>Material</span>${esc(dg.filter(g => !n.includes(g)).join(', '))}</p>` : '';
           return `<div class="st st-dr${s.pause ? ' ps' : ''}${open ? ' open' : ''}"><span class="d">${esc(s.dur)}</span><button class="l dr-in" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>${tgtHTML(s)}</div>${open ? `<div class="dr-x dr-st"><p>${esc(t)}</p>${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}${mat}${hintP(bi + ':' + si)}</div>` : ''}`;
         }
         /* Normaler Schritt mit Hinweis aus der Notiz (z. B. Paddles): Info-Button hinter dem Text */
