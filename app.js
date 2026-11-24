@@ -294,13 +294,15 @@
     }));
     return min >= 10;
   }
-  function advice(r, units) {
-    if (r.lvl === 'g' || r.lvl === 'n' || r.lvl === 'w') return '';
-    const train = units.filter(p => sp(p.sport).fam !== 'Stabi');
-    if (r.lvl === 'r') return train.length ? 'Lass die Einheiten heute aus. Blackroll und Dehnen tun trotzdem gut.' : 'Heute ist ohnehin frei. Gönn dir die Pause.';
-    const hard = train.filter(isHard);
-    if (hard.length) return hard.map(p => p.sport === 'Kraft' ? `${p.title}: mit dem Gewicht vom letzten Mal, ohne Steigerung.` : `Statt „${p.title}“: gleiche Dauer ganz locker im Grundlagenbereich.`).join(' ');
-    return train.length ? 'Lockere Einheiten wie geplant, eher kürzer und nicht ausreizen.' : '';
+  /* Hinweis zur Tagesform direkt an der Einheit von heute (statt gesammelt unter der Tagesform) */
+  function unitAdvice(M, p) {
+    if (p.date !== today() || p.done || sp(p.sport).fam === 'Stabi') return '';
+    const r = readiness(M);
+    if (!r || (r.lvl !== 'y' && r.lvl !== 'r')) return '';
+    const t = r.lvl === 'r' ? 'Heute lieber auslassen. Blackroll und Dehnen tun trotzdem gut.'
+      : !isHard(p) ? 'Locker wie geplant, eher kürzer und nicht ausreizen.'
+      : p.sport === 'Kraft' ? 'Mit dem Gewicht vom letzten Mal, ohne Steigerung.' : 'Heute lieber gleiche Dauer ganz locker im Grundlagenbereich.';
+    return `<div class="advice ${r.lvl}">${esc(t)}</div>`;
   }
 
   /* ---------- Workout lesbar machen ---------- */
@@ -1210,6 +1212,7 @@
     const S = sp(p.sport), st = statusOf(p, M), t = M.match[p.id];
     const pill = st === 'done' ? `<span class="done-pill">${CHECK}Erledigt</span>` : st === 'miss' ? '<span class="miss-pill">Ausgelassen</span>' : st === 'catch' ? '<span class="catch-pill">Nachholen</span>' : `<span class="u-dur">${esc(unitMeta(p))}</span>`;
     let body = '', prog = null, compact = null, review = false;
+    const adv = unitAdvice(M, p);
     if (S.k === 'mob' && p.done) { body = mobBody(M, p).html; review = true; }
     else if (S.k === 'kraft' || S.k === 'mob') {
       if (!isStarted(p)) { const r = overviewBody(M, p, S.k === 'kraft'); compact = r; }
@@ -1222,24 +1225,27 @@
     if (review) {
       h += `<p class="u-sum">${esc(mobItems(p).length + ' Übungen · ' + unitMeta(p))}</p>`;
       if (p.note) h += `<span class="note">${esc(p.note)}</span>`;
+      h += adv;
       h += `</section><div class="ubody" style="${cv(S.k)}">${body}</div>`;
     } else if (compact) {
       const [a, b] = compact.progress;
       if (a > 0 && !p.done) h += `<div style="height:8px;background:var(--c-l);border-radius:99px;overflow:hidden"><div class="pfill" style="width:${b ? Math.round(a / b * 100) : 0}%;height:100%;background:var(--c);border-radius:99px"></div></div>`;
       h += exList(compact.rows);
       if (p.note) h += `<span class="note">${esc(p.note)}</span>`;
+      h += adv;
       h += compact.html + '</section>';
     } else if (prog) {
       const [a, b] = prog;
       h += `<div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--c-mu)"><span>${S.k === 'kraft' ? 'Sätze' : 'Geschafft'}</span><span class="num" style="font-weight:700">${a} von ${b}</span></div><div style="height:8px;background:var(--c-l);border-radius:99px;overflow:hidden"><div class="pfill" style="width:${b ? Math.round(a / b * 100) : 0}%;height:100%;background:var(--c);border-radius:99px"></div></div></div>`;
-      if (p.note && S.k !== 'kraft') h += `<span class="note">${esc(p.note)}</span>`;
-      if (p.note && S.k === 'kraft') h += `<span class="note">${esc(p.note)}</span>`;
+      if (p.note) h += `<span class="note">${esc(p.note)}</span>`;
+      h += adv;
       h += `</section><div class="ubody" style="${cv(S.k)}">${body}</div>`;
     } else {
       const bl = blocks(p);
       const css = S.k === 'swim' && TCSS && bl.some(b => b.steps.some(x => swimPace(x.lab))) ? `<div class="cssbar"><span>Deine Schwelle (CSS)</span><b class="num">${mmss(TCSS)} /100 m</b></div>` : '';
       h += flowBar(bl, S.k) + css + `<div class="steps${S.k === 'swim' ? ' swim' : ''}">${stepsHTML(p)}</div>`;
       if (p.note) h += `<span class="note">${esc(p.note)}</span>`;
+      h += adv;
       const gear = S.k === 'swim' && st !== 'done' ? gearOf(p.workout) : [];
       if (gear.length) h += `<p class="gear"><b>Material</b>${esc(gear.join(' · '))}</p>`;
       h += runLen(M, p);
@@ -1283,7 +1289,6 @@
     if (!r) return checkCard(M);
     const L = r.last;
     const head = r.lvl === 'n' ? 'Nach dem Nachtdienst' : r.lvl === 'w' ? 'Warte auf die Uhr' : r.lvl === 'g' ? 'Bereit für das Training' : r.lvl === 'y' ? 'Heute lieber locker' : 'Heute Pause';
-    const adv = advice(r, units);
     const k = [];
     const o = key => r.stale || r.old.includes(key) ? ' class="old"' : '';
     if (L.sleep != null) k.push([`Schlaf <b>${de1(L.sleep)} h</b>`, o('sleep')]);
@@ -1295,7 +1300,6 @@
     return `<section class="card stcard" aria-label="Tagesform"><div class="st-h"><span class="st-dot ${r.lvl}" aria-hidden="true"></span><b>${head}</b><span class="st-form">Form <b>${L.tsb == null ? '–' : (L.tsb > 0 ? '+' : '') + de1(L.tsb)}</b></span></div>
       ${r.flags.length ? `<div class="st-fl">${esc(r.flags.join(' · '))}</div>` : ''}
       ${k.length ? `<div class="st-k">${k.map(([x, c]) => `<span${c}>${x}</span>`).join('')}</div>` : ''}
-      ${adv ? `<div class="advice ${r.lvl}">${esc(adv)}</div>` : ''}
       ${nt.length ? `<div class="hint">${esc(nt.join('. '))}.</div>` : ''}${checkCard(M, true)}</section>`;
   }
   const afterNightToday = M => M.nights.has(iso(addDays(new Date(), -1)));
