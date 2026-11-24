@@ -457,8 +457,34 @@
   function tgtHTML(s) {
     return s.pause && /^Pause /.test(s.tgt) ? `<span class="t tp"><small>Pause</small>${esc(s.tgt.slice(6))}</span>` : `<span class="t">${esc(s.tgt)}</span>`;
   }
+  /* Schwimmen: Sätze der Notiz, die eine Übung oder ein Material im Workout nennen, stehen in der Info an diesem Schritt.
+     Der Rest bleibt als Notiz unter der Einheit. */
+  function swimNotes(p) {
+    const hints = {}, rest = [];
+    if (sp(p.sport).k !== 'swim' || !p.note) return { hints, rest: p.note || '' };
+    const steps = [];
+    blocks(p).forEach((b, bi) => b.steps.forEach((s, si) => {
+      const dr = drillsOf(s.lab);
+      if (dr) dr.forEach((d, di) => steps.push({ key: bi + ':' + si + ':' + di, names: [d[0]] }));
+      else {
+        const [dn, dg] = gearSplit(s.lab);
+        steps.push({ key: bi + ':' + si, names: DRILLS[dn.toLowerCase()] ? [DRILLS[dn.toLowerCase()][0]] : [], gear: gearOf(s.lab) });
+      }
+    }));
+    const has = (txt, w) => new RegExp('(^|[^a-zäöüß])' + w.toLowerCase().replace(/[-]/g, '\\$&'), 'i').test(txt.toLowerCase());
+    p.note.split(/(?<=[.!?])\s+/).forEach(x => {
+      x = x.trim(); if (!x) return;
+      let hit = steps.filter(st => st.names.some(n => has(x, n)));
+      if (!hit.length) { const g = steps.find(st => !st.names.length && (st.gear || []).some(w => has(x, w))); if (g) hit = [g]; }
+      if (!hit.length) { rest.push(x); return; }
+      hit.forEach(st => { (hints[st.key] = hints[st.key] || []).push(x); });
+    });
+    return { hints, rest: rest.join(' ') };
+  }
   function stepsHTML(p) {
     const bl = blocks(p), main = mainStep(bl);
+    const H = swimNotes(p).hints;
+    const hintP = k => (H[k] || []).map(x => `<p class="why"><span>Hinweis</span>${esc(x)}</p>`).join('');
     return bl.map((b, bi) => {
       let extra = '';
       const rows = b.steps.map((s, si) => {
@@ -470,8 +496,9 @@
         if (dr) {
           lab = dr.length > 1 ? `Alle ${esc(s.dur)} die nächste Übung` : 'Technik';
           extra = `<ol class="drill-list" aria-label="Übungen der Reihe nach">${dr.map(([n, t, why], di) => {
-            const key = p.id + ':' + bi + ':' + si + ':' + di, open = !!state.drillOpen[key];
-            return `<li class="${open ? 'open' : ''}">${t ? `<button class="dr-h" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>` : `<div class="dr-h"><b>${esc(n)}</b></div>`}${open && t ? `<div class="dr-x"><p>${esc(t)}</p>${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}</div>` : ''}</li>`;
+            const key = p.id + ':' + bi + ':' + si + ':' + di, open = !!state.drillOpen[key], hp = hintP(bi + ':' + si + ':' + di);
+            if (hp && !t) t = ' ';
+            return `<li class="${open ? 'open' : ''}">${t ? `<button class="dr-h" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>` : `<div class="dr-h"><b>${esc(n)}</b></div>`}${open && t ? `<div class="dr-x">${t.trim() ? `<p>${esc(t)}</p>` : ''}${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}${hp}</div>` : ''}</li>`;
           }).join('')}</ol>`;
         }
         /* Einzelne Übung als eigener Schritt (z. B. „50mtr Abschlag. 20 s Pause“): Info-Button direkt hinter der Übung */
@@ -480,7 +507,13 @@
         if (one) {
           const [n, t, why] = one, key = p.id + ':' + bi + ':' + si, open = !!state.drillOpen[key];
           const mat = dg.length ? `<p class="why"><span>Material</span>${esc(dg.join(', '))}</p>` : '';
-          return `<div class="st st-dr${s.pause ? ' ps' : ''}${open ? ' open' : ''}"><span class="d">${esc(s.dur)}</span><button class="l dr-in" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>${tgtHTML(s)}</div>${open ? `<div class="dr-x dr-st"><p>${esc(t)}</p>${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}${mat}</div>` : ''}`;
+          return `<div class="st st-dr${s.pause ? ' ps' : ''}${open ? ' open' : ''}"><span class="d">${esc(s.dur)}</span><button class="l dr-in" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>${tgtHTML(s)}</div>${open ? `<div class="dr-x dr-st"><p>${esc(t)}</p>${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}${mat}${hintP(bi + ':' + si)}</div>` : ''}`;
+        }
+        /* Normaler Schritt mit Hinweis aus der Notiz (z. B. Paddles): Info-Button hinter dem Text */
+        const hp = !dr && hintP(bi + ':' + si);
+        if (hp) {
+          const key = p.id + ':' + bi + ':' + si, open = !!state.drillOpen[key];
+          return `<div class="st st-dr${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}${open ? ' open' : ''}"><span class="d">${esc(s.dur)}</span><button class="l dr-in" data-drill="${esc(key)}" aria-expanded="${open}"><span class="dr-l">${lab}</span><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Hinweis ausblenden' : 'Hinweis anzeigen'}</span></button>${tgtHTML(s)}</div>${open ? `<div class="dr-x dr-st">${hp.replace('<p class="why">', '<p class="why first">')}</div>` : ''}`;
         }
         return `<div class="st${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${lab}</span>${tgtHTML(s)}</div>`;
       }).join('');
@@ -1244,7 +1277,8 @@
       const bl = blocks(p);
       const css = S.k === 'swim' && TCSS && bl.some(b => b.steps.some(x => swimPace(x.lab))) ? `<div class="cssbar"><span>Deine Schwelle (CSS)</span><b class="num">${mmss(TCSS)} /100 m</b></div>` : '';
       h += flowBar(bl, S.k) + css + `<div class="steps${S.k === 'swim' ? ' swim' : ''}">${stepsHTML(p)}</div>`;
-      if (p.note) h += `<span class="note">${esc(p.note)}</span>`;
+      const nt = swimNotes(p).rest;
+      if (nt) h += `<span class="note">${esc(nt)}</span>`;
       h += adv;
       const gear = S.k === 'swim' && st !== 'done' ? gearOf(p.workout) : [];
       if (gear.length) h += `<p class="gear"><b>Material</b>${esc(gear.join(' · '))}</p>`;
@@ -1488,7 +1522,7 @@
     if (!us.length) return h + '<section class="card" style="padding:18px"><span class="free">Trainingsfrei</span></section></div>';
     return h + us.map(p => {
       const S = sp(p.sport), mob = S.k === 'mob', n = mob ? mobItems(p).length : 0;
-      return `<button class="mu${mob ? ' sm' : ''}" style="${cv(S.k)}" data-sheet="${esc(p.id)}" aria-label="${esc(p.title)} für morgen ansehen"><span class="mu-top"><span class="u-sport"><span class="dot-ico">${ICON[S.k]}</span><span>${esc(sportLabel(p))}</span></span><span class="u-dur">${esc(unitMeta(p))}${mob ? ' · ' + n + (n === 1 ? ' Übung' : ' Übungen') : ''}</span></span>${mob ? '' : `<span class="mu-t">${esc(cleanTitle(p))}</span>`}${p.note && !mob ? `<span class="mu-n">${esc(p.note)}</span>` : ''}</button>`;
+      return `<button class="mu${mob ? ' sm' : ''}" style="${cv(S.k)}" data-sheet="${esc(p.id)}" aria-label="${esc(p.title)} für morgen ansehen"><span class="mu-top"><span class="u-sport"><span class="dot-ico">${ICON[S.k]}</span><span>${esc(sportLabel(p))}</span></span><span class="u-dur">${esc(unitMeta(p))}${mob ? ' · ' + n + (n === 1 ? ' Übung' : ' Übungen') : ''}</span></span>${mob ? '' : `<span class="mu-t">${esc(cleanTitle(p))}</span>`}${swimNotes(p).rest && !mob ? `<span class="mu-n">${esc(swimNotes(p).rest)}</span>` : ''}</button>`;
     }).join('') + '</div>';
   }
   /* Laptop: Blick auf die kommenden Tage */
