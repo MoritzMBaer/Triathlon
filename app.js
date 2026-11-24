@@ -517,7 +517,7 @@
         }
         return `<div class="st${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${lab}</span>${tgtHTML(s)}</div>`;
       }).join('');
-      if (b.rep) return `<div class="rep"><div class="rep-h">${esc(b.h)} <b>${b.rep}×</b></div>${rows}${extra}</div>`;
+      if (b.rep) return `<div class="rep"><div class="rep-h"><span>${esc(b.h)}</span> <b>${b.rep}×</b></div>${rows}${extra}</div>`;
       return rows + extra;
     }).join('');
   }
