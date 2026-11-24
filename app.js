@@ -473,12 +473,12 @@
           }).join('')}</ol>`;
         }
         /* Einzelne Übung als eigener Schritt (z. B. „50mtr Abschlag. 20 s Pause“): Info-Button direkt hinter der Übung */
-        /* Material steht nicht hinter der Übung, sondern nur in der Info (z. B. „Beine mit Brett“ → „Beine“, Info: Material Brett) */
-        const [dn, dg] = gearSplit(s.lab), one = !dr && (DRILLS[dn.toLowerCase()] || (dg.length ? [dn, '', ''] : null));
+        /* Technikübungen: Material steht in der Info, nicht hinter dem Namen. Normale Schritte („Beine mit Brett“, „locker mit Pullbuoy und Paddles“) behalten es im Text */
+        const [dn, dg] = gearSplit(s.lab), one = !dr && DRILLS[dn.toLowerCase()];
         if (one) {
           const [n, t, why] = one, key = p.id + ':' + bi + ':' + si, open = !!state.drillOpen[key];
           const mat = dg.length ? `<p class="why"><span>Material</span>${esc(dg.join(', '))}</p>` : '';
-          return `<div class="st st-dr${s.pause ? ' ps' : ''}${open ? ' open' : ''}"><span class="d">${esc(s.dur)}</span><button class="l dr-in" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>${tgtHTML(s)}</div>${open ? `<div class="dr-x dr-st${t ? '' : ' only'}">${t ? `<p>${esc(t)}</p>` : ''}${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}${mat}</div>` : ''}`;
+          return `<div class="st st-dr${s.pause ? ' ps' : ''}${open ? ' open' : ''}"><span class="d">${esc(s.dur)}</span><button class="l dr-in" data-drill="${esc(key)}" aria-expanded="${open}"><b>${esc(n)}</b><span class="info${open ? ' on' : ''}" aria-hidden="true">${INFO_I}</span><span class="sr">${open ? 'Erklärung ausblenden' : 'Erklärung anzeigen'}</span></button>${tgtHTML(s)}</div>${open ? `<div class="dr-x dr-st"><p>${esc(t)}</p>${why ? `<p class="why"><span>Wofür</span>${esc(why)}</p>` : ''}${mat}</div>` : ''}`;
         }
         return `<div class="st${isMain ? ' main' : ''}${s.pause ? ' ps' : ''}"><span class="d">${esc(s.dur)}</span><span class="l">${lab}</span>${tgtHTML(s)}</div>`;
       }).join('');
