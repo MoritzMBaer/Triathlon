@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="tri-v188">
+<meta name="app-version" content="tri-v189">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Triathlon</title>
 <script>
@@ -212,8 +212,8 @@ input{font:inherit}
 .fuel svg{width:18px;height:18px;flex:none}
 button.fuel{border:0;font-family:inherit;cursor:pointer;text-align:left}
 .fuel .fuel-go{margin-left:2px;font-size:16px;line-height:1;opacity:.7}
-/* Notiz, Material und „Ohne Aufzeichnung erledigt“ bündig mit den Schritten (12 px Abstand + 2 px Linie) */
-.steps ~ :is(.note,.gear,.link.manual,.msg){margin-left:14px}
+/* Notiz, Material und „Ohne Aufzeichnung erledigt“ bündig mit den Schritten bzw. der Übungsliste (14 px) */
+.unit > .note,.steps ~ :is(.gear,.link.manual,.msg){margin-left:14px}
 .runlen{font-size:14px;color:var(--c-mu)}
 .runlen.warn{color:var(--fg);background:color-mix(in srgb,#ff9f0a 16%,var(--card));border-radius:14px;padding:10px 12px}
 .cssbar{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--c-mu);background:color-mix(in srgb,var(--card) 70%,transparent);border-radius:14px;padding:8px 12px}
