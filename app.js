@@ -1576,11 +1576,6 @@
       return `<div class="sprow" style="${cv(k)}"><span class="ic">${ICON[k]}</span><span><b>${f}</b><small>${xs.length === 1 ? '1 Einheit' : xs.length + ' Einheiten'}</small></span><span class="spv"><b class="num">${f === 'Schwimmen' ? Math.round(km * 1000).toLocaleString('de-DE') + ' m' : Math.round(km).toLocaleString('de-DE') + ' km'}</b><small class="num">${xs.length ? fmtH(min) : '–'}</small></span></div>`;
     }).join('')}</section>`);
     h += '</div><div class="pcol pk">' + stunden + '</div></div>';
-    if (state.ver) {
-      /* Seite und Service Worker getrennt: weichen sie ab, läuft noch eine ältere Seite aus dem Zwischenspeicher */
-      const pm = document.querySelector('meta[name="app-version"]'), pv = pm ? +(/(\d+)$/.exec(pm.content) || [])[1] : 0;
-      h += `<p class="appver">Version ${state.ver}${pv !== state.ver ? ` · Seite ${pv || 'alt'}` : ''}</p>`;
-    }
     return h;
   }
 
@@ -1676,6 +1671,12 @@
     const html = `<small>${esc(RACE_NAME)}</small><b class="num">${days}</b><span>Tage · ${fmtDay(RACE)} ${RACE.getFullYear()}</span>`;
     if (el.innerHTML !== html) el.innerHTML = html;
   }
+  /* Version ganz unten auf jeder Seite. Seite und Service Worker getrennt: weichen sie ab, läuft noch eine ältere Seite aus dem Zwischenspeicher */
+  function appVer() {
+    const pm = document.querySelector('meta[name="app-version"]'), pv = pm ? +(/(\d+)$/.exec(pm.content) || [])[1] : 0;
+    const v = state.ver || pv;
+    return v ? `<p class="appver">Version ${v}${state.ver && pv !== state.ver ? ` · Seite ${pv || 'alt'}` : ''}</p>` : '';
+  }
   function render() {
     const v = state.cfg && state.cfg.key ? current() : 'einrichtung';
     sideCount();
@@ -1689,6 +1690,7 @@
     if (v === 'einrichtung') html = viewSetup();
     else if (!M) html = header('Heute', 'Lade deine Daten …', null, 'Lädt …') + banner() + '<div class="skel"></div>';
     else html = v === 'woche' ? viewWoche(M) : v === 'fortschritt' ? viewFortschritt(M) : v === 'extras' ? viewExtras(M) : viewHeute(M);
+    html += appVer();
     if (v !== lastView) {
       app.innerHTML = html; lastRender = html;
       app.style.transition = ''; app.style.transform = ''; app.style.opacity = '';
