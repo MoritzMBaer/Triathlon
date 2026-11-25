@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="tri-v190">
+<meta name="app-version" content="tri-v191">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Triathlon</title>
 <script>
@@ -79,7 +79,7 @@ input{font:inherit}
 .head-count b{font-family:var(--round);font-size:17px;font-weight:800;color:var(--fg)}
 /* Handy: Abstand unter der Statusleiste. iOS zeichnet die Kante darunter weich, direkt nach dem Start breiter
    (bis zum ersten Scrollen). Getestet: 18 px + safe-area nach dem Scrollen scharf, beim Start nicht.
-   Test: 6 px, ganz oben, Unschärfe bewusst in Kauf genommen. */
+   Entschieden (25.11.2026): 6 px, ganz oben, Unschärfe bewusst akzeptiert. */
 @media (max-width:959px){.head{margin-bottom:-4px;padding-top:0}.app{padding-top:max(16px,calc(6px + env(safe-area-inset-top,0px)))}}
 .iconbtn.net{background:none;color:var(--muted)}
 .tiny{font-size:12px;color:var(--faint)}
